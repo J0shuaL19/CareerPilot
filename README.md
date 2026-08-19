@@ -24,7 +24,9 @@ This initial milestone contains only runnable backend and frontend foundations. 
 
 ### Backend
 
-Requirements: JDK 21.
+Requirements: JDK 21, Maven, and PostgreSQL.
+
+Create a PostgreSQL database and user, then expose the connection values as environment variables. See `.env.example` and `docs/database.md` for the expected names.
 
 ```bash
 cd backend
