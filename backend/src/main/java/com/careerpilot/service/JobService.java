@@ -2,6 +2,7 @@ package com.careerpilot.service;
 
 import com.careerpilot.dto.JobRequest;
 import com.careerpilot.dto.JobResponse;
+import com.careerpilot.exception.ResourceNotFoundException;
 import com.careerpilot.model.Job;
 import com.careerpilot.repository.JobRepository;
 import java.util.List;
@@ -34,6 +35,13 @@ public class JobService {
         return jobRepository.findAllByOrderByCreatedAtDesc().stream()
                 .map(JobService::toResponse)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public JobResponse getJob(Long id) {
+        return jobRepository.findById(id)
+                .map(JobService::toResponse)
+                .orElseThrow(() -> new ResourceNotFoundException("Job", id));
     }
 
     private static String normalizeOptional(String value) {

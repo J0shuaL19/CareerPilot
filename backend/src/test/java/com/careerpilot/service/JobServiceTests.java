@@ -1,17 +1,20 @@
 package com.careerpilot.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.careerpilot.dto.JobRequest;
 import com.careerpilot.dto.JobResponse;
+import com.careerpilot.exception.ResourceNotFoundException;
 import com.careerpilot.model.Job;
 import com.careerpilot.model.JobStatus;
 import com.careerpilot.repository.JobRepository;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -80,6 +83,26 @@ class JobServiceTests {
         assertThat(responses).extracting(JobResponse::id).containsExactly(2L, 1L);
         assertThat(responses).extracting(JobResponse::company)
                 .containsExactly("Company B", "Company A");
+    }
+
+    @Test
+    void returnsJobById() {
+        Job job = persistedJob(1L, "OpenAI", "2026-08-18T12:00:00Z");
+        when(jobRepository.findById(1L)).thenReturn(Optional.of(job));
+
+        JobResponse response = jobService.getJob(1L);
+
+        assertThat(response.id()).isEqualTo(1L);
+        assertThat(response.company()).isEqualTo("OpenAI");
+    }
+
+    @Test
+    void throwsWhenJobDoesNotExist() {
+        when(jobRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> jobService.getJob(999L))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("Job not found with id: 999");
     }
 
     private static Job persistedJob(Long id, String company, String createdAt) {
