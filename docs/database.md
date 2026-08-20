@@ -28,4 +28,15 @@ Migration: `V1__create_jobs_table.sql`
 | `status` | `VARCHAR(32)` | Application pipeline status |
 | `created_at` | `TIMESTAMP WITH TIME ZONE` | UTC creation time |
 
+## Resumes table
+
+Migration: `V2__create_resumes_table.sql`
+
+| Column | Type | Purpose |
+| --- | --- | --- |
+| `id` | `BIGSERIAL` | Database-generated identifier |
+| `name` | `VARCHAR(255)` | User-facing resume name |
+| `content` | `TEXT` | Plain-text resume content used by later analysis |
+| `created_at` | `TIMESTAMP WITH TIME ZONE` | UTC creation time |
+
 Future schema changes must be added as new Flyway migrations. Do not edit a migration after it has been applied to a shared database.
