@@ -5,10 +5,11 @@ import type { Job } from '../types/job'
 import { getErrorMessage, isAbortError } from '../utils/errors'
 
 interface JobsPageProps {
+  notice?: string
   onAddJob: () => void
 }
 
-export function JobsPage({ onAddJob }: JobsPageProps) {
+export function JobsPage({ notice, onAddJob }: JobsPageProps) {
   const [jobs, setJobs] = useState<Job[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -54,6 +55,12 @@ export function JobsPage({ onAddJob }: JobsPageProps) {
           <span aria-hidden="true">＋</span> Add job
         </button>
       </header>
+
+      {notice && (
+        <div className="alert alert--success" role="status">
+          <span aria-hidden="true">✓</span> {notice}
+        </div>
+      )}
 
       {isLoading && (
         <div className="state-card" role="status">
