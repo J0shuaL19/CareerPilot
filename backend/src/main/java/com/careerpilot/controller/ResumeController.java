@@ -1,0 +1,41 @@
+package com.careerpilot.controller;
+
+import com.careerpilot.dto.ResumeRequest;
+import com.careerpilot.dto.ResumeResponse;
+import com.careerpilot.service.ResumeService;
+import jakarta.validation.Valid;
+import java.util.List;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/resumes")
+public class ResumeController {
+
+    private final ResumeService resumeService;
+
+    public ResumeController(ResumeService resumeService) {
+        this.resumeService = resumeService;
+    }
+
+    @PostMapping
+    public ResponseEntity<ResumeResponse> createResume(@Valid @RequestBody ResumeRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(resumeService.createResume(request));
+    }
+
+    @GetMapping
+    public List<ResumeResponse> getResumes() {
+        return resumeService.getResumes();
+    }
+
+    @GetMapping("/{id}")
+    public ResumeResponse getResume(@PathVariable Long id) {
+        return resumeService.getResume(id);
+    }
+}
