@@ -97,9 +97,69 @@ Missing job: `404 Not Found`
 }
 ```
 
+## Resumes
+
+Resume content is currently stored as plain text. File uploads and document parsing are outside this API version.
+
+### Create a resume
+
+`POST /api/resumes`
+
+Request:
+
+```json
+{
+  "name": "Backend Engineer Resume",
+  "content": "Experienced Java engineer focused on reliable backend systems."
+}
+```
+
+Validation rules:
+
+- `name` and `content` are required and cannot contain only whitespace.
+- `name` can contain at most 255 characters.
+
+Success: `201 Created`
+
+```json
+{
+  "id": 1,
+  "name": "Backend Engineer Resume",
+  "content": "Experienced Java engineer focused on reliable backend systems.",
+  "createdAt": "2026-08-21T19:00:00Z"
+}
+```
+
+### List resumes
+
+`GET /api/resumes`
+
+Returns resumes ordered from newest to oldest.
+
+Success: `200 OK` with an array of resume responses. An empty database returns `[]`.
+
+### Get one resume
+
+`GET /api/resumes/{id}`
+
+Success: `200 OK` with one resume response.
+
+Missing resume: `404 Not Found`
+
+```json
+{
+  "timestamp": "2026-08-21T19:00:00Z",
+  "status": 404,
+  "error": "Not Found",
+  "message": "Resume not found with id: 999",
+  "path": "/api/resumes/999",
+  "fieldErrors": {}
+}
+```
+
 ## Validation errors
 
-Invalid requests return `400 Bad Request`.
+Invalid job and resume requests return `400 Bad Request`.
 
 ```json
 {
