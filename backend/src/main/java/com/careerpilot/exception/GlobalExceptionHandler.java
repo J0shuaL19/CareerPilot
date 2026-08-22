@@ -1,9 +1,12 @@
 package com.careerpilot.exception;
 
+import com.careerpilot.ai.AiClientException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -14,6 +17,8 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiErrorResponse> handleNotFound(
@@ -64,6 +69,21 @@ public class GlobalExceptionHandler {
         return errorResponse(
                 HttpStatus.BAD_REQUEST,
                 "Invalid value for " + exception.getName(),
+                request.getRequestURI(),
+                Map.of()
+        );
+    }
+
+    @ExceptionHandler(AiClientException.class)
+    public ResponseEntity<ApiErrorResponse> handleAiClientFailure(
+            AiClientException exception,
+            HttpServletRequest request
+    ) {
+        LOGGER.warn("AI analysis request failed: {}", exception.getMessage());
+
+        return errorResponse(
+                HttpStatus.BAD_GATEWAY,
+                "AI analysis service is temporarily unavailable",
                 request.getRequestURI(),
                 Map.of()
         );

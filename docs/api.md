@@ -159,7 +159,7 @@ Missing resume: `404 Not Found`
 
 ## Validation errors
 
-Invalid job and resume requests return `400 Bad Request`.
+Invalid job, resume, and match analysis requests return `400 Bad Request`.
 
 ```json
 {
@@ -175,6 +175,59 @@ Invalid job and resume requests return `400 Bad Request`.
 ```
 
 Malformed JSON and invalid path parameter types use the same error envelope with an empty `fieldErrors` object.
+
+## Match analyses
+
+Match analyses compare one saved job with one saved resume. The complete job description and resume content are not repeated in API responses.
+
+### Create a match analysis
+
+`POST /api/match-analyses`
+
+Request:
+
+```json
+{
+  "jobId": 1,
+  "resumeId": 2
+}
+```
+
+Both IDs are required and must be positive. Missing jobs or resumes return `404 Not Found`.
+
+Success: `201 Created`
+
+```json
+{
+  "id": 3,
+  "jobId": 1,
+  "company": "OpenAI",
+  "jobTitle": "Software Engineer",
+  "resumeId": 2,
+  "resumeName": "Backend Resume",
+  "matchScore": 84,
+  "summary": "Strong overall match.",
+  "strengths": "Relevant backend experience.",
+  "gaps": "Limited cloud evidence.",
+  "recommendations": "Add measurable cloud achievements.",
+  "modelName": "gpt-5.6",
+  "createdAt": "2026-08-22T19:00:00Z"
+}
+```
+
+If the upstream AI service cannot complete the request, the API returns `502 Bad Gateway`. No failed or partial analysis is persisted, and internal provider details are not included in the response.
+
+### List match analyses
+
+`GET /api/match-analyses`
+
+Returns analyses ordered from newest to oldest. Success: `200 OK`; an empty database returns `[]`.
+
+### Get one match analysis
+
+`GET /api/match-analyses/{id}`
+
+Success: `200 OK` with one analysis response. Missing analysis: `404 Not Found`.
 
 ## Job status values
 
