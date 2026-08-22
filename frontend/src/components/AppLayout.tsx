@@ -5,7 +5,7 @@ export function AppLayout() {
     <div className="app-shell">
       <header className="app-header">
         <div className="app-header__inner">
-          <NavLink className="brand" to="/jobs" aria-label="CareerPilot jobs">
+          <NavLink className="brand" to="/jobs" aria-label="CareerPilot home">
             <span className="brand__mark" aria-hidden="true">C</span>
             <span>CareerPilot</span>
           </NavLink>
@@ -17,6 +17,13 @@ export function AppLayout() {
               className={({ isActive }) => (isActive ? 'app-nav__link app-nav__link--active' : 'app-nav__link')}
             >
               Jobs
+            </NavLink>
+            <NavLink
+              to="/resumes"
+              end
+              className={({ isActive }) => (isActive ? 'app-nav__link app-nav__link--active' : 'app-nav__link')}
+            >
+              Resumes
             </NavLink>
             <NavLink className="button button--primary button--compact" to="/jobs/new">
               <span aria-hidden="true">＋</span> Add job
