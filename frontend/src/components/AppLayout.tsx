@@ -1,6 +1,9 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 
 export function AppLayout() {
+  const { pathname } = useLocation()
+  const isAnalysisRoute = pathname.startsWith('/analyses/')
+
   return (
     <div className="app-shell">
       <header className="app-header">
@@ -24,6 +27,14 @@ export function AppLayout() {
               className={({ isActive }) => (isActive ? 'app-nav__link app-nav__link--active' : 'app-nav__link')}
             >
               Resumes
+            </NavLink>
+            <NavLink
+              to="/analyses/new"
+              className={isAnalysisRoute
+                ? 'app-nav__link app-nav__link--analysis app-nav__link--active'
+                : 'app-nav__link app-nav__link--analysis'}
+            >
+              Analyze
             </NavLink>
             <NavLink className="button button--primary button--compact" to="/jobs/new">
               <span aria-hidden="true">＋</span> Add job

@@ -3,6 +3,8 @@ import { AppLayout } from './components/AppLayout'
 import { AddJobPage } from './pages/AddJobPage'
 import { AddResumePage } from './pages/AddResumePage'
 import { JobsPage } from './pages/JobsPage'
+import { MatchAnalysisResultPage } from './pages/MatchAnalysisResultPage'
+import { NewMatchAnalysisPage } from './pages/NewMatchAnalysisPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { ResumesPage } from './pages/ResumesPage'
 import type { Job } from './types/job'
@@ -74,6 +76,16 @@ function AddResumeRoute() {
   )
 }
 
+function NewMatchAnalysisRoute() {
+  const navigate = useNavigate()
+
+  return (
+    <NewMatchAnalysisPage
+      onCreated={(analysis) => navigate(`/analyses/${analysis.id}`)}
+    />
+  )
+}
+
 function App() {
   return (
     <Routes>
@@ -83,6 +95,8 @@ function App() {
         <Route path="jobs/new" element={<AddJobRoute />} />
         <Route path="resumes" element={<ResumesRoute />} />
         <Route path="resumes/new" element={<AddResumeRoute />} />
+        <Route path="analyses/new" element={<NewMatchAnalysisRoute />} />
+        <Route path="analyses/:id" element={<MatchAnalysisResultPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
