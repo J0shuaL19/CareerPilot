@@ -1,5 +1,10 @@
 import { useEffect, useState } from 'react'
 import { JobCard } from '../components/JobCard'
+import {
+  JobStatusFilter,
+  type JobStatusFilterValue,
+} from '../components/JobStatusFilter'
+import { PipelineSummary } from '../components/PipelineSummary'
 import { getJobs, updateJobStatus } from '../services/jobApi'
 import type { Job, JobStatus } from '../types/job'
 import { getErrorMessage, isAbortError } from '../utils/errors'
@@ -17,7 +22,12 @@ export function JobsPage({ notice, onAddJob }: JobsPageProps) {
   const [statusError, setStatusError] = useState<string | null>(null)
   const [statusNotice, setStatusNotice] = useState<string | null>(null)
   const [updatingJobId, setUpdatingJobId] = useState<number | null>(null)
+  const [selectedStatus, setSelectedStatus] = useState<JobStatusFilterValue>('ALL')
   const [reloadKey, setReloadKey] = useState(0)
+
+  const filteredJobs = selectedStatus === 'ALL'
+    ? jobs
+    : jobs.filter((job) => job.status === selectedStatus)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -129,16 +139,40 @@ export function JobsPage({ notice, onAddJob }: JobsPageProps) {
       )}
 
       {!isLoading && !error && jobs.length > 0 && (
-        <section className="job-list" aria-label="Saved jobs">
-          {jobs.map((job) => (
-            <JobCard
-              key={job.id}
-              job={job}
-              isUpdating={updatingJobId === job.id}
-              onStatusChange={handleStatusChange}
-            />
-          ))}
-        </section>
+        <>
+          <PipelineSummary jobs={jobs} />
+          <JobStatusFilter
+            jobs={jobs}
+            selectedStatus={selectedStatus}
+            onChange={setSelectedStatus}
+          />
+
+          {filteredJobs.length > 0 ? (
+            <section className="job-list" aria-label="Filtered jobs">
+              {filteredJobs.map((job) => (
+                <JobCard
+                  key={job.id}
+                  job={job}
+                  isUpdating={updatingJobId === job.id}
+                  onStatusChange={handleStatusChange}
+                />
+              ))}
+            </section>
+          ) : (
+            <div className="state-card state-card--compact">
+              <div className="state-card__icon" aria-hidden="true">◎</div>
+              <h2>No jobs at this stage</h2>
+              <p>Choose another pipeline stage or return to your full job list.</p>
+              <button
+                className="button button--secondary"
+                type="button"
+                onClick={() => setSelectedStatus('ALL')}
+              >
+                Show all jobs
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   )
