@@ -208,7 +208,8 @@ a:focus-visible {
   text-decoration: none;
 }
 
-.job-form {
+.job-form,
+.resume-form {
   display: grid;
   gap: 1.5rem;
 }
@@ -406,6 +407,89 @@ a:focus-visible {
   text-decoration: none;
 }
 
+.resume-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.resume-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1rem;
+  min-width: 0;
+  padding: 1.35rem;
+  border: 1px solid #dce3ef;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 8px 28px rgb(38 60 96 / 5%);
+  transition: border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+
+.resume-card:hover {
+  border-color: #bdcae1;
+  transform: translateY(-2px);
+  box-shadow: 0 16px 38px rgb(38 60 96 / 9%);
+}
+
+.resume-card__icon {
+  display: grid;
+  width: 46px;
+  height: 54px;
+  place-items: center;
+  border-radius: 8px 13px 13px 8px;
+  color: #17633f;
+  background: #e6f7ee;
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+}
+
+.resume-card__content {
+  min-width: 0;
+}
+
+.resume-card__heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.resume-card__heading h2 {
+  overflow: hidden;
+  margin: 0.2rem 0 0;
+  font-size: 1.1rem;
+  letter-spacing: -0.02em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.resume-card__heading time {
+  flex: 0 0 auto;
+  color: #8a94a6;
+  font-size: 0.78rem;
+}
+
+.resume-card__label {
+  margin: 0;
+  color: #687489;
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+.resume-card__preview {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 0.85rem 0 0;
+  color: #687489;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
 .status-badge {
   display: inline-flex;
   flex: 0 0 auto;
@@ -547,6 +631,10 @@ a:focus-visible {
 
   .job-card__company-mark {
     display: none;
+  }
+
+  .resume-list {
+    grid-template-columns: 1fr;
   }
 }
 
