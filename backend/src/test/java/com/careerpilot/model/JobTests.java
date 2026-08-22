@@ -51,4 +51,23 @@ class JobTests {
                 .isThrownBy(() -> job.updateStatus(null))
                 .withMessage("Job status is required");
     }
+
+    @Test
+    void updatesJobDetailsWithoutChangingStatus() {
+        Job job = new Job("OpenAI", "Engineer", "Description", null);
+        job.updateStatus(JobStatus.INTERVIEW);
+
+        job.updateDetails(
+                "Anthropic",
+                "Senior Engineer",
+                "Build safe AI systems.",
+                "https://example.com/jobs/2"
+        );
+
+        assertThat(job.getCompany()).isEqualTo("Anthropic");
+        assertThat(job.getTitle()).isEqualTo("Senior Engineer");
+        assertThat(job.getDescription()).isEqualTo("Build safe AI systems.");
+        assertThat(job.getJobUrl()).isEqualTo("https://example.com/jobs/2");
+        assertThat(job.getStatus()).isEqualTo(JobStatus.INTERVIEW);
+    }
 }

@@ -5,7 +5,7 @@ import {
   type JobStatusFilterValue,
 } from '../components/JobStatusFilter'
 import { PipelineSummary } from '../components/PipelineSummary'
-import { getJobs, updateJobStatus } from '../services/jobApi'
+import { deleteJob, getJobs, updateJobStatus } from '../services/jobApi'
 import type { Job, JobStatus } from '../types/job'
 import { getErrorMessage, isAbortError } from '../utils/errors'
 import { getJobStatusConfig } from '../utils/jobStatus'
@@ -13,15 +13,18 @@ import { getJobStatusConfig } from '../utils/jobStatus'
 interface JobsPageProps {
   notice?: string
   onAddJob: () => void
+  onEditJob: (jobId: number) => void
 }
 
-export function JobsPage({ notice, onAddJob }: JobsPageProps) {
+export function JobsPage({ notice, onAddJob, onEditJob }: JobsPageProps) {
   const [jobs, setJobs] = useState<Job[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [statusError, setStatusError] = useState<string | null>(null)
-  const [statusNotice, setStatusNotice] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
+  const [actionNotice, setActionNotice] = useState<string | null>(null)
+  const [showRouteNotice, setShowRouteNotice] = useState(Boolean(notice))
   const [updatingJobId, setUpdatingJobId] = useState<number | null>(null)
+  const [deletingJobId, setDeletingJobId] = useState<number | null>(null)
   const [selectedStatus, setSelectedStatus] = useState<JobStatusFilterValue>('ALL')
   const [reloadKey, setReloadKey] = useState(0)
 
@@ -55,21 +58,39 @@ export function JobsPage({ notice, onAddJob }: JobsPageProps) {
 
   async function handleStatusChange(jobId: number, status: JobStatus) {
     setUpdatingJobId(jobId)
-    setStatusError(null)
-    setStatusNotice(null)
+    setActionError(null)
+    setActionNotice(null)
+    setShowRouteNotice(false)
 
     try {
       const updatedJob = await updateJobStatus(jobId, { status })
       setJobs((currentJobs) => currentJobs.map((job) => (
         job.id === updatedJob.id ? updatedJob : job
       )))
-      setStatusNotice(
+      setActionNotice(
         `${updatedJob.title} moved to ${getJobStatusConfig(updatedJob.status).label}.`,
       )
     } catch (updateError) {
-      setStatusError(getErrorMessage(updateError))
+      setActionError(getErrorMessage(updateError))
     } finally {
       setUpdatingJobId(null)
+    }
+  }
+
+  async function handleDelete(job: Job) {
+    setDeletingJobId(job.id)
+    setActionError(null)
+    setActionNotice(null)
+    setShowRouteNotice(false)
+
+    try {
+      await deleteJob(job.id)
+      setJobs((currentJobs) => currentJobs.filter((currentJob) => currentJob.id !== job.id))
+      setActionNotice(`${job.title} at ${job.company} was deleted.`)
+    } catch (deleteError) {
+      setActionError(getErrorMessage(deleteError))
+    } finally {
+      setDeletingJobId(null)
     }
   }
 
@@ -90,21 +111,21 @@ export function JobsPage({ notice, onAddJob }: JobsPageProps) {
         </button>
       </header>
 
-      {notice && (
+      {showRouteNotice && notice && (
         <div className="alert alert--success" role="status">
           <span aria-hidden="true">✓</span> {notice}
         </div>
       )}
 
-      {statusNotice && (
+      {actionNotice && (
         <div className="alert alert--success" role="status">
-          <span aria-hidden="true">✓</span> {statusNotice}
+          <span aria-hidden="true">✓</span> {actionNotice}
         </div>
       )}
 
-      {statusError && (
-        <div className="alert alert--error job-status-error" role="alert">
-          {statusError}
+      {actionError && (
+        <div className="alert alert--error job-action-error" role="alert">
+          {actionError}
         </div>
       )}
 
@@ -154,7 +175,10 @@ export function JobsPage({ notice, onAddJob }: JobsPageProps) {
                   key={job.id}
                   job={job}
                   isUpdating={updatingJobId === job.id}
+                  isDeleting={deletingJobId === job.id}
                   onStatusChange={handleStatusChange}
+                  onEdit={onEditJob}
+                  onDelete={handleDelete}
                 />
               ))}
             </section>

@@ -56,6 +56,13 @@ public class Job {
         this.status = Objects.requireNonNull(status, "Job status is required");
     }
 
+    public void updateDetails(String company, String title, String description, String jobUrl) {
+        this.company = Objects.requireNonNull(company, "Company is required");
+        this.title = Objects.requireNonNull(title, "Title is required");
+        this.description = Objects.requireNonNull(description, "Description is required");
+        this.jobUrl = jobUrl;
+    }
+
     @PrePersist
     void setCreationTime() {
         if (createdAt == null) {

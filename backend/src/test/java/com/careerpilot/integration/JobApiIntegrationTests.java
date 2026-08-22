@@ -2,8 +2,10 @@ package com.careerpilot.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -109,6 +111,38 @@ class JobApiIntegrationTests {
 
         Job updatedJob = jobRepository.findById(job.getId()).orElseThrow();
         assertThat(updatedJob.getStatus()).isEqualTo(JobStatus.INTERVIEW);
+    }
+
+    @Test
+    void updatesAndPersistsJobDetails() throws Exception {
+        Job job = jobRepository.saveAndFlush(new Job("OpenAI", "Engineer", "Description", null));
+
+        mockMvc.perform(put("/api/jobs/{id}", job.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "company": "Anthropic",
+                                  "title": "Senior Engineer",
+                                  "description": "Build safe AI systems.",
+                                  "jobUrl": "https://example.com/jobs/2"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.company").value("Anthropic"));
+
+        Job updatedJob = jobRepository.findById(job.getId()).orElseThrow();
+        assertThat(updatedJob.getTitle()).isEqualTo("Senior Engineer");
+        assertThat(updatedJob.getJobUrl()).isEqualTo("https://example.com/jobs/2");
+    }
+
+    @Test
+    void deletesJob() throws Exception {
+        Job job = jobRepository.saveAndFlush(new Job("OpenAI", "Engineer", "Description", null));
+
+        mockMvc.perform(delete("/api/jobs/{id}", job.getId()))
+                .andExpect(status().isNoContent());
+
+        assertThat(jobRepository.existsById(job.getId())).isFalse();
     }
 
     private static Job job(String company, String createdAt) {

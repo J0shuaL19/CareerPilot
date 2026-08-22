@@ -132,6 +132,48 @@ class JobServiceTests {
                 .hasMessage("Job not found with id: 999");
     }
 
+    @Test
+    void updatesJobDetailsFromNormalizedRequest() {
+        Job job = persistedJob(1L, "OpenAI", "2026-08-18T12:00:00Z");
+        job.updateStatus(JobStatus.APPLIED);
+        when(jobRepository.findById(1L)).thenReturn(Optional.of(job));
+
+        JobResponse response = jobService.updateJob(
+                1L,
+                new JobRequest(
+                        "  Anthropic  ",
+                        "  Senior Engineer  ",
+                        "  Build safe AI systems.  ",
+                        "  "
+                )
+        );
+
+        assertThat(response.company()).isEqualTo("Anthropic");
+        assertThat(response.title()).isEqualTo("Senior Engineer");
+        assertThat(response.description()).isEqualTo("Build safe AI systems.");
+        assertThat(response.jobUrl()).isNull();
+        assertThat(response.status()).isEqualTo(JobStatus.APPLIED);
+    }
+
+    @Test
+    void deletesExistingJob() {
+        Job job = persistedJob(1L, "OpenAI", "2026-08-18T12:00:00Z");
+        when(jobRepository.findById(1L)).thenReturn(Optional.of(job));
+
+        jobService.deleteJob(1L);
+
+        verify(jobRepository).delete(job);
+    }
+
+    @Test
+    void throwsWhenDeletingMissingJob() {
+        when(jobRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> jobService.deleteJob(999L))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("Job not found with id: 999");
+    }
+
     private static Job persistedJob(Long id, String company, String createdAt) {
         Job job = new Job(company, "Engineer", "Description", null);
         ReflectionTestUtils.setField(job, "id", id);

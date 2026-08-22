@@ -1,4 +1,9 @@
-import type { CreateJobInput, Job, UpdateJobStatusInput } from '../types/job'
+import type {
+  CreateJobInput,
+  Job,
+  UpdateJobInput,
+  UpdateJobStatusInput,
+} from '../types/job'
 import { apiRequest } from './apiClient'
 
 export function getJobs(signal?: AbortSignal): Promise<Job[]> {
@@ -29,5 +34,21 @@ export function updateJobStatus(
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(input),
+  })
+}
+
+export function updateJob(id: number, input: UpdateJobInput): Promise<Job> {
+  return apiRequest<Job>(`/api/jobs/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(input),
+  })
+}
+
+export function deleteJob(id: number): Promise<void> {
+  return apiRequest<void>(`/api/jobs/${id}`, {
+    method: 'DELETE',
   })
 }

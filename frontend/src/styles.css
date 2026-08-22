@@ -170,7 +170,7 @@ a {
   transform: translateY(-1px);
 }
 
-.button:focus-visible,
+button:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible,
@@ -202,6 +202,16 @@ a:focus-visible {
 
 .button--secondary:hover:not(:disabled) {
   background: #f5f7fb;
+}
+
+.button--danger {
+  color: #fff;
+  background: #bd3049;
+  box-shadow: 0 8px 18px rgb(189 48 73 / 18%);
+}
+
+.button--danger:hover:not(:disabled) {
+  background: #a5273e;
 }
 
 .button--compact {
@@ -582,7 +592,7 @@ a:focus-visible {
   font-weight: 650;
 }
 
-.job-status-error {
+.job-action-error {
   margin-bottom: 1rem;
 }
 
@@ -599,6 +609,66 @@ a:focus-visible {
   color: #315dc9;
   font-weight: 700;
   text-decoration: none;
+}
+
+.job-card__footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.job-card__footer-actions button {
+  padding: 0;
+  border: 0;
+  color: #315dc9;
+  background: transparent;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.job-card__footer-actions button:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.job-card__footer-actions button:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.job-card__footer-actions .job-card__delete-button {
+  color: #a02b3e;
+}
+
+.job-card__delete-confirmation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0.9rem 0;
+  padding: 0.9rem 1rem;
+  border: 1px solid #efc3ca;
+  border-radius: 12px;
+  color: #6e2634;
+  background: #fff5f6;
+}
+
+.job-card__delete-confirmation strong,
+.job-card__delete-confirmation p {
+  margin: 0;
+}
+
+.job-card__delete-confirmation p {
+  margin-top: 0.2rem;
+  color: #8b5260;
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+.job-card__delete-confirmation > div:last-child {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 0.55rem;
 }
 
 .resume-list {
@@ -1347,6 +1417,25 @@ a:focus-visible {
   .job-card__status-select select {
     width: 100%;
     max-width: none;
+  }
+
+  .job-card__delete-confirmation {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .job-card__delete-confirmation > div:last-child .button {
+    flex: 1;
+  }
+
+  .job-card__footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .job-card__footer-actions {
+    width: 100%;
+    justify-content: flex-end;
   }
 
   .job-card__company-mark {

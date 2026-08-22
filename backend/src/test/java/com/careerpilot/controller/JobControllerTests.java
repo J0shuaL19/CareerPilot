@@ -3,8 +3,10 @@ package com.careerpilot.controller;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -159,6 +161,46 @@ class JobControllerTests {
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Malformed JSON request"));
+    }
+
+    @Test
+    void updatesJobDetails() throws Exception {
+        when(jobService.updateJob(any(Long.class), any(JobRequest.class)))
+                .thenReturn(jobResponse(1L, "Anthropic"));
+
+        mockMvc.perform(put("/api/jobs/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "company": "Anthropic",
+                                  "title": "Senior Engineer",
+                                  "description": "Build safe AI systems.",
+                                  "jobUrl": "https://example.com/jobs/2"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.company").value("Anthropic"));
+    }
+
+    @Test
+    void validatesJobUpdate() throws Exception {
+        mockMvc.perform(put("/api/jobs/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "company": "",
+                                  "title": "",
+                                  "description": ""
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.company").value("Company is required"));
+    }
+
+    @Test
+    void deletesJob() throws Exception {
+        mockMvc.perform(delete("/api/jobs/1"))
+                .andExpect(status().isNoContent());
     }
 
     private static JobResponse jobResponse(Long id, String company) {

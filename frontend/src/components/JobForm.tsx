@@ -2,14 +2,17 @@ import { useState, type FormEvent } from 'react'
 import type { CreateJobInput } from '../types/job'
 
 interface JobFormProps {
+  initialValues?: CreateJobInput
   fieldErrors?: Record<string, string>
   formError?: string | null
   isSubmitting: boolean
+  submitLabel?: string
+  submittingLabel?: string
   onSubmit: (input: CreateJobInput) => Promise<void>
   onCancel: () => void
 }
 
-const initialValues: CreateJobInput = {
+const emptyValues: CreateJobInput = {
   company: '',
   title: '',
   description: '',
@@ -17,13 +20,16 @@ const initialValues: CreateJobInput = {
 }
 
 export function JobForm({
+  initialValues = emptyValues,
   fieldErrors = {},
   formError,
   isSubmitting,
+  submitLabel = 'Save job',
+  submittingLabel = 'Saving job…',
   onSubmit,
   onCancel,
 }: JobFormProps) {
-  const [values, setValues] = useState<CreateJobInput>(initialValues)
+  const [values, setValues] = useState<CreateJobInput>({ ...initialValues })
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -134,7 +140,7 @@ export function JobForm({
           Cancel
         </button>
         <button className="button button--primary" type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Saving job…' : 'Save job'}
+          {isSubmitting ? submittingLabel : submitLabel}
         </button>
       </div>
     </form>

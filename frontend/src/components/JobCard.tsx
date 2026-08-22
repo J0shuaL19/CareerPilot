@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { Job, JobStatus } from '../types/job'
 import { formatDate } from '../utils/formatDate'
 import { jobStatusOptions } from '../utils/jobStatus'
@@ -6,10 +7,22 @@ import { StatusBadge } from './StatusBadge'
 interface JobCardProps {
   job: Job
   isUpdating: boolean
+  isDeleting: boolean
   onStatusChange: (jobId: number, status: JobStatus) => Promise<void>
+  onEdit: (jobId: number) => void
+  onDelete: (job: Job) => Promise<void>
 }
 
-export function JobCard({ job, isUpdating, onStatusChange }: JobCardProps) {
+export function JobCard({
+  job,
+  isUpdating,
+  isDeleting,
+  onStatusChange,
+  onEdit,
+  onDelete,
+}: JobCardProps) {
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false)
+
   return (
     <article className="job-card">
       <div className="job-card__company-mark" aria-hidden="true">
@@ -33,7 +46,7 @@ export function JobCard({ job, isUpdating, onStatusChange }: JobCardProps) {
             <select
               id={`job-status-${job.id}`}
               value={job.status}
-              disabled={isUpdating}
+              disabled={isUpdating || isDeleting}
               onChange={(event) => void onStatusChange(job.id, event.target.value as JobStatus)}
             >
               {jobStatusOptions.map((option) => (
@@ -46,13 +59,53 @@ export function JobCard({ job, isUpdating, onStatusChange }: JobCardProps) {
           </div>
         </div>
 
+        {isConfirmingDelete && (
+          <div className="job-card__delete-confirmation" role="alert">
+            <div>
+              <strong>Delete this job?</strong>
+              <p>Its saved match analyses will also be permanently deleted.</p>
+            </div>
+            <div>
+              <button
+                className="button button--secondary button--compact"
+                type="button"
+                disabled={isDeleting}
+                onClick={() => setIsConfirmingDelete(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="button button--danger button--compact"
+                type="button"
+                disabled={isDeleting}
+                onClick={() => void onDelete(job)}
+              >
+                {isDeleting ? 'Deleting…' : 'Delete job'}
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="job-card__footer">
           <time dateTime={job.createdAt}>Added {formatDate(job.createdAt)}</time>
-          {job.jobUrl && (
-            <a href={job.jobUrl} target="_blank" rel="noreferrer">
-              View posting <span aria-hidden="true">↗</span>
-            </a>
-          )}
+          <div className="job-card__footer-actions">
+            {job.jobUrl && (
+              <a href={job.jobUrl} target="_blank" rel="noreferrer">
+                View posting <span aria-hidden="true">↗</span>
+              </a>
+            )}
+            <button type="button" disabled={isDeleting} onClick={() => onEdit(job.id)}>
+              Edit
+            </button>
+            <button
+              className="job-card__delete-button"
+              type="button"
+              disabled={isDeleting || isConfirmingDelete}
+              onClick={() => setIsConfirmingDelete(true)}
+            >
+              Delete
+            </button>
+          </div>
         </div>
       </div>
     </article>

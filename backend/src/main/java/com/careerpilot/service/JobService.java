@@ -54,6 +54,28 @@ public class JobService {
         return toResponse(job);
     }
 
+    @Transactional
+    public JobResponse updateJob(Long id, JobRequest request) {
+        Job job = findJob(id);
+        job.updateDetails(
+                request.company().trim(),
+                request.title().trim(),
+                request.description().trim(),
+                normalizeOptional(request.jobUrl())
+        );
+        return toResponse(job);
+    }
+
+    @Transactional
+    public void deleteJob(Long id) {
+        jobRepository.delete(findJob(id));
+    }
+
+    private Job findJob(Long id) {
+        return jobRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Job", id));
+    }
+
     private static String normalizeOptional(String value) {
         return value == null || value.isBlank() ? null : value.trim();
     }

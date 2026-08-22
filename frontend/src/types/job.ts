@@ -27,3 +27,5 @@ export interface CreateJobInput {
 export interface UpdateJobStatusInput {
   status: JobStatus
 }
+
+export type UpdateJobInput = CreateJobInput
