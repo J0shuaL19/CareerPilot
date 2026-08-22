@@ -162,6 +162,7 @@ a {
   border-radius: 12px;
   cursor: pointer;
   font-weight: 750;
+  text-decoration: none;
   transition: transform 150ms ease, box-shadow 150ms ease, background 150ms ease;
 }
 
@@ -889,6 +890,154 @@ a:focus-visible {
   padding-top: 1.5rem;
 }
 
+.analysis-history {
+  display: grid;
+  gap: 1rem;
+}
+
+.analysis-history-card {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: 1.35rem;
+  padding: 1.35rem;
+  border: 1px solid #dce3ef;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 9px 28px rgb(38 60 96 / 5%);
+  transition: border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+
+.analysis-history-card:hover {
+  border-color: #bdcae1;
+  transform: translateY(-2px);
+  box-shadow: 0 16px 38px rgb(38 60 96 / 9%);
+}
+
+.analysis-history-card__score {
+  display: grid;
+  min-height: 112px;
+  place-content: center;
+  align-self: start;
+  border-radius: 18px;
+  text-align: center;
+}
+
+.analysis-history-card__score strong {
+  font-size: 2.45rem;
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+
+.analysis-history-card__score span {
+  margin-top: 0.3rem;
+  font-size: 0.7rem;
+  font-weight: 750;
+}
+
+.analysis-history-card__score--high {
+  color: #17633f;
+  background: #e6f7ee;
+}
+
+.analysis-history-card__score--medium {
+  color: #8a5b0d;
+  background: #fff4d9;
+}
+
+.analysis-history-card__score--low {
+  color: #a02b3e;
+  background: #ffecef;
+}
+
+.analysis-history-card__content {
+  min-width: 0;
+}
+
+.analysis-history-card__heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.analysis-history-card__heading p,
+.analysis-history-card__heading h2 {
+  margin: 0;
+}
+
+.analysis-history-card__heading p {
+  color: #687489;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.analysis-history-card__heading h2 {
+  margin-top: 0.25rem;
+  font-size: 1.25rem;
+  letter-spacing: -0.025em;
+}
+
+.analysis-history-card__heading time {
+  flex: 0 0 auto;
+  color: #929bab;
+  font-size: 0.75rem;
+}
+
+.analysis-history-card__resume {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0.8rem 0 0;
+  color: #59677d;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.analysis-history-card__resume span {
+  display: grid;
+  width: 25px;
+  height: 25px;
+  place-items: center;
+  border-radius: 7px;
+  color: #17633f;
+  background: #e6f7ee;
+  font-size: 0.58rem;
+  letter-spacing: 0.02em;
+}
+
+.analysis-history-card__summary {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 0.85rem 0;
+  color: #687489;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.analysis-history-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid #edf0f5;
+}
+
+.analysis-history-card__footer > span {
+  color: #929bab;
+  font-size: 0.72rem;
+}
+
+.analysis-history-card__footer a {
+  color: #315dc9;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
 .not-found__code {
   margin: 0;
   color: #3568e8;
@@ -964,6 +1113,29 @@ a:focus-visible {
   .analysis-result__actions {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .analysis-history-card {
+    grid-template-columns: 1fr;
+  }
+
+  .analysis-history-card__score {
+    display: flex;
+    min-height: auto;
+    align-items: baseline;
+    justify-content: center;
+    gap: 0.3rem;
+    padding: 0.9rem;
+  }
+
+  .analysis-history-card__score strong {
+    font-size: 2rem;
+  }
+
+  .analysis-history-card__heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.4rem;
   }
 
   .job-card {

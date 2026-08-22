@@ -3,6 +3,7 @@ import { AppLayout } from './components/AppLayout'
 import { AddJobPage } from './pages/AddJobPage'
 import { AddResumePage } from './pages/AddResumePage'
 import { JobsPage } from './pages/JobsPage'
+import { MatchAnalysesPage } from './pages/MatchAnalysesPage'
 import { MatchAnalysisResultPage } from './pages/MatchAnalysisResultPage'
 import { NewMatchAnalysisPage } from './pages/NewMatchAnalysisPage'
 import { NotFoundPage } from './pages/NotFoundPage'
@@ -95,6 +96,7 @@ function App() {
         <Route path="jobs/new" element={<AddJobRoute />} />
         <Route path="resumes" element={<ResumesRoute />} />
         <Route path="resumes/new" element={<AddResumeRoute />} />
+        <Route path="analyses" element={<MatchAnalysesPage />} />
         <Route path="analyses/new" element={<NewMatchAnalysisRoute />} />
         <Route path="analyses/:id" element={<MatchAnalysisResultPage />} />
         <Route path="*" element={<NotFoundPage />} />

@@ -22,3 +22,7 @@ export function getMatchAnalysis(
 ): Promise<MatchAnalysis> {
   return apiRequest<MatchAnalysis>(`/api/match-analyses/${id}`, { signal })
 }
+
+export function getMatchAnalyses(signal?: AbortSignal): Promise<MatchAnalysis[]> {
+  return apiRequest<MatchAnalysis[]>('/api/match-analyses', { signal })
+}

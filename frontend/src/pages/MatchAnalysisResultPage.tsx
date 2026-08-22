@@ -80,8 +80,8 @@ export function MatchAnalysisResultPage() {
             <Link className="button button--primary" to="/analyses/new">
               Run another analysis
             </Link>
-            <Link className="button button--secondary" to="/jobs">
-              Back to jobs
+            <Link className="button button--secondary" to="/analyses">
+              View analysis history
             </Link>
           </div>
         </>
