@@ -39,4 +39,23 @@ Migration: `V2__create_resumes_table.sql`
 | `content` | `TEXT` | Plain-text resume content used by later analysis |
 | `created_at` | `TIMESTAMP WITH TIME ZONE` | UTC creation time |
 
+## Match analyses table
+
+Migration: `V3__create_match_analyses_table.sql`
+
+Each row stores one completed comparison between a saved job and resume. Analysis text is separated into stable sections so the API and frontend do not depend on provider-specific response formats.
+
+| Column | Type | Purpose |
+| --- | --- | --- |
+| `id` | `BIGSERIAL` | Database-generated identifier |
+| `job_id` | `BIGINT` | Referenced job; deleting the job removes its analyses |
+| `resume_id` | `BIGINT` | Referenced resume; deleting the resume removes its analyses |
+| `match_score` | `INTEGER` | Overall match score constrained to `0` through `100` |
+| `summary` | `TEXT` | Concise overall assessment |
+| `strengths` | `TEXT` | Resume evidence aligned with the job |
+| `gaps` | `TEXT` | Missing or weakly demonstrated requirements |
+| `recommendations` | `TEXT` | Concrete resume improvement suggestions |
+| `model_name` | `VARCHAR(100)` | AI model that generated the result |
+| `created_at` | `TIMESTAMP WITH TIME ZONE` | UTC creation time |
+
 Future schema changes must be added as new Flyway migrations. Do not edit a migration after it has been applied to a shared database.
