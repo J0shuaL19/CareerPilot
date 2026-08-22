@@ -2,11 +2,13 @@ package com.careerpilot.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.careerpilot.model.Job;
+import com.careerpilot.model.JobStatus;
 import com.careerpilot.repository.JobRepository;
 import java.time.Instant;
 import java.util.List;
@@ -89,6 +91,24 @@ class JobApiIntegrationTests {
                 .andExpect(jsonPath("$.fieldErrors.company").exists());
 
         assertThat(jobRepository.count()).isZero();
+    }
+
+    @Test
+    void updatesAndPersistsJobStatus() throws Exception {
+        Job job = jobRepository.saveAndFlush(new Job("OpenAI", "Engineer", "Description", null));
+
+        mockMvc.perform(patch("/api/jobs/{id}/status", job.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "status": "INTERVIEW"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("INTERVIEW"));
+
+        Job updatedJob = jobRepository.findById(job.getId()).orElseThrow();
+        assertThat(updatedJob.getStatus()).isEqualTo(JobStatus.INTERVIEW);
     }
 
     private static Job job(String company, String createdAt) {

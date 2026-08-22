@@ -3,12 +3,14 @@ package com.careerpilot.controller;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.careerpilot.dto.JobRequest;
 import com.careerpilot.dto.JobResponse;
+import com.careerpilot.dto.JobStatusUpdateRequest;
 import com.careerpilot.exception.ResourceNotFoundException;
 import com.careerpilot.model.JobStatus;
 import com.careerpilot.service.JobService;
@@ -116,14 +118,61 @@ class JobControllerTests {
                 .andExpect(jsonPath("$.message").value("Invalid value for id"));
     }
 
+    @Test
+    void updatesJobStatus() throws Exception {
+        when(jobService.updateJobStatus(any(Long.class), any(JobStatusUpdateRequest.class)))
+                .thenReturn(jobResponse(1L, "OpenAI", JobStatus.INTERVIEW));
+
+        mockMvc.perform(patch("/api/jobs/1/status")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "status": "INTERVIEW"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.status").value("INTERVIEW"));
+    }
+
+    @Test
+    void rejectsMissingJobStatus() throws Exception {
+        mockMvc.perform(patch("/api/jobs/1/status")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "status": null
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.status").value("Job status is required"));
+    }
+
+    @Test
+    void rejectsUnknownJobStatus() throws Exception {
+        mockMvc.perform(patch("/api/jobs/1/status")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "status": "WAITING"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Malformed JSON request"));
+    }
+
     private static JobResponse jobResponse(Long id, String company) {
+        return jobResponse(id, company, JobStatus.SAVED);
+    }
+
+    private static JobResponse jobResponse(Long id, String company, JobStatus status) {
         return new JobResponse(
                 id,
                 company,
                 "Software Engineer",
                 "Build reliable products.",
                 "https://example.com/jobs/1",
-                JobStatus.SAVED,
+                status,
                 Instant.parse("2026-08-18T12:00:00Z")
         );
     }

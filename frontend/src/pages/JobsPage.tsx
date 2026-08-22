@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { JobCard } from '../components/JobCard'
-import { getJobs } from '../services/jobApi'
-import type { Job } from '../types/job'
+import { getJobs, updateJobStatus } from '../services/jobApi'
+import type { Job, JobStatus } from '../types/job'
 import { getErrorMessage, isAbortError } from '../utils/errors'
+import { getJobStatusConfig } from '../utils/jobStatus'
 
 interface JobsPageProps {
   notice?: string
@@ -13,6 +14,9 @@ export function JobsPage({ notice, onAddJob }: JobsPageProps) {
   const [jobs, setJobs] = useState<Job[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [statusError, setStatusError] = useState<string | null>(null)
+  const [statusNotice, setStatusNotice] = useState<string | null>(null)
+  const [updatingJobId, setUpdatingJobId] = useState<number | null>(null)
   const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
@@ -39,6 +43,26 @@ export function JobsPage({ notice, onAddJob }: JobsPageProps) {
     return () => controller.abort()
   }, [reloadKey])
 
+  async function handleStatusChange(jobId: number, status: JobStatus) {
+    setUpdatingJobId(jobId)
+    setStatusError(null)
+    setStatusNotice(null)
+
+    try {
+      const updatedJob = await updateJobStatus(jobId, { status })
+      setJobs((currentJobs) => currentJobs.map((job) => (
+        job.id === updatedJob.id ? updatedJob : job
+      )))
+      setStatusNotice(
+        `${updatedJob.title} moved to ${getJobStatusConfig(updatedJob.status).label}.`,
+      )
+    } catch (updateError) {
+      setStatusError(getErrorMessage(updateError))
+    } finally {
+      setUpdatingJobId(null)
+    }
+  }
+
   return (
     <div className="page">
       <header className="page-header page-header--row">
@@ -59,6 +83,18 @@ export function JobsPage({ notice, onAddJob }: JobsPageProps) {
       {notice && (
         <div className="alert alert--success" role="status">
           <span aria-hidden="true">✓</span> {notice}
+        </div>
+      )}
+
+      {statusNotice && (
+        <div className="alert alert--success" role="status">
+          <span aria-hidden="true">✓</span> {statusNotice}
+        </div>
+      )}
+
+      {statusError && (
+        <div className="alert alert--error job-status-error" role="alert">
+          {statusError}
         </div>
       )}
 
@@ -95,7 +131,12 @@ export function JobsPage({ notice, onAddJob }: JobsPageProps) {
       {!isLoading && !error && jobs.length > 0 && (
         <section className="job-list" aria-label="Saved jobs">
           {jobs.map((job) => (
-            <JobCard key={job.id} job={job} />
+            <JobCard
+              key={job.id}
+              job={job}
+              isUpdating={updatingJobId === job.id}
+              onStatusChange={handleStatusChange}
+            />
           ))}
         </section>
       )}

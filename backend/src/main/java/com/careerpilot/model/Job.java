@@ -10,6 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.Instant;
+import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -49,6 +50,10 @@ public class Job {
         this.description = description;
         this.jobUrl = jobUrl;
         this.status = JobStatus.SAVED;
+    }
+
+    public void updateStatus(JobStatus status) {
+        this.status = Objects.requireNonNull(status, "Job status is required");
     }
 
     @PrePersist

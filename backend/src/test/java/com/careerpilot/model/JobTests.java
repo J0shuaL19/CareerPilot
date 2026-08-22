@@ -1,6 +1,7 @@
 package com.careerpilot.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 
 import org.junit.jupiter.api.Test;
 
@@ -31,5 +32,23 @@ class JobTests {
         job.setCreationTime();
 
         assertThat(job.getCreatedAt()).isNotNull();
+    }
+
+    @Test
+    void updatesStatus() {
+        Job job = new Job("OpenAI", "Engineer", "Description", null);
+
+        job.updateStatus(JobStatus.INTERVIEW);
+
+        assertThat(job.getStatus()).isEqualTo(JobStatus.INTERVIEW);
+    }
+
+    @Test
+    void rejectsNullStatus() {
+        Job job = new Job("OpenAI", "Engineer", "Description", null);
+
+        assertThatNullPointerException()
+                .isThrownBy(() -> job.updateStatus(null))
+                .withMessage("Job status is required");
     }
 }

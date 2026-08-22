@@ -2,6 +2,7 @@ package com.careerpilot.service;
 
 import com.careerpilot.dto.JobRequest;
 import com.careerpilot.dto.JobResponse;
+import com.careerpilot.dto.JobStatusUpdateRequest;
 import com.careerpilot.exception.ResourceNotFoundException;
 import com.careerpilot.model.Job;
 import com.careerpilot.repository.JobRepository;
@@ -42,6 +43,15 @@ public class JobService {
         return jobRepository.findById(id)
                 .map(JobService::toResponse)
                 .orElseThrow(() -> new ResourceNotFoundException("Job", id));
+    }
+
+    @Transactional
+    public JobResponse updateJobStatus(Long id, JobStatusUpdateRequest request) {
+        Job job = jobRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Job", id));
+
+        job.updateStatus(request.status());
+        return toResponse(job);
     }
 
     private static String normalizeOptional(String value) {

@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import com.careerpilot.dto.JobRequest;
 import com.careerpilot.dto.JobResponse;
+import com.careerpilot.dto.JobStatusUpdateRequest;
 import com.careerpilot.exception.ResourceNotFoundException;
 import com.careerpilot.model.Job;
 import com.careerpilot.model.JobStatus;
@@ -101,6 +102,32 @@ class JobServiceTests {
         when(jobRepository.findById(999L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> jobService.getJob(999L))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("Job not found with id: 999");
+    }
+
+    @Test
+    void updatesJobStatus() {
+        Job job = persistedJob(1L, "OpenAI", "2026-08-18T12:00:00Z");
+        when(jobRepository.findById(1L)).thenReturn(Optional.of(job));
+
+        JobResponse response = jobService.updateJobStatus(
+                1L,
+                new JobStatusUpdateRequest(JobStatus.INTERVIEW)
+        );
+
+        assertThat(job.getStatus()).isEqualTo(JobStatus.INTERVIEW);
+        assertThat(response.status()).isEqualTo(JobStatus.INTERVIEW);
+    }
+
+    @Test
+    void throwsWhenUpdatingMissingJob() {
+        when(jobRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> jobService.updateJobStatus(
+                999L,
+                new JobStatusUpdateRequest(JobStatus.APPLIED)
+        ))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Job not found with id: 999");
     }

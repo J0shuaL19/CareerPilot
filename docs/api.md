@@ -97,6 +97,22 @@ Missing job: `404 Not Found`
 }
 ```
 
+### Update job status
+
+`PATCH /api/jobs/{id}/status`
+
+Request:
+
+```json
+{
+  "status": "INTERVIEW"
+}
+```
+
+Success: `200 OK` with the complete updated job response. The change is persisted immediately.
+
+`status` is required and must be one of the values listed below. A missing status returns `400 Bad Request`; a missing job returns `404 Not Found`.
+
 ## Resumes
 
 Resume content is currently stored as plain text. File uploads and document parsing are outside this API version.

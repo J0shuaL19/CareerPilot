@@ -23,3 +23,7 @@ export interface CreateJobInput {
   description: string
   jobUrl?: string
 }
+
+export interface UpdateJobStatusInput {
+  status: JobStatus
+}

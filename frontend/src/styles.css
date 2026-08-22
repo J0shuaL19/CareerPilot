@@ -402,6 +402,52 @@ a:focus-visible {
   -webkit-line-clamp: 2;
 }
 
+.job-card__status-control {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0.9rem 0;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid #e0e6ef;
+  border-radius: 11px;
+  background: #f8faff;
+}
+
+.job-card__status-control label {
+  color: #566278;
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.job-card__status-select {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.job-card__status-select select {
+  min-height: 36px;
+  max-width: 210px;
+  padding: 0 2rem 0 0.7rem;
+  border: 1px solid #cad4e3;
+  border-radius: 9px;
+  color: #273248;
+  background: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.job-card__status-select span {
+  color: #6e7b90;
+  font-size: 0.75rem;
+  font-weight: 650;
+}
+
+.job-status-error {
+  margin-bottom: 1rem;
+}
+
 .job-card__footer {
   display: flex;
   align-items: center;
@@ -1140,6 +1186,17 @@ a:focus-visible {
 
   .job-card {
     grid-template-columns: 1fr;
+  }
+
+  .job-card__status-control {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .job-card__status-select select {
+    width: 100%;
+    max-width: none;
   }
 
   .job-card__company-mark {
