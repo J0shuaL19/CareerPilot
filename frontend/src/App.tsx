@@ -19,12 +19,15 @@ import { MatchAnalysesPage } from './pages/MatchAnalysesPage'
 import { MatchAnalysisResultPage } from './pages/MatchAnalysisResultPage'
 import { NewMatchAnalysisPage } from './pages/NewMatchAnalysisPage'
 import { NotFoundPage } from './pages/NotFoundPage'
+import { ResumeDetailPage } from './pages/ResumeDetailPage'
 import { ResumesPage } from './pages/ResumesPage'
 import type { Job } from './types/job'
-import type { Resume } from './types/resume'
+import type { CreateResumeInput, Resume } from './types/resume'
 
 interface NavigationState {
   notice?: string
+  resumeDraft?: CreateResumeInput
+  draftNotice?: string
 }
 
 function JobsRoute() {
@@ -89,6 +92,7 @@ function ResumesRoute() {
     <ResumesPage
       notice={state?.notice}
       onAddResume={() => navigate('/resumes/new')}
+      onViewResume={(resumeId) => navigate(`/resumes/${resumeId}`)}
       onEditResume={(resumeId) => navigate(`/resumes/${resumeId}/edit`)}
     />
   )
@@ -116,6 +120,8 @@ function EditResumeRoute() {
 
 function AddResumeRoute() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const state = location.state as NavigationState | null
 
   function handleCreated(resume: Resume) {
     navigate('/resumes', {
@@ -126,6 +132,8 @@ function AddResumeRoute() {
 
   return (
     <AddResumePage
+      initialValues={state?.resumeDraft}
+      initialNotice={state?.draftNotice}
       onCancel={() => navigate('/resumes')}
       onCreated={handleCreated}
     />
@@ -157,6 +165,7 @@ function App() {
           <Route path="resumes" element={<ResumesRoute />} />
           <Route path="resumes/new" element={<AddResumeRoute />} />
           <Route path="resumes/:id/edit" element={<EditResumeRoute />} />
+          <Route path="resumes/:id" element={<ResumeDetailPage />} />
           <Route path="analyses" element={<MatchAnalysesPage />} />
           <Route path="analyses/new" element={<NewMatchAnalysisRoute />} />
           <Route path="analyses/:id" element={<MatchAnalysisResultPage />} />

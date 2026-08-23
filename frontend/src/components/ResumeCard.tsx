@@ -5,11 +5,12 @@ import { formatDate } from '../utils/formatDate'
 interface ResumeCardProps {
   resume: Resume
   isDeleting: boolean
+  onView: (resumeId: number) => void
   onEdit: (resumeId: number) => void
   onDelete: (resume: Resume) => Promise<void>
 }
 
-export function ResumeCard({ resume, isDeleting, onEdit, onDelete }: ResumeCardProps) {
+export function ResumeCard({ resume, isDeleting, onView, onEdit, onDelete }: ResumeCardProps) {
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false)
 
   return (
@@ -57,6 +58,9 @@ export function ResumeCard({ resume, isDeleting, onEdit, onDelete }: ResumeCardP
         )}
 
         <div className="resume-card__actions">
+          <button type="button" disabled={isDeleting} onClick={() => onView(resume.id)}>
+            View
+          </button>
           <button type="button" disabled={isDeleting} onClick={() => onEdit(resume.id)}>
             Edit
           </button>

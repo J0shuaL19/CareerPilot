@@ -1451,6 +1451,149 @@ a:focus-visible {
   color: #a02b3e;
 }
 
+.resume-draft-notice {
+  margin-bottom: 1rem;
+}
+
+.resume-detail__back {
+  display: inline-flex;
+  margin-bottom: 1rem;
+  color: #52627b;
+  font-size: 0.84rem;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.resume-detail__back:hover {
+  color: #2859d8;
+}
+
+.resume-detail__hero {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1.2rem;
+  margin-bottom: 1rem;
+  padding: clamp(1.3rem, 3vw, 2rem);
+  border: 1px solid #dce3ef;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 14px 42px rgb(38 60 96 / 7%);
+}
+
+.resume-detail__icon {
+  display: grid;
+  width: 58px;
+  height: 66px;
+  place-items: center;
+  border-radius: 10px 17px 17px 10px;
+  color: #17633f;
+  background: #e6f7ee;
+  font-size: 0.85rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+}
+
+.resume-detail__heading {
+  min-width: 0;
+}
+
+.resume-detail__heading p,
+.resume-detail__heading h1 {
+  margin: 0;
+}
+
+.resume-detail__heading p {
+  color: #3568e8;
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.resume-detail__heading h1 {
+  overflow-wrap: anywhere;
+  margin-top: 0.25rem;
+  font-size: clamp(1.7rem, 4vw, 2.4rem);
+  letter-spacing: -0.04em;
+}
+
+.resume-detail__metadata {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  margin-top: 0.7rem;
+  color: #7b8699;
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+.resume-detail__metadata span + span::before {
+  margin-right: 1rem;
+  color: #bdc5d2;
+  content: '•';
+}
+
+.resume-detail__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.65rem;
+}
+
+.resume-document {
+  overflow: hidden;
+  border: 1px solid #dce3ef;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 14px 42px rgb(38 60 96 / 7%);
+}
+
+.resume-document__heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.2rem 1.5rem;
+  border-bottom: 1px solid #e8edf5;
+  background: #fafbfe;
+}
+
+.resume-document__heading p,
+.resume-document__heading h2 {
+  margin: 0;
+}
+
+.resume-document__heading p {
+  color: #3568e8;
+  font-size: 0.66rem;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.resume-document__heading h2 {
+  margin-top: 0.2rem;
+  color: #273248;
+  font-size: 1.12rem;
+}
+
+.resume-document__heading > span {
+  color: #8a94a6;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.resume-document__content {
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  color: #354157;
+  font-family: ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', monospace;
+  font-size: 0.88rem;
+  line-height: 1.75;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
 .status-badge {
   display: inline-flex;
   flex: 0 0 auto;
@@ -2697,6 +2840,29 @@ a:focus-visible {
   .resume-card__heading {
     flex-direction: column;
     gap: 0.35rem;
+  }
+
+  .resume-detail__hero {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .resume-detail__icon {
+    width: 48px;
+    height: 56px;
+    border-radius: 9px 14px 14px 9px;
+  }
+
+  .resume-detail__actions {
+    grid-column: 1 / -1;
+  }
+
+  .resume-detail__actions .button {
+    flex: 1;
+  }
+
+  .resume-document__heading {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .job-detail__hero {

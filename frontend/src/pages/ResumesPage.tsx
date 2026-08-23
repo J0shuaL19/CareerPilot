@@ -7,10 +7,16 @@ import { getErrorMessage, isAbortError } from '../utils/errors'
 interface ResumesPageProps {
   notice?: string
   onAddResume: () => void
+  onViewResume: (resumeId: number) => void
   onEditResume: (resumeId: number) => void
 }
 
-export function ResumesPage({ notice, onAddResume, onEditResume }: ResumesPageProps) {
+export function ResumesPage({
+  notice,
+  onAddResume,
+  onViewResume,
+  onEditResume,
+}: ResumesPageProps) {
   const [resumes, setResumes] = useState<Resume[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -133,6 +139,7 @@ export function ResumesPage({ notice, onAddResume, onEditResume }: ResumesPagePr
               key={resume.id}
               resume={resume}
               isDeleting={deletingResumeId === resume.id}
+              onView={onViewResume}
               onEdit={onEditResume}
               onDelete={handleDelete}
             />

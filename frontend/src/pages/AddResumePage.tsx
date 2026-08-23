@@ -7,6 +7,8 @@ import type { CreateResumeInput, Resume } from '../types/resume'
 import { getErrorMessage } from '../utils/errors'
 
 interface AddResumePageProps {
+  initialValues?: CreateResumeInput
+  initialNotice?: string
   onCancel: () => void
   onCreated: (resume: Resume) => void
 }
@@ -14,10 +16,16 @@ interface AddResumePageProps {
 const maxFileSizeBytes = 5 * 1024 * 1024
 const emptyResume: CreateResumeInput = { name: '', content: '' }
 
-export function AddResumePage({ onCancel, onCreated }: AddResumePageProps) {
+export function AddResumePage({
+  initialValues = emptyResume,
+  initialNotice,
+  onCancel,
+  onCreated,
+}: AddResumePageProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isImporting, setIsImporting] = useState(false)
-  const [initialValues, setInitialValues] = useState<CreateResumeInput>(emptyResume)
+  const [formInitialValues, setFormInitialValues] = useState<CreateResumeInput>(initialValues)
+  const [draftNotice, setDraftNotice] = useState<string | null>(initialNotice ?? null)
   const [formVersion, setFormVersion] = useState(0)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [formError, setFormError] = useState<string | null>(null)
@@ -25,6 +33,7 @@ export function AddResumePage({ onCancel, onCreated }: AddResumePageProps) {
   const [importNotice, setImportNotice] = useState<string | null>(null)
 
   async function handleFileSelect(file: File) {
+    setDraftNotice(null)
     setImportError(null)
     setImportNotice(null)
 
@@ -41,7 +50,7 @@ export function AddResumePage({ onCancel, onCreated }: AddResumePageProps) {
     setIsImporting(true)
     try {
       const extraction = await extractResumeFile(file)
-      setInitialValues({ name: extraction.suggestedName, content: extraction.content })
+      setFormInitialValues({ name: extraction.suggestedName, content: extraction.content })
       setFormVersion((current) => current + 1)
       setFieldErrors({})
       setFormError(null)
@@ -79,6 +88,12 @@ export function AddResumePage({ onCancel, onCreated }: AddResumePageProps) {
         <p>Import a PDF or DOCX, or paste the text manually, then review it before saving.</p>
       </header>
 
+      {draftNotice && (
+        <div className="alert alert--success resume-draft-notice" role="status">
+          <span aria-hidden="true">✓</span> {draftNotice}
+        </div>
+      )}
+
       <ResumeFileImport
         isImporting={isImporting}
         error={importError}
@@ -93,7 +108,7 @@ export function AddResumePage({ onCancel, onCreated }: AddResumePageProps) {
       <section className="panel" aria-label="Add resume form">
         <ResumeForm
           key={formVersion}
-          initialValues={initialValues}
+          initialValues={formInitialValues}
           fieldErrors={fieldErrors}
           formError={formError}
           isSubmitting={isSubmitting}
