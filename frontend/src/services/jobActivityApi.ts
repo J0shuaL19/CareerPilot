@@ -4,7 +4,7 @@ import type {
   UpcomingJobActivity,
   UpdateJobActivityInput,
 } from '../types/jobActivity'
-import { apiRequest } from './apiClient'
+import { apiDownload, apiRequest } from './apiClient'
 
 export function getJobActivities(
   jobId: number,
@@ -44,6 +44,13 @@ export function deleteJobActivity(jobId: number, activityId: number): Promise<vo
   return apiRequest<void>(`/api/jobs/${jobId}/activities/${activityId}`, {
     method: 'DELETE',
   })
+}
+
+export function downloadJobActivityCalendar(
+  jobId: number,
+  activityId: number,
+): Promise<Blob> {
+  return apiDownload(`/api/jobs/${jobId}/activities/${activityId}/calendar`)
 }
 
 export function getUpcomingJobActivities(signal?: AbortSignal): Promise<UpcomingJobActivity[]> {

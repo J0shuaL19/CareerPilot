@@ -6,7 +6,9 @@ interface JobTimelineProps {
   activities: JobActivity[]
   deletingActivityId: number | null
   editingActivityId: number | null
+  exportingActivityId: number | null
   onEdit: (activity: JobActivity) => void
+  onExportCalendar: (activity: JobActivity) => Promise<void>
   onDelete: (activity: JobActivity) => Promise<void>
 }
 
@@ -22,7 +24,9 @@ export function JobTimeline({
   activities,
   deletingActivityId,
   editingActivityId,
+  exportingActivityId,
   onEdit,
+  onExportCalendar,
   onDelete,
 }: JobTimelineProps) {
   const [confirmingActivityId, setConfirmingActivityId] = useState<number | null>(null)
@@ -44,6 +48,8 @@ export function JobTimeline({
         const isDeleting = deletingActivityId === activity.id
         const isConfirming = confirmingActivityId === activity.id
         const isEditing = editingActivityId === activity.id
+        const isExporting = exportingActivityId === activity.id
+        const canExportCalendar = activity.type === 'INTERVIEW' || activity.type === 'FOLLOW_UP'
 
         return (
           <article className={`timeline-entry timeline-entry--${activity.type.toLowerCase()}`} key={activity.id}>
@@ -85,6 +91,15 @@ export function JobTimeline({
                   </>
                 ) : (
                   <>
+                    {canExportCalendar && (
+                      <button
+                        type="button"
+                        disabled={isExporting}
+                        onClick={() => void onExportCalendar(activity)}
+                      >
+                        {isExporting ? 'Downloading…' : 'Calendar ↓'}
+                      </button>
+                    )}
                     <button
                       type="button"
                       disabled={isDeleting || isEditing}

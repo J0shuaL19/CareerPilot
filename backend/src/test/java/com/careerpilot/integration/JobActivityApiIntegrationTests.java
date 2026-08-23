@@ -94,6 +94,20 @@ class JobActivityApiIntegrationTests {
         assertThat(updatedActivity.getOccurredAt())
                 .isEqualTo(Instant.parse("2026-08-26T18:00:00Z"));
 
+        mockMvc.perform(get(
+                        "/api/jobs/{jobId}/activities/{activityId}/calendar",
+                        job.getId(),
+                        activityId
+                ))
+                .andExpect(status().isOk())
+                .andExpect(result -> assertThat(result.getResponse().getContentType())
+                        .isEqualTo("text/calendar;charset=UTF-8"))
+                .andExpect(result -> assertThat(result.getResponse().getContentAsString())
+                        .contains("DTSTART:20260826T180000Z"))
+                .andExpect(result -> assertThat(
+                        result.getResponse().getHeader("Content-Disposition")
+                ).contains("careerpilot-activity-" + activityId + ".ics"));
+
         mockMvc.perform(delete(
                         "/api/jobs/{jobId}/activities/{activityId}",
                         job.getId(),

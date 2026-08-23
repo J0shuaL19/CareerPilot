@@ -1,5 +1,6 @@
 package com.careerpilot.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -11,8 +12,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.careerpilot.dto.JobActivityRequest;
 import com.careerpilot.dto.JobActivityResponse;
+import com.careerpilot.exception.JobActivityCalendarException;
 import com.careerpilot.model.JobActivityType;
+import com.careerpilot.service.JobActivityCalendarFile;
+import com.careerpilot.service.JobActivityCalendarService;
 import com.careerpilot.service.JobActivityService;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -30,6 +35,9 @@ class JobActivityControllerTests {
 
     @MockitoBean
     private JobActivityService jobActivityService;
+
+    @MockitoBean
+    private JobActivityCalendarService jobActivityCalendarService;
 
     @Test
     void createsActivity() throws Exception {
@@ -125,6 +133,42 @@ class JobActivityControllerTests {
     void deletesActivity() throws Exception {
         mockMvc.perform(delete("/api/jobs/1/activities/2"))
                 .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void downloadsActivityCalendar() throws Exception {
+        when(jobActivityCalendarService.export(1L, 2L)).thenReturn(
+                new JobActivityCalendarFile(
+                        "careerpilot-activity-2.ics",
+                        "BEGIN:VCALENDAR\r\nEND:VCALENDAR\r\n"
+                                .getBytes(StandardCharsets.UTF_8)
+                )
+        );
+
+        mockMvc.perform(get("/api/jobs/1/activities/2/calendar"))
+                .andExpect(status().isOk())
+                .andExpect(result -> assertThat(result.getResponse().getContentType())
+                        .isEqualTo("text/calendar;charset=UTF-8"))
+                .andExpect(result -> assertThat(
+                        result.getResponse().getHeader("Content-Disposition")
+                ).isEqualTo("attachment; filename=\"careerpilot-activity-2.ics\""))
+                .andExpect(result -> assertThat(result.getResponse().getContentAsString())
+                        .contains("BEGIN:VCALENDAR"));
+    }
+
+    @Test
+    void rejectsCalendarExportForUnsupportedActivityType() throws Exception {
+        when(jobActivityCalendarService.export(1L, 2L)).thenThrow(
+                new JobActivityCalendarException(
+                        "Only interviews and follow-ups can be exported to a calendar."
+                )
+        );
+
+        mockMvc.perform(get("/api/jobs/1/activities/2/calendar"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(
+                        "Only interviews and follow-ups can be exported to a calendar."
+                ));
     }
 
     private static JobActivityResponse response(Long id, String title) {

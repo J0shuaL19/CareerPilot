@@ -157,6 +157,12 @@ Returns the job's activities ordered by occurrence time from newest to oldest. S
 
 Uses the same request body and validation rules as activity creation. Success: `200 OK` with the complete updated activity. The activity must belong to the job in the request path; missing jobs or activities return `404 Not Found`.
 
+### Export a job activity to a calendar
+
+`GET /api/jobs/{jobId}/activities/{activityId}/calendar`
+
+Downloads an RFC 5545 iCalendar file for an interview or follow-up. Success: `200 OK` with a UTF-8 `text/calendar` attachment. Applications and general notes return `400 Bad Request`; missing jobs or activities return `404 Not Found`.
+
 ### Delete a job activity
 
 `DELETE /api/jobs/{jobId}/activities/{activityId}`

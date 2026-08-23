@@ -37,6 +37,22 @@ export async function apiRequest<T>(
   return (await response.json()) as T
 }
 
+export async function apiDownload(path: string, options: RequestInit = {}): Promise<Blob> {
+  const response = await fetch(`${apiBaseUrl}${path}`, {
+    ...options,
+    headers: {
+      Accept: 'text/calendar',
+      ...options.headers,
+    },
+  })
+
+  if (!response.ok) {
+    throw await createApiError(response)
+  }
+
+  return response.blob()
+}
+
 async function createApiError(response: Response): Promise<ApiError> {
   try {
     const errorResponse = (await response.json()) as ApiErrorResponse

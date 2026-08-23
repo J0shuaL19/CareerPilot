@@ -103,6 +103,19 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(JobActivityCalendarException.class)
+    public ResponseEntity<ApiErrorResponse> handleJobActivityCalendarFailure(
+            JobActivityCalendarException exception,
+            HttpServletRequest request
+    ) {
+        return errorResponse(
+                HttpStatus.BAD_REQUEST,
+                exception.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
+    }
+
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<ApiErrorResponse> handleUploadTooLarge(HttpServletRequest request) {
         return errorResponse(

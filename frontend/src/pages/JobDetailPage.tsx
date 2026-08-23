@@ -7,6 +7,7 @@ import { ApiError } from '../services/apiClient'
 import {
   createJobActivity,
   deleteJobActivity,
+  downloadJobActivityCalendar,
   getJobActivities,
   updateJobActivity,
 } from '../services/jobActivityApi'
@@ -30,6 +31,7 @@ export function JobDetailPage() {
   const [actionError, setActionError] = useState<string | null>(null)
   const [deletingActivityId, setDeletingActivityId] = useState<number | null>(null)
   const [editingActivity, setEditingActivity] = useState<JobActivity | null>(null)
+  const [exportingActivityId, setExportingActivityId] = useState<number | null>(null)
   const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
@@ -128,6 +130,29 @@ export function JobDetailPage() {
     setActionError(null)
   }
 
+  async function handleExportCalendar(activity: JobActivity) {
+    setExportingActivityId(activity.id)
+    setActionNotice(null)
+    setActionError(null)
+
+    try {
+      const calendar = await downloadJobActivityCalendar(jobId, activity.id)
+      const downloadUrl = URL.createObjectURL(calendar)
+      const link = document.createElement('a')
+      link.href = downloadUrl
+      link.download = `careerpilot-activity-${activity.id}.ics`
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      URL.revokeObjectURL(downloadUrl)
+      setActionNotice(`${activity.title} calendar file downloaded.`)
+    } catch (error) {
+      setActionError(getErrorMessage(error))
+    } finally {
+      setExportingActivityId(null)
+    }
+  }
+
   return (
     <div className="page job-detail-page">
       {isLoading && (
@@ -219,7 +244,9 @@ export function JobDetailPage() {
                 activities={activities}
                 deletingActivityId={deletingActivityId}
                 editingActivityId={editingActivity?.id ?? null}
+                exportingActivityId={exportingActivityId}
                 onEdit={handleEditActivity}
+                onExportCalendar={handleExportCalendar}
                 onDelete={handleDeleteActivity}
               />
             </div>
