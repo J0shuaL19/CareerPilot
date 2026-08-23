@@ -1,5 +1,9 @@
 import { useEffect, useState } from 'react'
 import { ResumeCard } from '../components/ResumeCard'
+import {
+  ResumeLibraryFilters,
+  type ResumeSortOrder,
+} from '../components/ResumeLibraryFilters'
 import { deleteResume, getResumes } from '../services/resumeApi'
 import type { Resume } from '../types/resume'
 import { getErrorMessage, isAbortError } from '../utils/errors'
@@ -24,7 +28,22 @@ export function ResumesPage({
   const [actionNotice, setActionNotice] = useState<string | null>(null)
   const [showRouteNotice, setShowRouteNotice] = useState(Boolean(notice))
   const [deletingResumeId, setDeletingResumeId] = useState<number | null>(null)
+  const [query, setQuery] = useState('')
+  const [sortOrder, setSortOrder] = useState<ResumeSortOrder>('NEWEST')
   const [reloadKey, setReloadKey] = useState(0)
+
+  const normalizedQuery = query.trim().toLocaleLowerCase()
+  const visibleResumes = resumes
+    .filter((resume) => normalizedQuery === '' || [resume.name, resume.content]
+      .some((value) => value.toLocaleLowerCase().includes(normalizedQuery)))
+    .sort((left, right) => {
+      if (sortOrder === 'NAME_ASC') {
+        return left.name.localeCompare(right.name, undefined, { sensitivity: 'base' })
+      }
+
+      const dateComparison = left.createdAt.localeCompare(right.createdAt)
+      return sortOrder === 'OLDEST' ? dateComparison : -dateComparison
+    })
 
   useEffect(() => {
     const controller = new AbortController()
@@ -65,6 +84,11 @@ export function ResumesPage({
     } finally {
       setDeletingResumeId(null)
     }
+  }
+
+  function handleResetFilters() {
+    setQuery('')
+    setSortOrder('NEWEST')
   }
 
   return (
@@ -133,18 +157,45 @@ export function ResumesPage({
       )}
 
       {!isLoading && !error && resumes.length > 0 && (
-        <section className="resume-list" aria-label="Saved resumes">
-          {resumes.map((resume) => (
-            <ResumeCard
-              key={resume.id}
-              resume={resume}
-              isDeleting={deletingResumeId === resume.id}
-              onView={onViewResume}
-              onEdit={onEditResume}
-              onDelete={handleDelete}
-            />
-          ))}
-        </section>
+        <>
+          <ResumeLibraryFilters
+            query={query}
+            sortOrder={sortOrder}
+            resultCount={visibleResumes.length}
+            totalCount={resumes.length}
+            onQueryChange={setQuery}
+            onSortOrderChange={setSortOrder}
+            onReset={handleResetFilters}
+          />
+
+          {visibleResumes.length > 0 ? (
+            <section className="resume-list" aria-label="Filtered saved resumes">
+              {visibleResumes.map((resume) => (
+                <ResumeCard
+                  key={resume.id}
+                  resume={resume}
+                  isDeleting={deletingResumeId === resume.id}
+                  onView={onViewResume}
+                  onEdit={onEditResume}
+                  onDelete={handleDelete}
+                />
+              ))}
+            </section>
+          ) : (
+            <div className="state-card state-card--compact">
+              <div className="state-card__icon" aria-hidden="true">⌕</div>
+              <h2>No resumes match</h2>
+              <p>Try a different name or keyword from the resume text.</p>
+              <button
+                className="button button--secondary"
+                type="button"
+                onClick={handleResetFilters}
+              >
+                Reset search
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   )

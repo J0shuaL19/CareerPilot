@@ -18,7 +18,7 @@ CareerPilot/
 └── docs/       Architecture, database, and API notes
 ```
 
-Current features include a career dashboard, job pipeline tracking, job activity timelines, PDF/DOCX resume import, resume previews and version duplication, AI match analysis, and searchable saved analysis history.
+Current features include a career dashboard, job pipeline tracking, job activity timelines, PDF/DOCX resume import, searchable resume previews and version duplication, AI match analysis, and searchable saved analysis history.
 
 ## Run locally
 

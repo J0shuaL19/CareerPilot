@@ -1333,6 +1333,95 @@ a:focus-visible {
   gap: 1rem;
 }
 
+.resume-filters {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 1.1rem 1.2rem;
+  border: 1px solid #dce3ef;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 8px 26px rgb(38 60 96 / 4%);
+}
+
+.resume-filters__heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.resume-filters__heading p,
+.resume-filters__heading h2 {
+  margin: 0;
+}
+
+.resume-filters__heading p {
+  color: #315dc9;
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.resume-filters__heading h2 {
+  margin-top: 0.2rem;
+  font-size: 1.05rem;
+  letter-spacing: -0.02em;
+}
+
+.resume-filters__heading > span {
+  color: #7f899a;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.resume-filters__controls {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(170px, 0.35fr) auto;
+  align-items: end;
+  gap: 0.85rem;
+}
+
+.resume-filters__field {
+  display: grid;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.resume-filters__field label {
+  color: #4f5d73;
+  font-size: 0.76rem;
+  font-weight: 750;
+}
+
+.resume-filters__field input,
+.resume-filters__field select {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #cdd6e6;
+  border-radius: 10px;
+  color: #172033;
+  background: #fff;
+  font: inherit;
+  font-size: 0.86rem;
+}
+
+.resume-filters__field input::placeholder {
+  color: #929bab;
+}
+
+.resume-filters__field input:focus,
+.resume-filters__field select:focus {
+  border-color: #6d8ce3;
+  outline: 3px solid rgb(49 93 201 / 12%);
+}
+
+.resume-filters__reset {
+  min-height: 44px;
+}
+
 .resume-card {
   display: grid;
   grid-template-columns: auto 1fr;
@@ -2840,6 +2929,20 @@ a:focus-visible {
   .resume-card__heading {
     flex-direction: column;
     gap: 0.35rem;
+  }
+
+  .resume-filters__heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+
+  .resume-filters__controls {
+    grid-template-columns: 1fr;
+  }
+
+  .resume-filters__reset {
+    width: 100%;
   }
 
   .resume-detail__hero {
