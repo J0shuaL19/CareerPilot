@@ -1410,6 +1410,96 @@ a:focus-visible {
   padding-top: 1.5rem;
 }
 
+.analysis-filters {
+  display: grid;
+  gap: 1.1rem;
+  margin-bottom: 1rem;
+  padding: 1.2rem 1.3rem;
+  border: 1px solid #dce3ef;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 8px 26px rgb(38 60 96 / 4%);
+}
+
+.analysis-filters__heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.analysis-filters__heading p,
+.analysis-filters__heading h2 {
+  margin: 0;
+}
+
+.analysis-filters__heading p {
+  color: #315dc9;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.analysis-filters__heading h2 {
+  margin-top: 0.2rem;
+  font-size: 1.05rem;
+  letter-spacing: -0.02em;
+}
+
+.analysis-filters__heading > span {
+  color: #7f899a;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.analysis-filters__controls {
+  display: grid;
+  grid-template-columns: minmax(230px, 1.5fr) repeat(2, minmax(170px, 0.8fr)) auto;
+  align-items: end;
+  gap: 0.85rem;
+}
+
+.analysis-filters__field {
+  display: grid;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.analysis-filters__field label {
+  color: #4f5d73;
+  font-size: 0.76rem;
+  font-weight: 750;
+}
+
+.analysis-filters__field input,
+.analysis-filters__field select {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #cdd6e6;
+  border-radius: 10px;
+  color: #172033;
+  background: #fff;
+  font: inherit;
+  font-size: 0.86rem;
+}
+
+.analysis-filters__field input::placeholder {
+  color: #929bab;
+}
+
+.analysis-filters__field input:focus,
+.analysis-filters__field select:focus {
+  border-color: #6d8ce3;
+  outline: 3px solid rgb(49 93 201 / 12%);
+}
+
+.analysis-filters__clear {
+  min-height: 44px;
+  white-space: nowrap;
+}
+
 .analysis-history {
   display: grid;
   gap: 1rem;
@@ -2053,6 +2143,20 @@ a:focus-visible {
     align-items: flex-start;
     flex-direction: column;
     gap: 0.4rem;
+  }
+
+  .analysis-filters__heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+
+  .analysis-filters__controls {
+    grid-template-columns: 1fr;
+  }
+
+  .analysis-filters__clear {
+    width: 100%;
   }
 
   .job-card {

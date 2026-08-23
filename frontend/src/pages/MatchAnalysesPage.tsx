@@ -1,9 +1,15 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { MatchAnalysisFilters } from '../components/MatchAnalysisFilters'
 import { MatchAnalysisCard } from '../components/MatchAnalysisCard'
 import { deleteMatchAnalysis, getMatchAnalyses } from '../services/matchAnalysisApi'
 import type { MatchAnalysis } from '../types/matchAnalysis'
 import { getErrorMessage, isAbortError } from '../utils/errors'
+import {
+  matchesScoreFilter,
+  type MatchScoreFilterValue,
+  type ResumeFilterValue,
+} from '../utils/matchAnalysisFilters'
 
 export function MatchAnalysesPage() {
   const [analyses, setAnalyses] = useState<MatchAnalysis[]>([])
@@ -12,7 +18,22 @@ export function MatchAnalysesPage() {
   const [actionError, setActionError] = useState<string | null>(null)
   const [actionNotice, setActionNotice] = useState<string | null>(null)
   const [deletingAnalysisId, setDeletingAnalysisId] = useState<number | null>(null)
+  const [query, setQuery] = useState('')
+  const [selectedResumeId, setSelectedResumeId] = useState<ResumeFilterValue>('ALL')
+  const [selectedScore, setSelectedScore] = useState<MatchScoreFilterValue>('ALL')
   const [reloadKey, setReloadKey] = useState(0)
+
+  const normalizedQuery = query.trim().toLocaleLowerCase()
+  const filteredAnalyses = analyses.filter((analysis) => {
+    const matchesQuery = normalizedQuery === '' || [analysis.company, analysis.jobTitle]
+      .some((value) => value.toLocaleLowerCase().includes(normalizedQuery))
+    const matchesResume = selectedResumeId === 'ALL'
+      || analysis.resumeId === selectedResumeId
+
+    return matchesQuery
+      && matchesResume
+      && matchesScoreFilter(analysis.matchScore, selectedScore)
+  })
 
   useEffect(() => {
     const controller = new AbortController()
@@ -38,6 +59,12 @@ export function MatchAnalysesPage() {
     return () => controller.abort()
   }, [reloadKey])
 
+  function handleClearFilters() {
+    setQuery('')
+    setSelectedResumeId('ALL')
+    setSelectedScore('ALL')
+  }
+
   async function handleDelete(analysis: MatchAnalysis) {
     setDeletingAnalysisId(analysis.id)
     setActionError(null)
@@ -45,7 +72,14 @@ export function MatchAnalysesPage() {
 
     try {
       await deleteMatchAnalysis(analysis.id)
-      setAnalyses((current) => current.filter((item) => item.id !== analysis.id))
+      const remainingAnalyses = analyses.filter((item) => item.id !== analysis.id)
+      setAnalyses(remainingAnalyses)
+      if (
+        selectedResumeId !== 'ALL'
+        && !remainingAnalyses.some((item) => item.resumeId === selectedResumeId)
+      ) {
+        setSelectedResumeId('ALL')
+      }
       setActionNotice(`Analysis for ${analysis.jobTitle} was deleted.`)
     } catch (deleteError) {
       setActionError(getErrorMessage(deleteError))
@@ -118,16 +152,45 @@ export function MatchAnalysesPage() {
       )}
 
       {!isLoading && !error && analyses.length > 0 && (
-        <section className="analysis-history" aria-label="Saved match analyses">
-          {analyses.map((analysis) => (
-            <MatchAnalysisCard
-              key={analysis.id}
-              analysis={analysis}
-              isDeleting={deletingAnalysisId === analysis.id}
-              onDelete={handleDelete}
-            />
-          ))}
-        </section>
+        <>
+          <MatchAnalysisFilters
+            analyses={analyses}
+            query={query}
+            selectedResumeId={selectedResumeId}
+            selectedScore={selectedScore}
+            resultCount={filteredAnalyses.length}
+            onQueryChange={setQuery}
+            onResumeChange={setSelectedResumeId}
+            onScoreChange={setSelectedScore}
+            onClear={handleClearFilters}
+          />
+
+          {filteredAnalyses.length > 0 ? (
+            <section className="analysis-history" aria-label="Filtered match analyses">
+              {filteredAnalyses.map((analysis) => (
+                <MatchAnalysisCard
+                  key={analysis.id}
+                  analysis={analysis}
+                  isDeleting={deletingAnalysisId === analysis.id}
+                  onDelete={handleDelete}
+                />
+              ))}
+            </section>
+          ) : (
+            <div className="state-card state-card--compact">
+              <div className="state-card__icon" aria-hidden="true">⌕</div>
+              <h2>No analyses match</h2>
+              <p>Try a different company, role, resume, or score range.</p>
+              <button
+                className="button button--secondary"
+                type="button"
+                onClick={handleClearFilters}
+              >
+                Clear filters
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   )
