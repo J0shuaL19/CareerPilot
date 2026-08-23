@@ -6,10 +6,16 @@ export type JobStatusFilterValue = JobStatus | 'ALL'
 interface JobStatusFilterProps {
   jobs: Job[]
   selectedStatus: JobStatusFilterValue
+  shownCount: number
   onChange: (status: JobStatusFilterValue) => void
 }
 
-export function JobStatusFilter({ jobs, selectedStatus, onChange }: JobStatusFilterProps) {
+export function JobStatusFilter({
+  jobs,
+  selectedStatus,
+  shownCount,
+  onChange,
+}: JobStatusFilterProps) {
   const options: ReadonlyArray<{ value: JobStatusFilterValue; label: string }> = [
     { value: 'ALL', label: 'All' },
     ...jobStatusOptions,
@@ -25,7 +31,7 @@ export function JobStatusFilter({ jobs, selectedStatus, onChange }: JobStatusFil
     <section className="job-filter" aria-labelledby="job-filter-label">
       <div className="job-filter__heading">
         <h2 id="job-filter-label">Filter by stage</h2>
-        <span>{countJobs(selectedStatus)} shown</span>
+        <span>{shownCount} shown</span>
       </div>
       <div className="job-filter__options">
         {options.map((option) => (

@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react'
 import { JobCard } from '../components/JobCard'
 import {
+  JobSearchSortControls,
+  type JobSortOrder,
+} from '../components/JobSearchSortControls'
+import {
   JobStatusFilter,
   type JobStatusFilterValue,
 } from '../components/JobStatusFilter'
@@ -33,12 +37,23 @@ export function JobsPage({ notice, onAddJob, onViewJob, onEditJob }: JobsPagePro
   const [isUpcomingLoading, setIsUpcomingLoading] = useState(true)
   const [upcomingError, setUpcomingError] = useState<string | null>(null)
   const [selectedStatus, setSelectedStatus] = useState<JobStatusFilterValue>('ALL')
+  const [query, setQuery] = useState('')
+  const [sortOrder, setSortOrder] = useState<JobSortOrder>('NEWEST')
   const [reloadKey, setReloadKey] = useState(0)
   const [upcomingReloadKey, setUpcomingReloadKey] = useState(0)
 
-  const filteredJobs = selectedStatus === 'ALL'
-    ? jobs
-    : jobs.filter((job) => job.status === selectedStatus)
+  const normalizedQuery = query.trim().toLocaleLowerCase()
+  const filteredJobs = jobs
+    .filter((job) => selectedStatus === 'ALL' || job.status === selectedStatus)
+    .filter((job) => normalizedQuery === '' || [job.company, job.title, job.description]
+      .some((value) => value.toLocaleLowerCase().includes(normalizedQuery)))
+    .sort((left, right) => {
+      const dateComparison = left.createdAt.localeCompare(right.createdAt)
+      return sortOrder === 'OLDEST' ? dateComparison : -dateComparison
+    })
+  const hasActiveFilters = normalizedQuery !== ''
+    || sortOrder !== 'NEWEST'
+    || selectedStatus !== 'ALL'
 
   useEffect(() => {
     const controller = new AbortController()
@@ -127,6 +142,12 @@ export function JobsPage({ notice, onAddJob, onViewJob, onEditJob }: JobsPagePro
     }
   }
 
+  function handleResetFilters() {
+    setQuery('')
+    setSortOrder('NEWEST')
+    setSelectedStatus('ALL')
+  }
+
   return (
     <div className="page">
       <header className="page-header page-header--row">
@@ -202,9 +223,20 @@ export function JobsPage({ notice, onAddJob, onViewJob, onEditJob }: JobsPagePro
             onRetry={() => setUpcomingReloadKey((key) => key + 1)}
             onViewJob={onViewJob}
           />
+          <JobSearchSortControls
+            query={query}
+            sortOrder={sortOrder}
+            resultCount={filteredJobs.length}
+            totalCount={jobs.length}
+            hasActiveFilters={hasActiveFilters}
+            onQueryChange={setQuery}
+            onSortOrderChange={setSortOrder}
+            onReset={handleResetFilters}
+          />
           <JobStatusFilter
             jobs={jobs}
             selectedStatus={selectedStatus}
+            shownCount={filteredJobs.length}
             onChange={setSelectedStatus}
           />
 
@@ -225,15 +257,19 @@ export function JobsPage({ notice, onAddJob, onViewJob, onEditJob }: JobsPagePro
             </section>
           ) : (
             <div className="state-card state-card--compact">
-              <div className="state-card__icon" aria-hidden="true">◎</div>
-              <h2>No jobs at this stage</h2>
-              <p>Choose another pipeline stage or return to your full job list.</p>
+              <div className="state-card__icon" aria-hidden="true">⌕</div>
+              <h2>{normalizedQuery === '' ? 'No jobs at this stage' : 'No jobs match'}</h2>
+              <p>
+                {normalizedQuery === ''
+                  ? 'Choose another pipeline stage or return to your full job list.'
+                  : 'Try a different company, role, description keyword, or pipeline stage.'}
+              </p>
               <button
                 className="button button--secondary"
                 type="button"
-                onClick={() => setSelectedStatus('ALL')}
+                onClick={handleResetFilters}
               >
-                Show all jobs
+                Reset filters
               </button>
             </div>
           )}
