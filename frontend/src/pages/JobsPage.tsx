@@ -13,10 +13,11 @@ import { getJobStatusConfig } from '../utils/jobStatus'
 interface JobsPageProps {
   notice?: string
   onAddJob: () => void
+  onViewJob: (jobId: number) => void
   onEditJob: (jobId: number) => void
 }
 
-export function JobsPage({ notice, onAddJob, onEditJob }: JobsPageProps) {
+export function JobsPage({ notice, onAddJob, onViewJob, onEditJob }: JobsPageProps) {
   const [jobs, setJobs] = useState<Job[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -177,6 +178,7 @@ export function JobsPage({ notice, onAddJob, onEditJob }: JobsPageProps) {
                   isUpdating={updatingJobId === job.id}
                   isDeleting={deletingJobId === job.id}
                   onStatusChange={handleStatusChange}
+                  onView={onViewJob}
                   onEdit={onEditJob}
                   onDelete={handleDelete}
                 />

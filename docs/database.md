@@ -58,4 +58,21 @@ Each row stores one completed comparison between a saved job and resume. Analysi
 | `model_name` | `VARCHAR(100)` | AI model that generated the result |
 | `created_at` | `TIMESTAMP WITH TIME ZONE` | UTC creation time |
 
+## Job activities table
+
+Migration: `V4__create_job_activities_table.sql`
+
+Each row records one dated event or note in a job's application history. Deleting the owning job removes its activities.
+
+| Column | Type | Purpose |
+| --- | --- | --- |
+| `id` | `BIGSERIAL` | Database-generated identifier |
+| `job_id` | `BIGINT` | Owning job |
+| `type` | `VARCHAR(32)` | Application, interview, follow-up, or note |
+| `title` | `VARCHAR(255)` | Short activity summary |
+| `details` | `TEXT` | Optional notes and next steps |
+| `contact` | `VARCHAR(255)` | Optional recruiter or interviewer |
+| `occurred_at` | `TIMESTAMP WITH TIME ZONE` | When the activity happened or is scheduled |
+| `created_at` | `TIMESTAMP WITH TIME ZONE` | UTC record creation time |
+
 Future schema changes must be added as new Flyway migrations. Do not edit a migration after it has been applied to a shared database.

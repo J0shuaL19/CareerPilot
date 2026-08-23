@@ -9,6 +9,7 @@ interface JobCardProps {
   isUpdating: boolean
   isDeleting: boolean
   onStatusChange: (jobId: number, status: JobStatus) => Promise<void>
+  onView: (jobId: number) => void
   onEdit: (jobId: number) => void
   onDelete: (job: Job) => Promise<void>
 }
@@ -18,6 +19,7 @@ export function JobCard({
   isUpdating,
   isDeleting,
   onStatusChange,
+  onView,
   onEdit,
   onDelete,
 }: JobCardProps) {
@@ -94,6 +96,9 @@ export function JobCard({
                 View posting <span aria-hidden="true">↗</span>
               </a>
             )}
+            <button type="button" disabled={isDeleting} onClick={() => onView(job.id)}>
+              Timeline
+            </button>
             <button type="button" disabled={isDeleting} onClick={() => onEdit(job.id)}>
               Edit
             </button>

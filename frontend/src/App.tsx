@@ -11,6 +11,7 @@ import { ScrollToTop } from './components/ScrollToTop'
 import { AddJobPage } from './pages/AddJobPage'
 import { AddResumePage } from './pages/AddResumePage'
 import { EditJobPage } from './pages/EditJobPage'
+import { JobDetailPage } from './pages/JobDetailPage'
 import { JobsPage } from './pages/JobsPage'
 import { MatchAnalysesPage } from './pages/MatchAnalysesPage'
 import { MatchAnalysisResultPage } from './pages/MatchAnalysisResultPage'
@@ -33,6 +34,7 @@ function JobsRoute() {
     <JobsPage
       notice={state?.notice}
       onAddJob={() => navigate('/jobs/new')}
+      onViewJob={(jobId) => navigate(`/jobs/${jobId}`)}
       onEditJob={(jobId) => navigate(`/jobs/${jobId}/edit`)}
     />
   )
@@ -127,6 +129,7 @@ function App() {
           <Route path="jobs" element={<JobsRoute />} />
           <Route path="jobs/new" element={<AddJobRoute />} />
           <Route path="jobs/:id/edit" element={<EditJobRoute />} />
+          <Route path="jobs/:id" element={<JobDetailPage />} />
           <Route path="resumes" element={<ResumesRoute />} />
           <Route path="resumes/new" element={<AddResumeRoute />} />
           <Route path="analyses" element={<MatchAnalysesPage />} />

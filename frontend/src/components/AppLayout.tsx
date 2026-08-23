@@ -2,6 +2,8 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom'
 
 export function AppLayout() {
   const { pathname } = useLocation()
+  const isJobRoute = pathname === '/jobs' || pathname.startsWith('/jobs/')
+  const isResumeRoute = pathname === '/resumes' || pathname.startsWith('/resumes/')
   const isAnalysisRoute = pathname === '/analyses' || pathname.startsWith('/analyses/')
 
   return (
@@ -17,14 +19,18 @@ export function AppLayout() {
             <NavLink
               to="/jobs"
               end
-              className={({ isActive }) => (isActive ? 'app-nav__link app-nav__link--active' : 'app-nav__link')}
+              className={isJobRoute
+                ? 'app-nav__link app-nav__link--active'
+                : 'app-nav__link'}
             >
               Jobs
             </NavLink>
             <NavLink
               to="/resumes"
               end
-              className={({ isActive }) => (isActive ? 'app-nav__link app-nav__link--active' : 'app-nav__link')}
+              className={isResumeRoute
+                ? 'app-nav__link app-nav__link--active'
+                : 'app-nav__link'}
             >
               Resumes
             </NavLink>

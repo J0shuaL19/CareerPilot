@@ -1,13 +1,13 @@
 # CareerPilot
 
-CareerPilot is an AI-powered job search platform that will help users compare job descriptions with a resume and track applications through the recruiting pipeline.
+CareerPilot is an AI-powered job search workspace for tracking applications, maintaining resumes, recording recruiting activity, and comparing jobs with a resume.
 
 ## Technology stack
 
 - Backend: Java 21, Spring Boot, Maven
 - Frontend: React, TypeScript, Vite
-- Database (next phase): PostgreSQL
-- AI (later phase): OpenAI API through the backend
+- Database: PostgreSQL with Flyway migrations
+- AI: OpenAI Responses API through an isolated backend adapter
 
 ## Repository structure
 
@@ -18,7 +18,7 @@ CareerPilot/
 └── docs/       Architecture, database, and API notes
 ```
 
-This initial milestone contains only runnable backend and frontend foundations. Job tracking, PostgreSQL, and AI integration intentionally belong to later milestones.
+Current features include job pipeline tracking, job activity timelines, resume storage, AI match analysis, and saved analysis history.
 
 ## Run locally
 
@@ -37,12 +37,12 @@ The backend health endpoint is available at `http://localhost:8080/api/health`.
 
 ### Frontend
 
-Requirements: Node.js 20 or newer.
+Requirements: Node.js 20 or newer and pnpm.
 
 ```bash
 cd frontend
-npm install
-npm run dev
+pnpm install
+pnpm run dev
 ```
 
 The Vite development server is available at `http://localhost:5173`.

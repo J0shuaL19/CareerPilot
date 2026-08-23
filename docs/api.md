@@ -125,6 +125,38 @@ Uses the same request body and validation rules as job creation. Success: `200 O
 
 Success: `204 No Content`. Deleting a job also deletes its saved match analyses. A missing job returns `404 Not Found`.
 
+### Create a job activity
+
+`POST /api/jobs/{jobId}/activities`
+
+Request:
+
+```json
+{
+  "type": "INTERVIEW",
+  "title": "Technical interview",
+  "details": "System design and collaboration round.",
+  "contact": "Alex Chen, recruiter",
+  "occurredAt": "2026-08-25T18:00:00Z"
+}
+```
+
+`type`, `title`, and `occurredAt` are required. `title` and `contact` can contain at most 255 characters, and `details` can contain at most 5000 characters.
+
+Success: `201 Created` with the saved activity. Activity types are `APPLICATION`, `INTERVIEW`, `FOLLOW_UP`, and `NOTE`.
+
+### List job activities
+
+`GET /api/jobs/{jobId}/activities`
+
+Returns the job's activities ordered by occurrence time from newest to oldest. Success: `200 OK`; a job without activity returns `[]`. A missing job returns `404 Not Found`.
+
+### Delete a job activity
+
+`DELETE /api/jobs/{jobId}/activities/{activityId}`
+
+Success: `204 No Content`. The activity must belong to the job in the request path. Missing jobs or activities return `404 Not Found`.
+
 ## Resumes
 
 Resume content is currently stored as plain text. File uploads and document parsing are outside this API version.
