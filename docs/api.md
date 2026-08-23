@@ -107,6 +107,56 @@ Success: `200 OK`
 
 An empty database returns `[]`.
 
+### Preview a CSV job import
+
+`POST /api/jobs/import/preview`
+
+Send a UTF-8 CSV file in the `file` field of a `multipart/form-data` request. Files can be at most 2 MB and contain at most 1,000 job rows.
+
+`Company`, `Title`, and `Description` columns are required. `Job URL` and `Status` are optional; a blank status defaults to `SAVED`. Extra columns from CareerPilot exports, including `ID` and `Created at`, are ignored.
+
+Success: `200 OK`
+
+```json
+{
+  "filename": "careerpilot-jobs.csv",
+  "totalRows": 3,
+  "validRows": 1,
+  "duplicateRows": 1,
+  "invalidRows": 1,
+  "rows": [
+    {
+      "rowNumber": 2,
+      "company": "OpenAI",
+      "title": "Software Engineer",
+      "description": "Build reliable products.",
+      "jobUrl": "https://example.com/jobs/1",
+      "status": "APPLIED",
+      "state": "VALID",
+      "errors": []
+    }
+  ]
+}
+```
+
+Row states are `VALID`, `DUPLICATE`, and `INVALID`. Duplicate matching uses company and title without case sensitivity and checks both saved jobs and earlier rows in the same file. Previewing never writes to the database.
+
+### Import jobs from CSV
+
+`POST /api/jobs/import`
+
+Send the same file format as the preview endpoint. The backend parses and validates the file again, imports only rows currently marked valid, and skips duplicate or invalid rows.
+
+Success: `200 OK`
+
+```json
+{
+  "imported": 1,
+  "skippedDuplicates": 1,
+  "skippedInvalid": 1
+}
+```
+
 ### Export jobs as CSV
 
 `POST /api/jobs/export`

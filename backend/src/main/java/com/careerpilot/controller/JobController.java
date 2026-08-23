@@ -1,11 +1,14 @@
 package com.careerpilot.controller;
 
 import com.careerpilot.dto.JobCsvExportRequest;
+import com.careerpilot.dto.JobCsvImportPreviewResponse;
+import com.careerpilot.dto.JobCsvImportResultResponse;
 import com.careerpilot.dto.JobRequest;
 import com.careerpilot.dto.JobResponse;
 import com.careerpilot.dto.JobStatusUpdateRequest;
 import com.careerpilot.service.JobCsvExportService;
 import com.careerpilot.service.JobCsvFile;
+import com.careerpilot.service.JobCsvImportService;
 import com.careerpilot.service.JobService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -21,7 +24,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/jobs")
@@ -29,10 +34,16 @@ public class JobController {
 
     private final JobService jobService;
     private final JobCsvExportService jobCsvExportService;
+    private final JobCsvImportService jobCsvImportService;
 
-    public JobController(JobService jobService, JobCsvExportService jobCsvExportService) {
+    public JobController(
+            JobService jobService,
+            JobCsvExportService jobCsvExportService,
+            JobCsvImportService jobCsvImportService
+    ) {
         this.jobService = jobService;
         this.jobCsvExportService = jobCsvExportService;
+        this.jobCsvImportService = jobCsvImportService;
     }
 
     @PostMapping
@@ -55,6 +66,16 @@ public class JobController {
                         "attachment; filename=\"" + file.filename() + "\""
                 )
                 .body(file.content());
+    }
+
+    @PostMapping(path = "/import/preview", consumes = "multipart/form-data")
+    public JobCsvImportPreviewResponse previewImport(@RequestPart("file") MultipartFile file) {
+        return jobCsvImportService.preview(file);
+    }
+
+    @PostMapping(path = "/import", consumes = "multipart/form-data")
+    public JobCsvImportResultResponse importJobs(@RequestPart("file") MultipartFile file) {
+        return jobCsvImportService.importFile(file);
     }
 
     @GetMapping("/{id}")

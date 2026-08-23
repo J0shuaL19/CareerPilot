@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -12,12 +13,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.careerpilot.dto.JobRequest;
+import com.careerpilot.dto.JobCsvImportPreviewResponse;
+import com.careerpilot.dto.JobCsvImportResultResponse;
+import com.careerpilot.dto.JobCsvImportRowResponse;
+import com.careerpilot.dto.JobCsvImportRowState;
 import com.careerpilot.dto.JobResponse;
 import com.careerpilot.dto.JobStatusUpdateRequest;
 import com.careerpilot.exception.ResourceNotFoundException;
 import com.careerpilot.model.JobStatus;
 import com.careerpilot.service.JobCsvExportService;
 import com.careerpilot.service.JobCsvFile;
+import com.careerpilot.service.JobCsvImportService;
 import com.careerpilot.service.JobService;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -26,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -40,6 +47,9 @@ class JobControllerTests {
 
     @MockitoBean
     private JobCsvExportService jobCsvExportService;
+
+    @MockitoBean
+    private JobCsvImportService jobCsvImportService;
 
     @Test
     void createsJob() throws Exception {
@@ -108,6 +118,57 @@ class JobControllerTests {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fieldErrors.jobIds")
                         .value("At least one job is required"));
+    }
+
+    @Test
+    void previewsCsvImport() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "jobs.csv",
+                "text/csv",
+                "Company,Title,Description".getBytes(StandardCharsets.UTF_8)
+        );
+        when(jobCsvImportService.preview(any())).thenReturn(new JobCsvImportPreviewResponse(
+                "jobs.csv",
+                1,
+                1,
+                0,
+                0,
+                List.of(new JobCsvImportRowResponse(
+                        2,
+                        "OpenAI",
+                        "Engineer",
+                        "Description",
+                        null,
+                        JobStatus.SAVED,
+                        JobCsvImportRowState.VALID,
+                        List.of()
+                ))
+        ));
+
+        mockMvc.perform(multipart("/api/jobs/import/preview").file(file))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.filename").value("jobs.csv"))
+                .andExpect(jsonPath("$.validRows").value(1))
+                .andExpect(jsonPath("$.rows[0].state").value("VALID"));
+    }
+
+    @Test
+    void importsCsvJobs() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "jobs.csv",
+                "text/csv",
+                "Company,Title,Description".getBytes(StandardCharsets.UTF_8)
+        );
+        when(jobCsvImportService.importFile(any()))
+                .thenReturn(new JobCsvImportResultResponse(2, 1, 1));
+
+        mockMvc.perform(multipart("/api/jobs/import").file(file))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.imported").value(2))
+                .andExpect(jsonPath("$.skippedDuplicates").value(1))
+                .andExpect(jsonPath("$.skippedInvalid").value(1));
     }
 
     @Test

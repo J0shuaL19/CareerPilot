@@ -65,4 +65,23 @@ class JobRepositoryTests {
         assertThat(jobs).extracting(Job::getCompany)
                 .containsExactly("Company C", "Company B");
     }
+
+    @Test
+    void detectsDuplicateCompanyAndTitleIgnoringCase() {
+        jobRepository.saveAndFlush(new Job(
+                "OpenAI",
+                "Software Engineer",
+                "Description",
+                null
+        ));
+
+        assertThat(jobRepository.existsByCompanyIgnoreCaseAndTitleIgnoreCase(
+                "openai",
+                "SOFTWARE ENGINEER"
+        )).isTrue();
+        assertThat(jobRepository.existsByCompanyIgnoreCaseAndTitleIgnoreCase(
+                "OpenAI",
+                "Product Manager"
+        )).isFalse();
+    }
 }

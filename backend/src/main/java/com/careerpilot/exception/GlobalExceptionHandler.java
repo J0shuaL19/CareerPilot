@@ -116,11 +116,24 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(JobCsvImportException.class)
+    public ResponseEntity<ApiErrorResponse> handleJobCsvImportFailure(
+            JobCsvImportException exception,
+            HttpServletRequest request
+    ) {
+        return errorResponse(
+                HttpStatus.BAD_REQUEST,
+                exception.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
+    }
+
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<ApiErrorResponse> handleUploadTooLarge(HttpServletRequest request) {
         return errorResponse(
                 HttpStatus.PAYLOAD_TOO_LARGE,
-                "Resume files must be 5 MB or smaller.",
+                "Uploaded files must be 6 MB or smaller.",
                 request.getRequestURI(),
                 Map.of()
         );

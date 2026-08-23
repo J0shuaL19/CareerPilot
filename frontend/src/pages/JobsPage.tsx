@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { JobCard } from '../components/JobCard'
+import { JobCsvImportPanel } from '../components/JobCsvImportPanel'
 import {
   JobSearchSortControls,
   type JobSortOrder,
@@ -12,7 +13,7 @@ import { PipelineSummary } from '../components/PipelineSummary'
 import { UpcomingActivities } from '../components/UpcomingActivities'
 import { getUpcomingJobActivities } from '../services/jobActivityApi'
 import { deleteJob, exportJobs, getJobs, updateJobStatus } from '../services/jobApi'
-import type { Job, JobStatus } from '../types/job'
+import type { Job, JobCsvImportResult, JobStatus } from '../types/job'
 import type { UpcomingJobActivity } from '../types/jobActivity'
 import { getErrorMessage, isAbortError } from '../utils/errors'
 import { getJobStatusConfig } from '../utils/jobStatus'
@@ -34,6 +35,7 @@ export function JobsPage({ notice, onAddJob, onViewJob, onEditJob }: JobsPagePro
   const [updatingJobId, setUpdatingJobId] = useState<number | null>(null)
   const [deletingJobId, setDeletingJobId] = useState<number | null>(null)
   const [isExporting, setIsExporting] = useState(false)
+  const [showCsvImport, setShowCsvImport] = useState(false)
   const [upcomingActivities, setUpcomingActivities] = useState<UpcomingJobActivity[]>([])
   const [isUpcomingLoading, setIsUpcomingLoading] = useState(true)
   const [upcomingError, setUpcomingError] = useState<string | null>(null)
@@ -169,6 +171,16 @@ export function JobsPage({ notice, onAddJob, onViewJob, onEditJob }: JobsPagePro
     }
   }
 
+  function handleImported(result: JobCsvImportResult) {
+    setShowCsvImport(false)
+    setShowRouteNotice(false)
+    setActionError(null)
+    setActionNotice(
+      `${result.imported} ${result.imported === 1 ? 'job' : 'jobs'} imported from CSV.`,
+    )
+    setReloadKey((key) => key + 1)
+  }
+
   function handleResetFilters() {
     setQuery('')
     setSortOrder('NEWEST')
@@ -188,6 +200,15 @@ export function JobsPage({ notice, onAddJob, onViewJob, onEditJob }: JobsPagePro
           </p>
         </div>
         <div className="page-header__actions">
+          <button
+            className="button button--secondary"
+            type="button"
+            disabled={isLoading}
+            aria-expanded={showCsvImport}
+            onClick={() => setShowCsvImport((isOpen) => !isOpen)}
+          >
+            <span aria-hidden="true">⇧</span> Import CSV
+          </button>
           {jobs.length > 0 && (
             <button
               className="button button--secondary"
@@ -220,6 +241,13 @@ export function JobsPage({ notice, onAddJob, onViewJob, onEditJob }: JobsPagePro
         <div className="alert alert--error job-action-error" role="alert">
           {actionError}
         </div>
+      )}
+
+      {!isLoading && !error && showCsvImport && (
+        <JobCsvImportPanel
+          onClose={() => setShowCsvImport(false)}
+          onImported={handleImported}
+        />
       )}
 
       {isLoading && (

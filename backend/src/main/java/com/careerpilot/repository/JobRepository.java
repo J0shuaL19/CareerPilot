@@ -10,4 +10,6 @@ public interface JobRepository extends JpaRepository<Job, Long> {
     List<Job> findAllByOrderByCreatedAtDesc();
 
     List<Job> findAllByCreatedAtGreaterThanEqualOrderByCreatedAtDesc(Instant createdAt);
+
+    boolean existsByCompanyIgnoreCaseAndTitleIgnoreCase(String company, String title);
 }

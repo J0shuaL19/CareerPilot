@@ -1,6 +1,8 @@
 import type {
   CreateJobInput,
   Job,
+  JobCsvImportPreview,
+  JobCsvImportResult,
   UpdateJobInput,
   UpdateJobStatusInput,
 } from '../types/job'
@@ -22,6 +24,26 @@ export function exportJobs(jobIds: number[]): Promise<Blob> {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ jobIds }),
+  })
+}
+
+export function previewJobCsv(file: File): Promise<JobCsvImportPreview> {
+  const formData = new FormData()
+  formData.append('file', file)
+
+  return apiRequest<JobCsvImportPreview>('/api/jobs/import/preview', {
+    method: 'POST',
+    body: formData,
+  })
+}
+
+export function importJobCsv(file: File): Promise<JobCsvImportResult> {
+  const formData = new FormData()
+  formData.append('file', file)
+
+  return apiRequest<JobCsvImportResult>('/api/jobs/import', {
+    method: 'POST',
+    body: formData,
   })
 }
 

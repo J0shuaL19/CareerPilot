@@ -1235,6 +1235,310 @@ a:focus-visible {
   background: #8a94a6;
 }
 
+.job-csv-import {
+  margin-bottom: 1rem;
+  padding: 1.2rem;
+  border: 1px solid #cbd8ed;
+  border-radius: 18px;
+  background: linear-gradient(145deg, #fff 0%, #f6f9ff 100%);
+  box-shadow: 0 10px 30px rgb(38 60 96 / 6%);
+}
+
+.job-csv-import__heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.job-csv-import__heading p,
+.job-csv-import__heading h2,
+.job-csv-import__heading span {
+  margin: 0;
+}
+
+.job-csv-import__heading p {
+  color: #3568e8;
+  font-size: 0.66rem;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.job-csv-import__heading h2 {
+  margin-top: 0.22rem;
+  color: #273248;
+  font-size: 1.2rem;
+  letter-spacing: -0.025em;
+}
+
+.job-csv-import__heading span {
+  display: block;
+  margin-top: 0.35rem;
+  color: #8490a4;
+  font-size: 0.75rem;
+}
+
+.job-csv-import__close {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid #d9e1ee;
+  border-radius: 10px;
+  color: #687489;
+  background: #fff;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.job-csv-import__close:hover:not(:disabled) {
+  color: #a02b3e;
+  border-color: #efcbd2;
+  background: #fff8f9;
+}
+
+.job-csv-import__picker {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.8fr) minmax(260px, 1.2fr);
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.job-csv-import__picker label {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  column-gap: 0.7rem;
+  padding: 0.85rem 1rem;
+  border: 1px dashed #aebfdd;
+  border-radius: 13px;
+  color: #315dc9;
+  background: #f8faff;
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+
+.job-csv-import__picker label:hover,
+.job-csv-import__picker label:focus-within {
+  border-color: #3568e8;
+  background: #f0f5ff;
+}
+
+.job-csv-import__picker label.is-busy {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.job-csv-import__picker input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+}
+
+.job-csv-import__picker label > span {
+  grid-row: 1 / span 2;
+  font-size: 1.25rem;
+  font-weight: 900;
+}
+
+.job-csv-import__picker strong {
+  overflow: hidden;
+  color: #273248;
+  font-size: 0.82rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.job-csv-import__picker small {
+  margin-top: 0.15rem;
+  color: #8995a8;
+  font-size: 0.66rem;
+}
+
+.job-csv-import__picker > p {
+  margin: 0;
+  color: #758196;
+  font-size: 0.75rem;
+  line-height: 1.55;
+}
+
+.job-csv-import__error {
+  margin-top: 1rem;
+  margin-bottom: 0;
+}
+
+.job-csv-import__summary {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) repeat(3, minmax(100px, 0.7fr));
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.job-csv-import__summary > div {
+  min-width: 0;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid #e0e6f0;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.job-csv-import__summary span,
+.job-csv-import__summary strong {
+  display: block;
+}
+
+.job-csv-import__summary span {
+  color: #8792a5;
+  font-size: 0.65rem;
+  font-weight: 750;
+}
+
+.job-csv-import__summary strong {
+  overflow: hidden;
+  margin-top: 0.2rem;
+  color: #273248;
+  font-size: 0.9rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.job-csv-import__summary-item--valid strong {
+  color: #19704a;
+}
+
+.job-csv-import__summary-item--duplicate strong {
+  color: #9b6818;
+}
+
+.job-csv-import__summary-item--invalid strong {
+  color: #a02b3e;
+}
+
+.job-csv-import__table-wrap {
+  overflow: auto;
+  max-height: 360px;
+  margin-top: 0.75rem;
+  border: 1px solid #dce3ef;
+  border-radius: 13px;
+  background: #fff;
+}
+
+.job-csv-import__table {
+  width: 100%;
+  min-width: 700px;
+  border-collapse: collapse;
+  font-size: 0.74rem;
+}
+
+.job-csv-import__table th {
+  position: sticky;
+  z-index: 1;
+  top: 0;
+  padding: 0.65rem 0.75rem;
+  color: #6f7b90;
+  background: #f4f7fb;
+  font-size: 0.65rem;
+  letter-spacing: 0.04em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.job-csv-import__table td {
+  padding: 0.75rem;
+  border-top: 1px solid #e7ebf2;
+  color: #536078;
+  vertical-align: top;
+}
+
+.job-csv-import__table td:first-child {
+  width: 52px;
+  color: #8b96a8;
+  font-variant-numeric: tabular-nums;
+}
+
+.job-csv-import__table td:nth-child(2) {
+  width: 34%;
+}
+
+.job-csv-import__table td:nth-child(3) {
+  width: 16%;
+}
+
+.job-csv-import__table td strong,
+.job-csv-import__table td span,
+.job-csv-import__table td small {
+  display: block;
+}
+
+.job-csv-import__table td > strong {
+  color: #273248;
+  font-size: 0.78rem;
+}
+
+.job-csv-import__table td > span:not(.job-csv-import__state) {
+  margin-top: 0.18rem;
+  color: #8a95a8;
+  font-size: 0.68rem;
+}
+
+.job-csv-import__state {
+  width: fit-content;
+  padding: 0.25rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 800;
+}
+
+.job-csv-import__state--valid {
+  color: #17633f;
+  background: #e6f7ee;
+}
+
+.job-csv-import__state--duplicate {
+  color: #8a5b0d;
+  background: #fff4d9;
+}
+
+.job-csv-import__state--invalid {
+  color: #a02b3e;
+  background: #ffecef;
+}
+
+.job-csv-import__table td small {
+  max-width: 430px;
+  margin-top: 0.35rem;
+  color: #a02b3e;
+  font-size: 0.65rem;
+  line-height: 1.4;
+}
+
+.job-csv-import__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.85rem;
+}
+
+.job-csv-import__actions p {
+  margin: 0;
+  color: #687489;
+  font-size: 0.75rem;
+}
+
+.job-csv-import__actions > div {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 0.6rem;
+}
+
 .job-search-sort {
   display: grid;
   gap: 1rem;
@@ -3129,6 +3433,27 @@ a:focus-visible {
     align-items: flex-start;
     flex-direction: column;
     gap: 0.45rem;
+  }
+
+  .job-csv-import__picker {
+    grid-template-columns: 1fr;
+  }
+
+  .job-csv-import__summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .job-csv-import__actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .job-csv-import__actions > div {
+    width: 100%;
+  }
+
+  .job-csv-import__actions .button {
+    flex: 1;
   }
 
   .job-search-sort__controls {
