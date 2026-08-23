@@ -151,6 +151,12 @@ Success: `201 Created` with the saved activity. Activity types are `APPLICATION`
 
 Returns the job's activities ordered by occurrence time from newest to oldest. Success: `200 OK`; a job without activity returns `[]`. A missing job returns `404 Not Found`.
 
+### Update a job activity
+
+`PUT /api/jobs/{jobId}/activities/{activityId}`
+
+Uses the same request body and validation rules as activity creation. Success: `200 OK` with the complete updated activity. The activity must belong to the job in the request path; missing jobs or activities return `404 Not Found`.
+
 ### Delete a job activity
 
 `DELETE /api/jobs/{jobId}/activities/{activityId}`

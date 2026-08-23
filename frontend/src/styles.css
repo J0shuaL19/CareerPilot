@@ -2611,6 +2611,16 @@ a:focus-visible {
   width: 100%;
 }
 
+.activity-form__actions {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.65rem;
+}
+
+.activity-form__actions .button {
+  width: 100%;
+}
+
 .timeline-panel {
   min-width: 0;
   padding: 1.35rem;
@@ -2684,6 +2694,12 @@ a:focus-visible {
   border: 1px solid #e0e6ef;
   border-radius: 14px;
   background: #fbfcfe;
+}
+
+.timeline-entry__card--editing {
+  border-color: #8ba6ec;
+  background: #f6f8ff;
+  box-shadow: 0 0 0 3px rgb(49 93 201 / 8%);
 }
 
 .timeline-entry__meta {

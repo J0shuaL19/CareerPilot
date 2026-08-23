@@ -111,6 +111,32 @@ class JobActivityServiceTests {
     }
 
     @Test
+    void updatesNormalizedActivityOwnedByJob() {
+        Job job = persistedJob(1L);
+        JobActivity activity = persistedActivity(2L, job, "Interview", "2026-08-22T12:00:00Z");
+        when(jobRepository.findById(1L)).thenReturn(Optional.of(job));
+        when(jobActivityRepository.findByIdAndJob_Id(2L, 1L)).thenReturn(Optional.of(activity));
+
+        JobActivityResponse response = jobActivityService.updateActivity(
+                1L,
+                2L,
+                new JobActivityRequest(
+                        JobActivityType.FOLLOW_UP,
+                        "  Send thank-you note  ",
+                        "  Mention platform discussion  ",
+                        "  Alex Chen  ",
+                        Instant.parse("2026-08-26T18:00:00Z")
+                )
+        );
+
+        assertThat(response.type()).isEqualTo(JobActivityType.FOLLOW_UP);
+        assertThat(response.title()).isEqualTo("Send thank-you note");
+        assertThat(response.details()).isEqualTo("Mention platform discussion");
+        assertThat(response.contact()).isEqualTo("Alex Chen");
+        assertThat(response.occurredAt()).isEqualTo(Instant.parse("2026-08-26T18:00:00Z"));
+    }
+
+    @Test
     void deletesActivityOwnedByJob() {
         Job job = persistedJob(1L);
         JobActivity activity = persistedActivity(2L, job, "Interview", "2026-08-22T12:00:00Z");
@@ -138,6 +164,25 @@ class JobActivityServiceTests {
         when(jobActivityRepository.findByIdAndJob_Id(99L, 1L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> jobActivityService.deleteActivity(1L, 99L))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("Job activity not found with id: 99");
+    }
+
+    @Test
+    void rejectsUpdatingActivityOwnedByAnotherJob() {
+        Job job = persistedJob(1L);
+        when(jobRepository.findById(1L)).thenReturn(Optional.of(job));
+        when(jobActivityRepository.findByIdAndJob_Id(99L, 1L)).thenReturn(Optional.empty());
+
+        JobActivityRequest request = new JobActivityRequest(
+                JobActivityType.NOTE,
+                "Updated note",
+                null,
+                null,
+                Instant.parse("2026-08-26T18:00:00Z")
+        );
+
+        assertThatThrownBy(() -> jobActivityService.updateActivity(1L, 99L, request))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Job activity not found with id: 99");
     }

@@ -67,6 +67,20 @@ public class JobActivity {
         this.occurredAt = Objects.requireNonNull(occurredAt, "Activity time is required");
     }
 
+    public void update(
+            JobActivityType type,
+            String title,
+            String details,
+            String contact,
+            Instant occurredAt
+    ) {
+        this.type = Objects.requireNonNull(type, "Activity type is required");
+        this.title = Objects.requireNonNull(title, "Activity title is required");
+        this.details = details;
+        this.contact = contact;
+        this.occurredAt = Objects.requireNonNull(occurredAt, "Activity time is required");
+    }
+
     @PrePersist
     void setCreationTime() {
         if (createdAt == null) {

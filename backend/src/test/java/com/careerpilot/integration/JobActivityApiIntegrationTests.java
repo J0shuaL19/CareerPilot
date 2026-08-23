@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -42,7 +43,7 @@ class JobActivityApiIntegrationTests {
     }
 
     @Test
-    void createsListsAndDeletesActivity() throws Exception {
+    void createsListsUpdatesAndDeletesActivity() throws Exception {
         Job job = jobRepository.saveAndFlush(new Job("OpenAI", "Engineer", "Description", null));
 
         String response = mockMvc.perform(post("/api/jobs/{jobId}/activities", job.getId())
@@ -68,6 +69,30 @@ class JobActivityApiIntegrationTests {
         mockMvc.perform(get("/api/jobs/{jobId}/activities", job.getId()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(activityId));
+
+        mockMvc.perform(put(
+                        "/api/jobs/{jobId}/activities/{activityId}",
+                        job.getId(),
+                        activityId
+                )
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "type": "FOLLOW_UP",
+                                  "title": "Send thank-you note",
+                                  "details": "Mention platform discussion",
+                                  "contact": "Alex Chen",
+                                  "occurredAt": "2026-08-26T18:00:00Z"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.type").value("FOLLOW_UP"))
+                .andExpect(jsonPath("$.title").value("Send thank-you note"));
+
+        JobActivity updatedActivity = jobActivityRepository.findById(activityId).orElseThrow();
+        assertThat(updatedActivity.getTitle()).isEqualTo("Send thank-you note");
+        assertThat(updatedActivity.getOccurredAt())
+                .isEqualTo(Instant.parse("2026-08-26T18:00:00Z"));
 
         mockMvc.perform(delete(
                         "/api/jobs/{jobId}/activities/{activityId}",

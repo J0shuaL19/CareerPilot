@@ -8,6 +8,7 @@ import {
   createJobActivity,
   deleteJobActivity,
   getJobActivities,
+  updateJobActivity,
 } from '../services/jobActivityApi'
 import { getJob } from '../services/jobApi'
 import type { Job } from '../types/job'
@@ -28,6 +29,7 @@ export function JobDetailPage() {
   const [actionNotice, setActionNotice] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
   const [deletingActivityId, setDeletingActivityId] = useState<number | null>(null)
+  const [editingActivity, setEditingActivity] = useState<JobActivity | null>(null)
   const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
@@ -67,7 +69,7 @@ export function JobDetailPage() {
     return <NotFoundPage />
   }
 
-  async function handleCreateActivity(input: CreateJobActivityInput) {
+  async function handleSaveActivity(input: CreateJobActivityInput) {
     setIsSubmitting(true)
     setFieldErrors({})
     setFormError(null)
@@ -75,10 +77,18 @@ export function JobDetailPage() {
     setActionError(null)
 
     try {
-      const activity = await createJobActivity(jobId, input)
-      setActivities((current) => [activity, ...current]
-        .sort((left, right) => right.occurredAt.localeCompare(left.occurredAt)))
-      setActionNotice(`${activity.title} was added to the timeline.`)
+      if (editingActivity) {
+        const updatedActivity = await updateJobActivity(jobId, editingActivity.id, input)
+        setActivities((current) => current
+          .map((activity) => activity.id === updatedActivity.id ? updatedActivity : activity)
+          .sort(compareActivitiesNewestFirst))
+        setEditingActivity(null)
+        setActionNotice(`${updatedActivity.title} was updated.`)
+      } else {
+        const activity = await createJobActivity(jobId, input)
+        setActivities((current) => [activity, ...current].sort(compareActivitiesNewestFirst))
+        setActionNotice(`${activity.title} was added to the timeline.`)
+      }
       return true
     } catch (error) {
       if (error instanceof ApiError) {
@@ -99,12 +109,23 @@ export function JobDetailPage() {
     try {
       await deleteJobActivity(jobId, activity.id)
       setActivities((current) => current.filter((item) => item.id !== activity.id))
+      if (editingActivity?.id === activity.id) {
+        setEditingActivity(null)
+      }
       setActionNotice(`${activity.title} was removed from the timeline.`)
     } catch (error) {
       setActionError(getErrorMessage(error))
     } finally {
       setDeletingActivityId(null)
     }
+  }
+
+  function handleEditActivity(activity: JobActivity) {
+    setEditingActivity(activity)
+    setFieldErrors({})
+    setFormError(null)
+    setActionNotice(null)
+    setActionError(null)
   }
 
   return (
@@ -172,10 +193,17 @@ export function JobDetailPage() {
           <div className="job-detail__content">
             <aside className="activity-form-panel">
               <JobActivityForm
+                key={editingActivity ? `edit-${editingActivity.id}` : 'create'}
+                activity={editingActivity ?? undefined}
                 fieldErrors={fieldErrors}
                 formError={formError}
                 isSubmitting={isSubmitting}
-                onSubmit={handleCreateActivity}
+                onSubmit={handleSaveActivity}
+                onCancelEdit={() => {
+                  setEditingActivity(null)
+                  setFieldErrors({})
+                  setFormError(null)
+                }}
               />
             </aside>
 
@@ -190,6 +218,8 @@ export function JobDetailPage() {
               <JobTimeline
                 activities={activities}
                 deletingActivityId={deletingActivityId}
+                editingActivityId={editingActivity?.id ?? null}
+                onEdit={handleEditActivity}
                 onDelete={handleDeleteActivity}
               />
             </div>
@@ -198,4 +228,9 @@ export function JobDetailPage() {
       )}
     </div>
   )
+}
+
+function compareActivitiesNewestFirst(left: JobActivity, right: JobActivity) {
+  return right.occurredAt.localeCompare(left.occurredAt)
+    || right.createdAt.localeCompare(left.createdAt)
 }

@@ -5,6 +5,8 @@ import { getJobActivityTypeConfig } from '../utils/jobActivity'
 interface JobTimelineProps {
   activities: JobActivity[]
   deletingActivityId: number | null
+  editingActivityId: number | null
+  onEdit: (activity: JobActivity) => void
   onDelete: (activity: JobActivity) => Promise<void>
 }
 
@@ -16,7 +18,13 @@ const dateTimeFormatter = new Intl.DateTimeFormat('en-US', {
   minute: '2-digit',
 })
 
-export function JobTimeline({ activities, deletingActivityId, onDelete }: JobTimelineProps) {
+export function JobTimeline({
+  activities,
+  deletingActivityId,
+  editingActivityId,
+  onEdit,
+  onDelete,
+}: JobTimelineProps) {
   const [confirmingActivityId, setConfirmingActivityId] = useState<number | null>(null)
 
   if (activities.length === 0) {
@@ -35,11 +43,12 @@ export function JobTimeline({ activities, deletingActivityId, onDelete }: JobTim
         const config = getJobActivityTypeConfig(activity.type)
         const isDeleting = deletingActivityId === activity.id
         const isConfirming = confirmingActivityId === activity.id
+        const isEditing = editingActivityId === activity.id
 
         return (
           <article className={`timeline-entry timeline-entry--${activity.type.toLowerCase()}`} key={activity.id}>
             <div className="timeline-entry__marker" aria-hidden="true">{config.symbol}</div>
-            <div className="timeline-entry__card">
+            <div className={`timeline-entry__card${isEditing ? ' timeline-entry__card--editing' : ''}`}>
               <div className="timeline-entry__meta">
                 <span>{config.shortLabel}</span>
                 <time dateTime={activity.occurredAt}>
@@ -75,9 +84,18 @@ export function JobTimeline({ activities, deletingActivityId, onDelete }: JobTim
                     </button>
                   </>
                 ) : (
-                  <button type="button" onClick={() => setConfirmingActivityId(activity.id)}>
-                    Delete
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      disabled={isDeleting || isEditing}
+                      onClick={() => onEdit(activity)}
+                    >
+                      {isEditing ? 'Editing…' : 'Edit'}
+                    </button>
+                    <button type="button" onClick={() => setConfirmingActivityId(activity.id)}>
+                      Delete
+                    </button>
+                  </>
                 )}
               </div>
             </div>

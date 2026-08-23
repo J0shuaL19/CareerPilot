@@ -19,6 +19,8 @@ export interface CreateJobActivityInput {
   occurredAt: string
 }
 
+export type UpdateJobActivityInput = CreateJobActivityInput
+
 export interface UpcomingJobActivity {
   id: number
   jobId: number

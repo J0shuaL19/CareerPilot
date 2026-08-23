@@ -2,6 +2,7 @@ import type {
   CreateJobActivityInput,
   JobActivity,
   UpcomingJobActivity,
+  UpdateJobActivityInput,
 } from '../types/jobActivity'
 import { apiRequest } from './apiClient'
 
@@ -18,6 +19,20 @@ export function createJobActivity(
 ): Promise<JobActivity> {
   return apiRequest<JobActivity>(`/api/jobs/${jobId}/activities`, {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(input),
+  })
+}
+
+export function updateJobActivity(
+  jobId: number,
+  activityId: number,
+  input: UpdateJobActivityInput,
+): Promise<JobActivity> {
+  return apiRequest<JobActivity>(`/api/jobs/${jobId}/activities/${activityId}`, {
+    method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
     },

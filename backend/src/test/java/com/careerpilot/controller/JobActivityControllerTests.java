@@ -5,6 +5,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -79,6 +80,30 @@ class JobActivityControllerTests {
                 .andExpect(jsonPath("$.fieldErrors.type").value("Activity type is required"))
                 .andExpect(jsonPath("$.fieldErrors.title").value("Activity title is required"))
                 .andExpect(jsonPath("$.fieldErrors.occurredAt").value("Activity time is required"));
+    }
+
+    @Test
+    void updatesActivity() throws Exception {
+        when(jobActivityService.updateActivity(
+                any(Long.class),
+                any(Long.class),
+                any(JobActivityRequest.class)
+        )).thenReturn(response(2L, "Recruiter follow-up"));
+
+        mockMvc.perform(put("/api/jobs/1/activities/2")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "type": "FOLLOW_UP",
+                                  "title": "Recruiter follow-up",
+                                  "details": "Send thank-you note",
+                                  "contact": "Alex Chen",
+                                  "occurredAt": "2026-08-26T18:00:00Z"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(2))
+                .andExpect(jsonPath("$.title").value("Recruiter follow-up"));
     }
 
     @Test

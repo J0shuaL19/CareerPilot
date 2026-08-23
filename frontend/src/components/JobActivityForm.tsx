@@ -1,5 +1,9 @@
 import { useState, type FormEvent } from 'react'
-import type { CreateJobActivityInput, JobActivityType } from '../types/jobActivity'
+import type {
+  CreateJobActivityInput,
+  JobActivity,
+  JobActivityType,
+} from '../types/jobActivity'
 import { jobActivityTypeOptions, toLocalDateTimeValue } from '../utils/jobActivity'
 
 interface ActivityFormValues {
@@ -14,10 +18,22 @@ interface JobActivityFormProps {
   fieldErrors?: Record<string, string>
   formError?: string | null
   isSubmitting: boolean
+  activity?: JobActivity
   onSubmit: (input: CreateJobActivityInput) => Promise<boolean>
+  onCancelEdit?: () => void
 }
 
-function initialValues(): ActivityFormValues {
+function initialValues(activity?: JobActivity): ActivityFormValues {
+  if (activity) {
+    return {
+      type: activity.type,
+      title: activity.title,
+      details: activity.details ?? '',
+      contact: activity.contact ?? '',
+      occurredAt: toLocalDateTimeValue(new Date(activity.occurredAt)),
+    }
+  }
+
   return {
     type: 'NOTE',
     title: '',
@@ -31,9 +47,12 @@ export function JobActivityForm({
   fieldErrors = {},
   formError,
   isSubmitting,
+  activity,
   onSubmit,
+  onCancelEdit,
 }: JobActivityFormProps) {
-  const [values, setValues] = useState<ActivityFormValues>(initialValues)
+  const [values, setValues] = useState<ActivityFormValues>(() => initialValues(activity))
+  const isEditing = Boolean(activity)
 
   function updateField<Field extends keyof ActivityFormValues>(
     field: Field,
@@ -44,11 +63,11 @@ export function JobActivityForm({
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const didCreate = await onSubmit({
+    const didSave = await onSubmit({
       ...values,
       occurredAt: new Date(values.occurredAt).toISOString(),
     })
-    if (didCreate) {
+    if (didSave && !isEditing) {
       setValues(initialValues())
     }
   }
@@ -57,10 +76,10 @@ export function JobActivityForm({
     <form className="activity-form" onSubmit={handleSubmit}>
       <div className="activity-form__heading">
         <div>
-          <p>New timeline entry</p>
-          <h2>Record an activity</h2>
+          <p>{isEditing ? 'Editing timeline entry' : 'New timeline entry'}</p>
+          <h2>{isEditing ? 'Update activity' : 'Record an activity'}</h2>
         </div>
-        <span aria-hidden="true">＋</span>
+        <span aria-hidden="true">{isEditing ? '✎' : '＋'}</span>
       </div>
 
       {formError && (
@@ -142,9 +161,25 @@ export function JobActivityForm({
         {fieldErrors.details && <p className="form-field__error">{fieldErrors.details}</p>}
       </div>
 
-      <button className="button button--primary" type="submit" disabled={isSubmitting}>
-        {isSubmitting ? 'Adding activity…' : 'Add to timeline'}
-      </button>
+      {isEditing ? (
+        <div className="activity-form__actions">
+          <button
+            className="button button--secondary"
+            type="button"
+            disabled={isSubmitting}
+            onClick={onCancelEdit}
+          >
+            Cancel
+          </button>
+          <button className="button button--primary" type="submit" disabled={isSubmitting}>
+            {isSubmitting ? 'Saving changes…' : 'Save changes'}
+          </button>
+        </div>
+      ) : (
+        <button className="button button--primary" type="submit" disabled={isSubmitting}>
+          {isSubmitting ? 'Adding activity…' : 'Add to timeline'}
+        </button>
+      )}
     </form>
   )
 }

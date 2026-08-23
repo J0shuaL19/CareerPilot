@@ -63,10 +63,27 @@ public class JobActivityService {
     }
 
     @Transactional
+    public JobActivityResponse updateActivity(
+            Long jobId,
+            Long activityId,
+            JobActivityRequest request
+    ) {
+        findJob(jobId);
+        JobActivity activity = findActivity(jobId, activityId);
+        activity.update(
+                request.type(),
+                request.title().trim(),
+                normalizeOptional(request.details()),
+                normalizeOptional(request.contact()),
+                request.occurredAt()
+        );
+        return toResponse(activity);
+    }
+
+    @Transactional
     public void deleteActivity(Long jobId, Long activityId) {
         findJob(jobId);
-        JobActivity activity = jobActivityRepository.findByIdAndJob_Id(activityId, jobId)
-                .orElseThrow(() -> new ResourceNotFoundException("Job activity", activityId));
+        JobActivity activity = findActivity(jobId, activityId);
         jobActivityRepository.delete(activity);
     }
 
@@ -88,6 +105,11 @@ public class JobActivityService {
     private Job findJob(Long jobId) {
         return jobRepository.findById(jobId)
                 .orElseThrow(() -> new ResourceNotFoundException("Job", jobId));
+    }
+
+    private JobActivity findActivity(Long jobId, Long activityId) {
+        return jobActivityRepository.findByIdAndJob_Id(activityId, jobId)
+                .orElseThrow(() -> new ResourceNotFoundException("Job activity", activityId));
     }
 
     private static String normalizeOptional(String value) {
