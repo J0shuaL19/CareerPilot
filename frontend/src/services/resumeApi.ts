@@ -1,4 +1,9 @@
-import type { CreateResumeInput, Resume, UpdateResumeInput } from '../types/resume'
+import type {
+  CreateResumeInput,
+  Resume,
+  ResumeExtraction,
+  UpdateResumeInput,
+} from '../types/resume'
 import { apiRequest } from './apiClient'
 
 export function getResumes(signal?: AbortSignal): Promise<Resume[]> {
@@ -16,6 +21,16 @@ export function createResume(input: CreateResumeInput): Promise<Resume> {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(input),
+  })
+}
+
+export function extractResumeFile(file: File): Promise<ResumeExtraction> {
+  const formData = new FormData()
+  formData.append('file', file)
+
+  return apiRequest<ResumeExtraction>('/api/resumes/extract', {
+    method: 'POST',
+    body: formData,
   })
 }
 

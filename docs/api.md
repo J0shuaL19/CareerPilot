@@ -2,7 +2,7 @@
 
 Base URL during local development: `http://localhost:8080`
 
-All request and response bodies use JSON. Dates use ISO 8601 UTC timestamps.
+Request and response bodies use JSON unless an endpoint specifies otherwise. Dates use ISO 8601 UTC timestamps.
 
 ## Foundation endpoint
 
@@ -167,7 +167,24 @@ Each response includes `jobId`, `company`, and `jobTitle` so the frontend can pr
 
 ## Resumes
 
-Resume content is currently stored as plain text. File uploads and document parsing are outside this API version.
+Resume content is stored as plain text. A PDF or DOCX can be converted to text before the user creates a resume record.
+
+### Extract a resume file
+
+`POST /api/resumes/extract`
+
+Send a `multipart/form-data` request with the PDF or DOCX in the `file` field. Files can be at most 5 MB, and extracted text can contain at most 100,000 characters.
+
+Success: `200 OK`
+
+```json
+{
+  "suggestedName": "Backend Engineer Resume",
+  "content": "Experienced Java engineer focused on reliable backend systems."
+}
+```
+
+Extraction does not create or update a resume record. Invalid, unreadable, unsupported, or text-free documents return `400 Bad Request`. Requests rejected by the multipart transport limit return `413 Payload Too Large`.
 
 ### Create a resume
 

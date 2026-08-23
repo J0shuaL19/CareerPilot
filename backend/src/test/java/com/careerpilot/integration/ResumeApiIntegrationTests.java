@@ -3,6 +3,7 @@ package com.careerpilot.integration;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -10,14 +11,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.careerpilot.model.Resume;
 import com.careerpilot.repository.ResumeRepository;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
+import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -118,9 +123,36 @@ class ResumeApiIntegrationTests {
         assertThat(resumeRepository.existsById(resume.getId())).isFalse();
     }
 
+    @Test
+    void extractsDocxWithoutPersistingResume() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "Backend_Resume.docx",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                docxWithText("Java and Spring Boot experience")
+        );
+
+        mockMvc.perform(multipart("/api/resumes/extract").file(file))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.suggestedName").value("Backend Resume"))
+                .andExpect(jsonPath("$.content").value(org.hamcrest.Matchers.containsString(
+                        "Java and Spring Boot experience"
+                )));
+
+        assertThat(resumeRepository.count()).isZero();
+    }
+
     private static Resume resume(String name, String createdAt) {
         Resume resume = new Resume(name, "Resume content");
         ReflectionTestUtils.setField(resume, "createdAt", Instant.parse(createdAt));
         return resume;
+    }
+
+    private static byte[] docxWithText(String text) throws IOException {
+        try (XWPFDocument document = new XWPFDocument(); ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+            document.createParagraph().createRun().setText(text);
+            document.write(output);
+            return output.toByteArray();
+        }
     }
 }

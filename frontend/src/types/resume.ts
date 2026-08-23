@@ -10,4 +10,9 @@ export interface CreateResumeInput {
   content: string
 }
 
+export interface ResumeExtraction {
+  suggestedName: string
+  content: string
+}
+
 export type UpdateResumeInput = CreateResumeInput

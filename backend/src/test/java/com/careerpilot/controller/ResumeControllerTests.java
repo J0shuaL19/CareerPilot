@@ -4,14 +4,18 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.careerpilot.dto.ResumeExtractionResponse;
 import com.careerpilot.dto.ResumeRequest;
 import com.careerpilot.dto.ResumeResponse;
 import com.careerpilot.exception.ResourceNotFoundException;
+import com.careerpilot.exception.ResumeFileExtractionException;
+import com.careerpilot.service.ResumeFileExtractionService;
 import com.careerpilot.service.ResumeService;
 import java.time.Instant;
 import java.util.List;
@@ -19,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -30,6 +35,9 @@ class ResumeControllerTests {
 
     @MockitoBean
     private ResumeService resumeService;
+
+    @MockitoBean
+    private ResumeFileExtractionService resumeFileExtractionService;
 
     @Test
     void createsResume() throws Exception {
@@ -48,6 +56,40 @@ class ResumeControllerTests {
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.name").value("Backend Resume"))
                 .andExpect(jsonPath("$.content").value("Experienced Java engineer."));
+    }
+
+    @Test
+    void extractsResumeFile() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "Backend Resume.pdf",
+                "application/pdf",
+                "pdf bytes".getBytes()
+        );
+        when(resumeFileExtractionService.extract(any()))
+                .thenReturn(new ResumeExtractionResponse("Backend Resume", "Java experience"));
+
+        mockMvc.perform(multipart("/api/resumes/extract").file(file))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.suggestedName").value("Backend Resume"))
+                .andExpect(jsonPath("$.content").value("Java experience"));
+    }
+
+    @Test
+    void returnsBadRequestForInvalidResumeFile() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "resume.txt",
+                "text/plain",
+                "Resume text".getBytes()
+        );
+        when(resumeFileExtractionService.extract(any()))
+                .thenThrow(new ResumeFileExtractionException("Only PDF and DOCX resume files are supported."));
+
+        mockMvc.perform(multipart("/api/resumes/extract").file(file))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Only PDF and DOCX resume files are supported."))
+                .andExpect(jsonPath("$.path").value("/api/resumes/extract"));
     }
 
     @Test

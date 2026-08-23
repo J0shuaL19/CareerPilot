@@ -14,6 +14,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -84,6 +85,29 @@ public class GlobalExceptionHandler {
         return errorResponse(
                 HttpStatus.BAD_GATEWAY,
                 "AI analysis service is temporarily unavailable",
+                request.getRequestURI(),
+                Map.of()
+        );
+    }
+
+    @ExceptionHandler(ResumeFileExtractionException.class)
+    public ResponseEntity<ApiErrorResponse> handleResumeExtractionFailure(
+            ResumeFileExtractionException exception,
+            HttpServletRequest request
+    ) {
+        return errorResponse(
+                HttpStatus.BAD_REQUEST,
+                exception.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiErrorResponse> handleUploadTooLarge(HttpServletRequest request) {
+        return errorResponse(
+                HttpStatus.PAYLOAD_TOO_LARGE,
+                "Resume files must be 5 MB or smaller.",
                 request.getRequestURI(),
                 Map.of()
         );
