@@ -13,6 +13,11 @@ public interface JobActivityRepository extends JpaRepository<JobActivity, Long> 
 
     List<JobActivity> findAllByJob_IdOrderByOccurredAtDescCreatedAtDesc(Long jobId);
 
+    List<JobActivity> findAllByJob_IdInAndTypeIn(
+            Collection<Long> jobIds,
+            Collection<JobActivityType> types
+    );
+
     Optional<JobActivity> findByIdAndJob_Id(Long id, Long jobId);
 
     @EntityGraph(attributePaths = "job")

@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { DashboardFunnel } from '../components/DashboardFunnel'
 import { PipelineSummary } from '../components/PipelineSummary'
 import { UpcomingActivities } from '../components/UpcomingActivities'
+import { getDashboardStats } from '../services/dashboardApi'
 import { getUpcomingJobActivities } from '../services/jobActivityApi'
 import { getJobs } from '../services/jobApi'
 import { getMatchAnalyses } from '../services/matchAnalysisApi'
 import { getResumes } from '../services/resumeApi'
 import type { Job } from '../types/job'
+import type { DashboardStats, DashboardStatsRange } from '../types/dashboard'
 import type { UpcomingJobActivity } from '../types/jobActivity'
 import type { MatchAnalysis } from '../types/matchAnalysis'
 import type { Resume } from '../types/resume'
@@ -33,6 +36,11 @@ export function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [reloadKey, setReloadKey] = useState(0)
+  const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [statsRange, setStatsRange] = useState<DashboardStatsRange>('LAST_90_DAYS')
+  const [isStatsLoading, setIsStatsLoading] = useState(true)
+  const [statsError, setStatsError] = useState<string | null>(null)
+  const [statsReloadKey, setStatsReloadKey] = useState(0)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -63,6 +71,30 @@ export function DashboardPage() {
     void loadDashboard()
     return () => controller.abort()
   }, [reloadKey])
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    async function loadStats() {
+      setIsStatsLoading(true)
+      setStatsError(null)
+
+      try {
+        setStats(await getDashboardStats(statsRange, controller.signal))
+      } catch (loadError) {
+        if (!isAbortError(loadError)) {
+          setStatsError(getErrorMessage(loadError))
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsStatsLoading(false)
+        }
+      }
+    }
+
+    void loadStats()
+    return () => controller.abort()
+  }, [statsRange, statsReloadKey])
 
   const activeJobs = data.jobs.filter(({ status }) => (
     ['APPLIED', 'OA', 'INTERVIEW'].includes(status)
@@ -150,6 +182,15 @@ export function DashboardPage() {
               </article>
             ))}
           </section>
+
+          <DashboardFunnel
+            stats={stats}
+            range={statsRange}
+            isLoading={isStatsLoading}
+            error={statsError}
+            onRangeChange={setStatsRange}
+            onRetry={() => setStatsReloadKey((key) => key + 1)}
+          />
 
           <section className="dashboard-section" aria-labelledby="dashboard-pipeline-heading">
             <div className="dashboard-section__heading">

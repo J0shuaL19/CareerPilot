@@ -17,6 +17,35 @@ Confirms that the backend is running.
 }
 ```
 
+## Dashboard statistics
+
+### Get application funnel statistics
+
+`GET /api/dashboard/stats?range=LAST_90_DAYS`
+
+`range` is optional and defaults to `LAST_90_DAYS`. Supported values are `LAST_30_DAYS`, `LAST_90_DAYS`, and `ALL_TIME`.
+
+The selected range forms a cohort from each job's `createdAt` time. Application and interview activities preserve reached stages even after a job moves to a closed status.
+
+Success: `200 OK`
+
+```json
+{
+  "range": "LAST_90_DAYS",
+  "from": "2026-05-25T12:00:00Z",
+  "to": "2026-08-23T12:00:00Z",
+  "trackedJobs": 10,
+  "applications": 8,
+  "interviews": 4,
+  "offers": 1,
+  "applicationRate": 80,
+  "interviewRate": 50,
+  "offerRate": 25
+}
+```
+
+`applicationRate` is applications divided by tracked jobs, `interviewRate` is interviews divided by applications, and `offerRate` is offers divided by interviews. A rate is `null` when its denominator is zero.
+
 ## Jobs
 
 ### Create a job

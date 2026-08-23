@@ -563,6 +563,194 @@ a:focus-visible {
   line-height: 1.45;
 }
 
+.dashboard-funnel {
+  margin-bottom: 1rem;
+  padding: 1.2rem;
+  border: 1px solid #d7e0ef;
+  border-radius: 18px;
+  background: linear-gradient(145deg, #fff 0%, #f7f9ff 100%);
+  box-shadow: 0 9px 28px rgb(38 60 96 / 5%);
+}
+
+.dashboard-funnel__heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.dashboard-funnel__heading p,
+.dashboard-funnel__heading h2,
+.dashboard-funnel__heading span {
+  margin: 0;
+}
+
+.dashboard-funnel__heading p {
+  color: #3568e8;
+  font-size: 0.65rem;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.dashboard-funnel__heading h2 {
+  margin-top: 0.2rem;
+  color: #273248;
+  font-size: 1.15rem;
+  letter-spacing: -0.025em;
+}
+
+.dashboard-funnel__heading span {
+  display: block;
+  margin-top: 0.3rem;
+  color: #8a95a8;
+  font-size: 0.7rem;
+}
+
+.dashboard-funnel__ranges {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border: 1px solid #dce3ef;
+  border-radius: 11px;
+  background: #f3f6fb;
+}
+
+.dashboard-funnel__ranges button {
+  padding: 0.48rem 0.7rem;
+  border: 0;
+  border-radius: 8px;
+  color: #687489;
+  background: transparent;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.dashboard-funnel__ranges button:hover {
+  color: #244fab;
+}
+
+.dashboard-funnel__ranges button.is-active {
+  color: #244fab;
+  background: #fff;
+  box-shadow: 0 2px 8px rgb(45 74 132 / 12%);
+}
+
+.dashboard-funnel__state {
+  display: flex;
+  min-height: 128px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  border: 1px dashed #d7dfec;
+  border-radius: 14px;
+  color: #78849a;
+  font-size: 0.8rem;
+}
+
+.dashboard-funnel__state--error {
+  color: #a12d42;
+  background: #fff8f9;
+}
+
+.dashboard-funnel__state button {
+  border: 0;
+  color: #315dc9;
+  background: transparent;
+  font: inherit;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.dashboard-funnel__stages {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+.dashboard-funnel__stage-wrap {
+  position: relative;
+  min-width: 0;
+}
+
+.dashboard-funnel__arrow {
+  position: absolute;
+  top: 50%;
+  left: -0.88rem;
+  color: #aab5c7;
+  font-size: 0.9rem;
+  font-weight: 900;
+  transform: translate(-50%, -50%);
+}
+
+.dashboard-funnel__stage {
+  --funnel-color: #71809a;
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  gap: 0.3rem;
+  min-height: 128px;
+  align-content: center;
+  padding: 1rem;
+  border: 1px solid #e0e6f0;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.dashboard-funnel__stage::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 4px;
+  background: var(--funnel-color);
+  content: '';
+}
+
+.dashboard-funnel__stage--tracked {
+  --funnel-color: #71809a;
+}
+
+.dashboard-funnel__stage--applied {
+  --funnel-color: #3568e8;
+}
+
+.dashboard-funnel__stage--interview {
+  --funnel-color: #d18a21;
+}
+
+.dashboard-funnel__stage--offer {
+  --funnel-color: #2b9565;
+}
+
+.dashboard-funnel__stage > span {
+  color: #687489;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.dashboard-funnel__stage > strong {
+  color: #172033;
+  font-size: 1.9rem;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.dashboard-funnel__stage p {
+  margin: 0.2rem 0 0;
+  color: #929bab;
+  font-size: 0.68rem;
+}
+
+.dashboard-funnel__stage p b {
+  color: var(--funnel-color);
+  font-size: 0.8rem;
+}
+
 .dashboard-section,
 .dashboard-collection {
   padding: 1.2rem;
@@ -2975,6 +3163,24 @@ a:focus-visible {
 
   .dashboard-metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-funnel {
+    padding: 1rem;
+  }
+
+  .dashboard-funnel__heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .dashboard-funnel__stages {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  .dashboard-funnel__arrow {
+    display: none;
   }
 
   .dashboard-grid {

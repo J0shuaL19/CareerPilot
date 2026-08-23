@@ -47,4 +47,22 @@ class JobRepositoryTests {
         assertThat(jobs).extracting(Job::getCompany)
                 .containsExactly("Company B", "Company A");
     }
+
+    @Test
+    void findsJobsCreatedWithinRangeNewestFirst() {
+        Job outsideRange = new Job("Company A", "Backend Engineer", "Description A", null);
+        Job firstInRange = new Job("Company B", "Platform Engineer", "Description B", null);
+        Job newestInRange = new Job("Company C", "Full Stack Engineer", "Description C", null);
+        ReflectionTestUtils.setField(outsideRange, "createdAt", Instant.parse("2026-05-01T00:00:00Z"));
+        ReflectionTestUtils.setField(firstInRange, "createdAt", Instant.parse("2026-06-01T00:00:00Z"));
+        ReflectionTestUtils.setField(newestInRange, "createdAt", Instant.parse("2026-07-01T00:00:00Z"));
+        jobRepository.saveAllAndFlush(List.of(outsideRange, firstInRange, newestInRange));
+
+        List<Job> jobs = jobRepository.findAllByCreatedAtGreaterThanEqualOrderByCreatedAtDesc(
+                Instant.parse("2026-05-25T00:00:00Z")
+        );
+
+        assertThat(jobs).extracting(Job::getCompany)
+                .containsExactly("Company C", "Company B");
+    }
 }
