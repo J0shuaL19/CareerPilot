@@ -802,7 +802,8 @@ a:focus-visible {
 }
 
 .job-action-error,
-.resume-action-error {
+.resume-action-error,
+.analysis-action-error {
   margin-bottom: 1rem;
 }
 
@@ -851,7 +852,8 @@ a:focus-visible {
 }
 
 .job-card__delete-confirmation,
-.resume-card__delete-confirmation {
+.resume-card__delete-confirmation,
+.analysis-history-card__delete-confirmation {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -867,12 +869,15 @@ a:focus-visible {
 .job-card__delete-confirmation strong,
 .job-card__delete-confirmation p,
 .resume-card__delete-confirmation strong,
-.resume-card__delete-confirmation p {
+.resume-card__delete-confirmation p,
+.analysis-history-card__delete-confirmation strong,
+.analysis-history-card__delete-confirmation p {
   margin: 0;
 }
 
 .job-card__delete-confirmation p,
-.resume-card__delete-confirmation p {
+.resume-card__delete-confirmation p,
+.analysis-history-card__delete-confirmation p {
   margin-top: 0.2rem;
   color: #8b5260;
   font-size: 0.76rem;
@@ -880,7 +885,8 @@ a:focus-visible {
 }
 
 .job-card__delete-confirmation > div:last-child,
-.resume-card__delete-confirmation > div:last-child {
+.resume-card__delete-confirmation > div:last-child,
+.analysis-history-card__delete-confirmation > div:last-child {
   display: flex;
   flex: 0 0 auto;
   gap: 0.55rem;
@@ -1552,6 +1558,36 @@ a:focus-visible {
   text-decoration: none;
 }
 
+.analysis-history-card__footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.analysis-history-card__footer-actions button {
+  padding: 0;
+  border: 0;
+  color: #a02b3e;
+  background: transparent;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.analysis-history-card__footer-actions button:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.analysis-history-card__footer-actions button:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.analysis-history-card__delete-confirmation {
+  margin-bottom: 0.85rem;
+}
+
 .job-detail-page {
   width: min(1128px, 100%);
 }
@@ -2067,13 +2103,15 @@ a:focus-visible {
   }
 
   .job-card__delete-confirmation,
-  .resume-card__delete-confirmation {
+  .resume-card__delete-confirmation,
+  .analysis-history-card__delete-confirmation {
     align-items: stretch;
     flex-direction: column;
   }
 
   .job-card__delete-confirmation > div:last-child .button,
-  .resume-card__delete-confirmation > div:last-child .button {
+  .resume-card__delete-confirmation > div:last-child .button,
+  .analysis-history-card__delete-confirmation > div:last-child .button {
     flex: 1;
   }
 

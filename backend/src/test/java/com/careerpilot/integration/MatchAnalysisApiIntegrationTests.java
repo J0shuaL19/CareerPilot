@@ -3,6 +3,7 @@ package com.careerpilot.integration;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -55,7 +56,7 @@ class MatchAnalysisApiIntegrationTests {
     }
 
     @Test
-    void createsPersistsListsAndReadsAnalysis() throws Exception {
+    void createsPersistsListsReadsAndDeletesAnalysis() throws Exception {
         Job job = jobRepository.saveAndFlush(new Job(
                 "OpenAI",
                 "Software Engineer",
@@ -98,6 +99,13 @@ class MatchAnalysisApiIntegrationTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(persisted.getId()))
                 .andExpect(jsonPath("$.summary").value("Strong overall match."));
+
+        mockMvc.perform(delete("/api/match-analyses/{id}", persisted.getId()))
+                .andExpect(status().isNoContent());
+
+        assertThat(matchAnalysisRepository.existsById(persisted.getId())).isFalse();
+        assertThat(jobRepository.existsById(job.getId())).isTrue();
+        assertThat(resumeRepository.existsById(resume.getId())).isTrue();
     }
 
     @Test

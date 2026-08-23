@@ -315,6 +315,14 @@ Returns analyses ordered from newest to oldest. Success: `200 OK`; an empty data
 
 Success: `200 OK` with one analysis response. Missing analysis: `404 Not Found`.
 
+### Delete a match analysis
+
+`DELETE /api/match-analyses/{id}`
+
+Success: `204 No Content`. Only the saved analysis is removed; its referenced job and resume remain available.
+
+Missing analysis: `404 Not Found`.
+
 ## Job status values
 
 ```text

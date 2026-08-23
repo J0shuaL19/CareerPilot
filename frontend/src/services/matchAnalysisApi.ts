@@ -26,3 +26,9 @@ export function getMatchAnalysis(
 export function getMatchAnalyses(signal?: AbortSignal): Promise<MatchAnalysis[]> {
   return apiRequest<MatchAnalysis[]>('/api/match-analyses', { signal })
 }
+
+export function deleteMatchAnalysis(id: number): Promise<void> {
+  return apiRequest<void>(`/api/match-analyses/${id}`, {
+    method: 'DELETE',
+  })
+}

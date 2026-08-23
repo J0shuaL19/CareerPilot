@@ -2,6 +2,7 @@ package com.careerpilot.controller;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -121,6 +122,12 @@ class MatchAnalysisControllerTests {
                         org.hamcrest.Matchers.containsString("OPENAI_API_KEY")
                 )))
                 .andExpect(jsonPath("$.path").value("/api/match-analyses"));
+    }
+
+    @Test
+    void deletesAnalysis() throws Exception {
+        mockMvc.perform(delete("/api/match-analyses/3"))
+                .andExpect(status().isNoContent());
     }
 
     private static MatchAnalysisResponse analysisResponse(Long id) {

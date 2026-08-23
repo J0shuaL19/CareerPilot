@@ -170,6 +170,25 @@ class MatchAnalysisServiceTests {
                 .hasMessage("Match analysis not found with id: 99");
     }
 
+    @Test
+    void deletesExistingAnalysis() {
+        MatchAnalysis analysis = persistedAnalysis(3L, "2026-08-22T12:00:00Z");
+        when(matchAnalysisRepository.findById(3L)).thenReturn(Optional.of(analysis));
+
+        matchAnalysisService.deleteAnalysis(3L);
+
+        verify(matchAnalysisRepository).delete(analysis);
+    }
+
+    @Test
+    void throwsWhenDeletingMissingAnalysis() {
+        when(matchAnalysisRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> matchAnalysisService.deleteAnalysis(99L))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("Match analysis not found with id: 99");
+    }
+
     private static Job persistedJob(Long id, String company, String title) {
         Job job = new Job(company, title, "Build reliable products.", null);
         ReflectionTestUtils.setField(job, "id", id);

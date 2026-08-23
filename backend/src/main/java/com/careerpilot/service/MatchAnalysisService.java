@@ -80,8 +80,16 @@ public class MatchAnalysisService {
 
     @Transactional(readOnly = true)
     public MatchAnalysisResponse getAnalysis(Long id) {
+        return toResponse(findAnalysis(id));
+    }
+
+    @Transactional
+    public void deleteAnalysis(Long id) {
+        matchAnalysisRepository.delete(findAnalysis(id));
+    }
+
+    private MatchAnalysis findAnalysis(Long id) {
         return matchAnalysisRepository.findById(id)
-                .map(MatchAnalysisService::toResponse)
                 .orElseThrow(() -> new ResourceNotFoundException("Match analysis", id));
     }
 
