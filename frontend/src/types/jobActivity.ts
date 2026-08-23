@@ -1,3 +1,5 @@
+import type { JobStatus } from './job'
+
 export type JobActivityType = 'APPLICATION' | 'INTERVIEW' | 'FOLLOW_UP' | 'NOTE'
 
 export interface JobActivity {
@@ -30,4 +32,13 @@ export interface UpcomingJobActivity {
   title: string
   contact: string | null
   occurredAt: string
+}
+
+export interface JobAttentionItem {
+  jobId: number
+  company: string
+  jobTitle: string
+  status: JobStatus
+  lastActivityAt: string
+  daysWithoutActivity: number
 }

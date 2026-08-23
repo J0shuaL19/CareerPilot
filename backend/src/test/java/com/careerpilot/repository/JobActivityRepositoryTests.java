@@ -73,6 +73,30 @@ class JobActivityRepositoryTests {
                 .containsExactly("Interview", "Follow-up");
     }
 
+    @Test
+    void findsLatestActivityTimeForEachJob() {
+        Job firstJob = jobRepository.save(new Job("OpenAI", "Engineer", "Description", null));
+        Job secondJob = jobRepository.save(new Job("Example", "Designer", "Description", null));
+        jobActivityRepository.saveAllAndFlush(List.of(
+                activity(firstJob, "Applied", "2026-08-10T12:00:00Z"),
+                activity(firstJob, "Follow-up", "2026-08-18T12:00:00Z"),
+                activity(secondJob, "Interview", "2026-08-20T12:00:00Z")
+        ));
+
+        List<JobActivityLastTouchProjection> lastTouches = jobActivityRepository
+                .findLatestOccurredAtByJobIds(List.of(firstJob.getId(), secondJob.getId()));
+
+        assertThat(lastTouches).anySatisfy(lastTouch -> {
+            assertThat(lastTouch.getJobId()).isEqualTo(firstJob.getId());
+            assertThat(lastTouch.getLastOccurredAt())
+                    .isEqualTo(Instant.parse("2026-08-18T12:00:00Z"));
+        }).anySatisfy(lastTouch -> {
+            assertThat(lastTouch.getJobId()).isEqualTo(secondJob.getId());
+            assertThat(lastTouch.getLastOccurredAt())
+                    .isEqualTo(Instant.parse("2026-08-20T12:00:00Z"));
+        });
+    }
+
     private static JobActivity activity(Job job, String title, String occurredAt) {
         return activity(job, JobActivityType.NOTE, title, occurredAt);
     }

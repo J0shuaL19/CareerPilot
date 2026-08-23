@@ -1,16 +1,17 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { DashboardFunnel } from '../components/DashboardFunnel'
+import { NeedsAttentionPanel } from '../components/NeedsAttentionPanel'
 import { PipelineSummary } from '../components/PipelineSummary'
 import { UpcomingActivities } from '../components/UpcomingActivities'
 import { getDashboardStats } from '../services/dashboardApi'
-import { getUpcomingJobActivities } from '../services/jobActivityApi'
+import { getJobAttentionItems, getUpcomingJobActivities } from '../services/jobActivityApi'
 import { getJobs } from '../services/jobApi'
 import { getMatchAnalyses } from '../services/matchAnalysisApi'
 import { getResumes } from '../services/resumeApi'
 import type { Job } from '../types/job'
 import type { DashboardStats, DashboardStatsRange } from '../types/dashboard'
-import type { UpcomingJobActivity } from '../types/jobActivity'
+import type { JobAttentionItem, UpcomingJobActivity } from '../types/jobActivity'
 import type { MatchAnalysis } from '../types/matchAnalysis'
 import type { Resume } from '../types/resume'
 import { getErrorMessage, isAbortError } from '../utils/errors'
@@ -20,6 +21,7 @@ interface DashboardData {
   jobs: Job[]
   resumes: Resume[]
   analyses: MatchAnalysis[]
+  attentionItems: JobAttentionItem[]
   upcomingActivities: UpcomingJobActivity[]
 }
 
@@ -27,6 +29,7 @@ const emptyData: DashboardData = {
   jobs: [],
   resumes: [],
   analyses: [],
+  attentionItems: [],
   upcomingActivities: [],
 }
 
@@ -50,13 +53,14 @@ export function DashboardPage() {
       setError(null)
 
       try {
-        const [jobs, resumes, analyses, upcomingActivities] = await Promise.all([
+        const [jobs, resumes, analyses, attentionItems, upcomingActivities] = await Promise.all([
           getJobs(controller.signal),
           getResumes(controller.signal),
           getMatchAnalyses(controller.signal),
+          getJobAttentionItems(controller.signal),
           getUpcomingJobActivities(controller.signal),
         ])
-        setData({ jobs, resumes, analyses, upcomingActivities })
+        setData({ jobs, resumes, analyses, attentionItems, upcomingActivities })
       } catch (loadError) {
         if (!isAbortError(loadError)) {
           setError(getErrorMessage(loadError))
@@ -202,6 +206,11 @@ export function DashboardPage() {
             </div>
             <PipelineSummary jobs={data.jobs} />
           </section>
+
+          <NeedsAttentionPanel
+            items={data.attentionItems}
+            onViewJob={(jobId) => navigate(`/jobs/${jobId}`)}
+          />
 
           <UpcomingActivities
             activities={data.upcomingActivities}

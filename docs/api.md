@@ -274,6 +274,27 @@ Returns interviews and follow-ups scheduled from the current server time through
 
 Each response includes `jobId`, `company`, and `jobTitle` so the frontend can present reminders across the complete pipeline. Success: `200 OK`; no upcoming reminders returns `[]`.
 
+### List jobs needing attention
+
+`GET /api/job-activities/needs-attention`
+
+Returns jobs in `APPLIED`, `OA`, or `INTERVIEW` whose latest activity occurred at least seven full days ago. For a job without activities, its creation time is used as the last touch. A future activity is treated as a scheduled next step and keeps that job out of the reminder list.
+
+Results are ordered from the longest-stalled job to the most recent. Success: `200 OK`; when every active application has recent or scheduled activity, the endpoint returns `[]`.
+
+```json
+[
+  {
+    "jobId": 1,
+    "company": "OpenAI",
+    "jobTitle": "Software Engineer",
+    "status": "APPLIED",
+    "lastActivityAt": "2026-08-10T12:00:00Z",
+    "daysWithoutActivity": 13
+  }
+]
+```
+
 ## Resumes
 
 Resume content is stored as plain text. A PDF or DOCX can be converted to text before the user creates a resume record.

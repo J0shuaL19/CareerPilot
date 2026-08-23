@@ -1,5 +1,6 @@
 import type {
   CreateJobActivityInput,
+  JobAttentionItem,
   JobActivity,
   UpcomingJobActivity,
   UpdateJobActivityInput,
@@ -55,4 +56,8 @@ export function downloadJobActivityCalendar(
 
 export function getUpcomingJobActivities(signal?: AbortSignal): Promise<UpcomingJobActivity[]> {
   return apiRequest<UpcomingJobActivity[]>('/api/job-activities/upcoming', { signal })
+}
+
+export function getJobAttentionItems(signal?: AbortSignal): Promise<JobAttentionItem[]> {
+  return apiRequest<JobAttentionItem[]>('/api/job-activities/needs-attention', { signal })
 }
