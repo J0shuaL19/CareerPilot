@@ -342,6 +342,215 @@ a:focus-visible {
   font-weight: 900;
 }
 
+.upcoming-panel {
+  margin-bottom: 1rem;
+  padding: 1.15rem;
+  border: 1px solid #d7e0ef;
+  border-radius: 18px;
+  background: linear-gradient(145deg, #fff 0%, #f7f9fe 100%);
+  box-shadow: 0 9px 28px rgb(38 60 96 / 5%);
+}
+
+.upcoming-panel__heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.9rem;
+}
+
+.upcoming-panel__title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.upcoming-panel__title > span {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 11px;
+  color: #315dc9;
+  background: #eaf0ff;
+  font-size: 1.1rem;
+  font-weight: 850;
+}
+
+.upcoming-panel__title p,
+.upcoming-panel__title h2 {
+  margin: 0;
+}
+
+.upcoming-panel__title p {
+  color: #3568e8;
+  font-size: 0.62rem;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.upcoming-panel__title h2 {
+  margin-top: 0.15rem;
+  color: #273248;
+  font-size: 1.12rem;
+  letter-spacing: -0.02em;
+}
+
+.upcoming-panel__heading > span {
+  color: #8a94a6;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.upcoming-panel__state {
+  display: flex;
+  min-height: 74px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  padding: 0.8rem;
+  border: 1px dashed #d6deeb;
+  border-radius: 13px;
+  color: #758196;
+  background: rgb(255 255 255 / 72%);
+  font-size: 0.78rem;
+  text-align: center;
+}
+
+.upcoming-panel__state .spinner {
+  width: 22px;
+  height: 22px;
+  border-width: 2px;
+}
+
+.upcoming-panel__state--error {
+  color: #922438;
+  background: #fff5f6;
+}
+
+.upcoming-panel__state button {
+  padding: 0;
+  border: 0;
+  color: #315dc9;
+  background: transparent;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.upcoming-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.upcoming-card {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.8rem;
+  min-width: 0;
+  padding: 0.85rem;
+  border: 1px solid #dce3ef;
+  border-radius: 13px;
+  color: #273248;
+  background: #fff;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 150ms ease, transform 150ms ease, box-shadow 150ms ease;
+}
+
+.upcoming-card::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: #8f6bd6;
+  content: '';
+}
+
+.upcoming-card--interview::before {
+  background: #d49428;
+}
+
+.upcoming-card:hover {
+  border-color: #aebddd;
+  transform: translateY(-1px);
+  box-shadow: 0 9px 22px rgb(38 60 96 / 8%);
+}
+
+.upcoming-card__date {
+  display: grid;
+  min-width: 58px;
+  gap: 0.2rem;
+  padding: 0.55rem 0.45rem;
+  border-radius: 10px;
+  color: #5d4a87;
+  background: #f2edff;
+  text-align: center;
+}
+
+.upcoming-card--interview .upcoming-card__date {
+  color: #80530a;
+  background: #fff3d4;
+}
+
+.upcoming-card__date strong {
+  font-size: 0.75rem;
+}
+
+.upcoming-card__date span {
+  font-size: 0.64rem;
+  font-weight: 700;
+}
+
+.upcoming-card__content {
+  overflow: hidden;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.upcoming-card__content > strong,
+.upcoming-card__content > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.upcoming-card__content > strong {
+  font-size: 0.84rem;
+}
+
+.upcoming-card__content > span {
+  color: #758196;
+  font-size: 0.68rem;
+  font-weight: 650;
+}
+
+.upcoming-card__content .upcoming-card__type {
+  color: #6844b7;
+  font-size: 0.6rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.upcoming-card--interview .upcoming-card__content .upcoming-card__type {
+  color: #95620d;
+}
+
+.upcoming-card__content .upcoming-card__contact {
+  color: #59677d;
+}
+
+.upcoming-card__arrow {
+  color: #9aa5b7;
+  font-weight: 800;
+}
+
 .pipeline-summary {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1769,6 +1978,30 @@ a:focus-visible {
 
   .pipeline-summary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .upcoming-list {
+    grid-template-columns: 1fr;
+  }
+
+  .upcoming-card {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .upcoming-card__content > strong {
+    display: -webkit-box;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .upcoming-card__arrow {
+    display: none;
+  }
+
+  .upcoming-panel__state {
+    align-items: center;
+    flex-direction: column;
   }
 
   .pipeline-metric {

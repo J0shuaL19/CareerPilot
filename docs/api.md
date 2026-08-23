@@ -157,6 +157,14 @@ Returns the job's activities ordered by occurrence time from newest to oldest. S
 
 Success: `204 No Content`. The activity must belong to the job in the request path. Missing jobs or activities return `404 Not Found`.
 
+### List upcoming job activities
+
+`GET /api/job-activities/upcoming`
+
+Returns interviews and follow-ups scheduled from the current server time through the next 14 days, ordered from nearest to latest. Past activities, applications, and general notes are excluded.
+
+Each response includes `jobId`, `company`, and `jobTitle` so the frontend can present reminders across the complete pipeline. Success: `200 OK`; no upcoming reminders returns `[]`.
+
 ## Resumes
 
 Resume content is currently stored as plain text. File uploads and document parsing are outside this API version.

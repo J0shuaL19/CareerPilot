@@ -5,8 +5,11 @@ import {
   type JobStatusFilterValue,
 } from '../components/JobStatusFilter'
 import { PipelineSummary } from '../components/PipelineSummary'
+import { UpcomingActivities } from '../components/UpcomingActivities'
+import { getUpcomingJobActivities } from '../services/jobActivityApi'
 import { deleteJob, getJobs, updateJobStatus } from '../services/jobApi'
 import type { Job, JobStatus } from '../types/job'
+import type { UpcomingJobActivity } from '../types/jobActivity'
 import { getErrorMessage, isAbortError } from '../utils/errors'
 import { getJobStatusConfig } from '../utils/jobStatus'
 
@@ -26,8 +29,12 @@ export function JobsPage({ notice, onAddJob, onViewJob, onEditJob }: JobsPagePro
   const [showRouteNotice, setShowRouteNotice] = useState(Boolean(notice))
   const [updatingJobId, setUpdatingJobId] = useState<number | null>(null)
   const [deletingJobId, setDeletingJobId] = useState<number | null>(null)
+  const [upcomingActivities, setUpcomingActivities] = useState<UpcomingJobActivity[]>([])
+  const [isUpcomingLoading, setIsUpcomingLoading] = useState(true)
+  const [upcomingError, setUpcomingError] = useState<string | null>(null)
   const [selectedStatus, setSelectedStatus] = useState<JobStatusFilterValue>('ALL')
   const [reloadKey, setReloadKey] = useState(0)
+  const [upcomingReloadKey, setUpcomingReloadKey] = useState(0)
 
   const filteredJobs = selectedStatus === 'ALL'
     ? jobs
@@ -56,6 +63,30 @@ export function JobsPage({ notice, onAddJob, onViewJob, onEditJob }: JobsPagePro
     void loadJobs()
     return () => controller.abort()
   }, [reloadKey])
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    async function loadUpcomingActivities() {
+      setIsUpcomingLoading(true)
+      setUpcomingError(null)
+
+      try {
+        setUpcomingActivities(await getUpcomingJobActivities(controller.signal))
+      } catch (loadError) {
+        if (!isAbortError(loadError)) {
+          setUpcomingError(getErrorMessage(loadError))
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsUpcomingLoading(false)
+        }
+      }
+    }
+
+    void loadUpcomingActivities()
+    return () => controller.abort()
+  }, [upcomingReloadKey])
 
   async function handleStatusChange(jobId: number, status: JobStatus) {
     setUpdatingJobId(jobId)
@@ -87,6 +118,7 @@ export function JobsPage({ notice, onAddJob, onViewJob, onEditJob }: JobsPagePro
     try {
       await deleteJob(job.id)
       setJobs((currentJobs) => currentJobs.filter((currentJob) => currentJob.id !== job.id))
+      setUpcomingActivities((current) => current.filter((activity) => activity.jobId !== job.id))
       setActionNotice(`${job.title} at ${job.company} was deleted.`)
     } catch (deleteError) {
       setActionError(getErrorMessage(deleteError))
@@ -163,6 +195,13 @@ export function JobsPage({ notice, onAddJob, onViewJob, onEditJob }: JobsPagePro
       {!isLoading && !error && jobs.length > 0 && (
         <>
           <PipelineSummary jobs={jobs} />
+          <UpcomingActivities
+            activities={upcomingActivities}
+            isLoading={isUpcomingLoading}
+            error={upcomingError}
+            onRetry={() => setUpcomingReloadKey((key) => key + 1)}
+            onViewJob={onViewJob}
+          />
           <JobStatusFilter
             jobs={jobs}
             selectedStatus={selectedStatus}

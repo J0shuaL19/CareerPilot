@@ -2,11 +2,16 @@ package com.careerpilot.service;
 
 import com.careerpilot.dto.JobActivityRequest;
 import com.careerpilot.dto.JobActivityResponse;
+import com.careerpilot.dto.UpcomingJobActivityResponse;
 import com.careerpilot.exception.ResourceNotFoundException;
 import com.careerpilot.model.Job;
 import com.careerpilot.model.JobActivity;
+import com.careerpilot.model.JobActivityType;
 import com.careerpilot.repository.JobActivityRepository;
 import com.careerpilot.repository.JobRepository;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,15 +19,24 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class JobActivityService {
 
+    private static final long UPCOMING_WINDOW_DAYS = 14;
+    private static final List<JobActivityType> REMINDER_TYPES = List.of(
+            JobActivityType.INTERVIEW,
+            JobActivityType.FOLLOW_UP
+    );
+
     private final JobRepository jobRepository;
     private final JobActivityRepository jobActivityRepository;
+    private final Clock clock;
 
     public JobActivityService(
             JobRepository jobRepository,
-            JobActivityRepository jobActivityRepository
+            JobActivityRepository jobActivityRepository,
+            Clock clock
     ) {
         this.jobRepository = jobRepository;
         this.jobActivityRepository = jobActivityRepository;
+        this.clock = clock;
     }
 
     @Transactional
@@ -56,6 +70,21 @@ public class JobActivityService {
         jobActivityRepository.delete(activity);
     }
 
+    @Transactional(readOnly = true)
+    public List<UpcomingJobActivityResponse> getUpcomingActivities() {
+        Instant start = clock.instant();
+        Instant end = start.plus(UPCOMING_WINDOW_DAYS, ChronoUnit.DAYS);
+        return jobActivityRepository
+                .findAllByTypeInAndOccurredAtBetweenOrderByOccurredAtAscCreatedAtAsc(
+                        REMINDER_TYPES,
+                        start,
+                        end
+                )
+                .stream()
+                .map(JobActivityService::toUpcomingResponse)
+                .toList();
+    }
+
     private Job findJob(Long jobId) {
         return jobRepository.findById(jobId)
                 .orElseThrow(() -> new ResourceNotFoundException("Job", jobId));
@@ -75,6 +104,19 @@ public class JobActivityService {
                 activity.getContact(),
                 activity.getOccurredAt(),
                 activity.getCreatedAt()
+        );
+    }
+
+    private static UpcomingJobActivityResponse toUpcomingResponse(JobActivity activity) {
+        return new UpcomingJobActivityResponse(
+                activity.getId(),
+                activity.getJob().getId(),
+                activity.getJob().getCompany(),
+                activity.getJob().getTitle(),
+                activity.getType(),
+                activity.getTitle(),
+                activity.getContact(),
+                activity.getOccurredAt()
         );
     }
 }

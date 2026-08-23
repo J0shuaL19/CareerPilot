@@ -18,3 +18,14 @@ export interface CreateJobActivityInput {
   contact?: string
   occurredAt: string
 }
+
+export interface UpcomingJobActivity {
+  id: number
+  jobId: number
+  company: string
+  jobTitle: string
+  type: Extract<JobActivityType, 'INTERVIEW' | 'FOLLOW_UP'>
+  title: string
+  contact: string | null
+  occurredAt: string
+}

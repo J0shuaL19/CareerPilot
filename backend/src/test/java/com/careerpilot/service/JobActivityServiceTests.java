@@ -8,12 +8,14 @@ import static org.mockito.Mockito.when;
 
 import com.careerpilot.dto.JobActivityRequest;
 import com.careerpilot.dto.JobActivityResponse;
+import com.careerpilot.dto.UpcomingJobActivityResponse;
 import com.careerpilot.exception.ResourceNotFoundException;
 import com.careerpilot.model.Job;
 import com.careerpilot.model.JobActivity;
 import com.careerpilot.model.JobActivityType;
 import com.careerpilot.repository.JobActivityRepository;
 import com.careerpilot.repository.JobRepository;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -33,6 +35,9 @@ class JobActivityServiceTests {
 
     @Mock
     private JobActivityRepository jobActivityRepository;
+
+    @Mock
+    private Clock clock;
 
     @InjectMocks
     private JobActivityService jobActivityService;
@@ -137,6 +142,42 @@ class JobActivityServiceTests {
                 .hasMessage("Job activity not found with id: 99");
     }
 
+    @Test
+    void returnsUpcomingReminderActivitiesInRepositoryOrder() {
+        Instant now = Instant.parse("2026-08-22T12:00:00Z");
+        Job job = persistedJob(1L);
+        JobActivity interview = persistedActivity(
+                2L,
+                job,
+                JobActivityType.INTERVIEW,
+                "Technical interview",
+                "2026-08-23T12:00:00Z"
+        );
+        JobActivity followUp = persistedActivity(
+                3L,
+                job,
+                JobActivityType.FOLLOW_UP,
+                "Recruiter follow-up",
+                "2026-08-25T12:00:00Z"
+        );
+        when(clock.instant()).thenReturn(now);
+        when(jobActivityRepository
+                .findAllByTypeInAndOccurredAtBetweenOrderByOccurredAtAscCreatedAtAsc(
+                        List.of(JobActivityType.INTERVIEW, JobActivityType.FOLLOW_UP),
+                        now,
+                        Instant.parse("2026-09-05T12:00:00Z")
+                ))
+                .thenReturn(List.of(interview, followUp));
+
+        List<UpcomingJobActivityResponse> responses =
+                jobActivityService.getUpcomingActivities();
+
+        assertThat(responses).extracting(UpcomingJobActivityResponse::title)
+                .containsExactly("Technical interview", "Recruiter follow-up");
+        assertThat(responses.getFirst().company()).isEqualTo("OpenAI");
+        assertThat(responses.getFirst().jobTitle()).isEqualTo("Engineer");
+    }
+
     private static Job persistedJob(Long id) {
         Job job = new Job("OpenAI", "Engineer", "Description", null);
         ReflectionTestUtils.setField(job, "id", id);
@@ -149,9 +190,19 @@ class JobActivityServiceTests {
             String title,
             String occurredAt
     ) {
+        return persistedActivity(id, job, JobActivityType.NOTE, title, occurredAt);
+    }
+
+    private static JobActivity persistedActivity(
+            Long id,
+            Job job,
+            JobActivityType type,
+            String title,
+            String occurredAt
+    ) {
         JobActivity activity = new JobActivity(
                 job,
-                JobActivityType.NOTE,
+                type,
                 title,
                 null,
                 null,

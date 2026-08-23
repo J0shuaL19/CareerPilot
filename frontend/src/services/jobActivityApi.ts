@@ -1,4 +1,8 @@
-import type { CreateJobActivityInput, JobActivity } from '../types/jobActivity'
+import type {
+  CreateJobActivityInput,
+  JobActivity,
+  UpcomingJobActivity,
+} from '../types/jobActivity'
 import { apiRequest } from './apiClient'
 
 export function getJobActivities(
@@ -25,4 +29,8 @@ export function deleteJobActivity(jobId: number, activityId: number): Promise<vo
   return apiRequest<void>(`/api/jobs/${jobId}/activities/${activityId}`, {
     method: 'DELETE',
   })
+}
+
+export function getUpcomingJobActivities(signal?: AbortSignal): Promise<UpcomingJobActivity[]> {
+  return apiRequest<UpcomingJobActivity[]>('/api/job-activities/upcoming', { signal })
 }

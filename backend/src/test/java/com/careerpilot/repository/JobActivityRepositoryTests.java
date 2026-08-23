@@ -51,10 +51,41 @@ class JobActivityRepositoryTests {
         assertThat(jobActivityRepository.findByIdAndJob_Id(saved.getId(), other.getId())).isEmpty();
     }
 
+    @Test
+    void findsUpcomingReminderTypesWithinTimeWindow() {
+        Job job = jobRepository.save(new Job("OpenAI", "Engineer", "Description", null));
+        jobActivityRepository.saveAllAndFlush(List.of(
+                activity(job, JobActivityType.INTERVIEW, "Interview", "2026-08-23T12:00:00Z"),
+                activity(job, JobActivityType.FOLLOW_UP, "Follow-up", "2026-08-25T12:00:00Z"),
+                activity(job, JobActivityType.NOTE, "Future note", "2026-08-24T12:00:00Z"),
+                activity(job, JobActivityType.INTERVIEW, "Past interview", "2026-08-20T12:00:00Z"),
+                activity(job, JobActivityType.INTERVIEW, "Later interview", "2026-09-10T12:00:00Z")
+        ));
+
+        List<JobActivity> activities = jobActivityRepository
+                .findAllByTypeInAndOccurredAtBetweenOrderByOccurredAtAscCreatedAtAsc(
+                        List.of(JobActivityType.INTERVIEW, JobActivityType.FOLLOW_UP),
+                        Instant.parse("2026-08-22T12:00:00Z"),
+                        Instant.parse("2026-09-05T12:00:00Z")
+                );
+
+        assertThat(activities).extracting(JobActivity::getTitle)
+                .containsExactly("Interview", "Follow-up");
+    }
+
     private static JobActivity activity(Job job, String title, String occurredAt) {
+        return activity(job, JobActivityType.NOTE, title, occurredAt);
+    }
+
+    private static JobActivity activity(
+            Job job,
+            JobActivityType type,
+            String title,
+            String occurredAt
+    ) {
         return new JobActivity(
                 job,
-                JobActivityType.NOTE,
+                type,
                 title,
                 null,
                 null,

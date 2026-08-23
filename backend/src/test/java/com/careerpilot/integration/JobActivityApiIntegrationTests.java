@@ -8,10 +8,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.careerpilot.model.Job;
+import com.careerpilot.model.JobActivity;
+import com.careerpilot.model.JobActivityType;
 import com.careerpilot.repository.JobActivityRepository;
 import com.careerpilot.repository.JobRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import java.time.Instant;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -80,5 +84,32 @@ class JobActivityApiIntegrationTests {
         mockMvc.perform(get("/api/jobs/999/activities"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value("Job not found with id: 999"));
+    }
+
+    @Test
+    void listsOnlyUpcomingInterviewsAndFollowUps() throws Exception {
+        Job job = jobRepository.saveAndFlush(new Job("OpenAI", "Engineer", "Description", null));
+        Instant now = Instant.now();
+        jobActivityRepository.saveAllAndFlush(List.of(
+                activity(job, JobActivityType.INTERVIEW, "Interview", now.plusSeconds(86_400)),
+                activity(job, JobActivityType.FOLLOW_UP, "Follow-up", now.plusSeconds(172_800)),
+                activity(job, JobActivityType.NOTE, "Note", now.plusSeconds(86_400)),
+                activity(job, JobActivityType.INTERVIEW, "Past", now.minusSeconds(86_400))
+        ));
+
+        mockMvc.perform(get("/api/job-activities/upcoming"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].title").value("Interview"))
+                .andExpect(jsonPath("$[1].title").value("Follow-up"));
+    }
+
+    private static JobActivity activity(
+            Job job,
+            JobActivityType type,
+            String title,
+            Instant occurredAt
+    ) {
+        return new JobActivity(job, type, title, null, null, occurredAt);
     }
 }
