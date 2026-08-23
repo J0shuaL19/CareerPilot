@@ -11,7 +11,7 @@ import {
 import { PipelineSummary } from '../components/PipelineSummary'
 import { UpcomingActivities } from '../components/UpcomingActivities'
 import { getUpcomingJobActivities } from '../services/jobActivityApi'
-import { deleteJob, getJobs, updateJobStatus } from '../services/jobApi'
+import { deleteJob, exportJobs, getJobs, updateJobStatus } from '../services/jobApi'
 import type { Job, JobStatus } from '../types/job'
 import type { UpcomingJobActivity } from '../types/jobActivity'
 import { getErrorMessage, isAbortError } from '../utils/errors'
@@ -33,6 +33,7 @@ export function JobsPage({ notice, onAddJob, onViewJob, onEditJob }: JobsPagePro
   const [showRouteNotice, setShowRouteNotice] = useState(Boolean(notice))
   const [updatingJobId, setUpdatingJobId] = useState<number | null>(null)
   const [deletingJobId, setDeletingJobId] = useState<number | null>(null)
+  const [isExporting, setIsExporting] = useState(false)
   const [upcomingActivities, setUpcomingActivities] = useState<UpcomingJobActivity[]>([])
   const [isUpcomingLoading, setIsUpcomingLoading] = useState(true)
   const [upcomingError, setUpcomingError] = useState<string | null>(null)
@@ -142,6 +143,32 @@ export function JobsPage({ notice, onAddJob, onViewJob, onEditJob }: JobsPagePro
     }
   }
 
+  async function handleExport() {
+    setIsExporting(true)
+    setActionError(null)
+    setActionNotice(null)
+    setShowRouteNotice(false)
+
+    try {
+      const csv = await exportJobs(filteredJobs.map((job) => job.id))
+      const downloadUrl = URL.createObjectURL(csv)
+      const link = document.createElement('a')
+      link.href = downloadUrl
+      link.download = 'careerpilot-jobs.csv'
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      URL.revokeObjectURL(downloadUrl)
+      setActionNotice(
+        `${filteredJobs.length} ${filteredJobs.length === 1 ? 'job' : 'jobs'} exported to CSV.`,
+      )
+    } catch (exportError) {
+      setActionError(getErrorMessage(exportError))
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
   function handleResetFilters() {
     setQuery('')
     setSortOrder('NEWEST')
@@ -160,9 +187,21 @@ export function JobsPage({ notice, onAddJob, onViewJob, onEditJob }: JobsPagePro
               : `${jobs.length} ${jobs.length === 1 ? 'opportunity' : 'opportunities'} in your pipeline.`}
           </p>
         </div>
-        <button className="button button--primary" type="button" onClick={onAddJob}>
-          <span aria-hidden="true">＋</span> Add job
-        </button>
+        <div className="page-header__actions">
+          {jobs.length > 0 && (
+            <button
+              className="button button--secondary"
+              type="button"
+              disabled={isLoading || filteredJobs.length === 0 || isExporting}
+              onClick={() => void handleExport()}
+            >
+              <span aria-hidden="true">⇩</span> {isExporting ? 'Exporting…' : 'Export CSV'}
+            </button>
+          )}
+          <button className="button button--primary" type="button" onClick={onAddJob}>
+            <span aria-hidden="true">＋</span> Add job
+          </button>
+        </div>
       </header>
 
       {showRouteNotice && notice && (

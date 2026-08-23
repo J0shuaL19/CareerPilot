@@ -1,5 +1,6 @@
 package com.careerpilot.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -15,7 +16,10 @@ import com.careerpilot.dto.JobResponse;
 import com.careerpilot.dto.JobStatusUpdateRequest;
 import com.careerpilot.exception.ResourceNotFoundException;
 import com.careerpilot.model.JobStatus;
+import com.careerpilot.service.JobCsvExportService;
+import com.careerpilot.service.JobCsvFile;
 import com.careerpilot.service.JobService;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -33,6 +37,9 @@ class JobControllerTests {
 
     @MockitoBean
     private JobService jobService;
+
+    @MockitoBean
+    private JobCsvExportService jobCsvExportService;
 
     @Test
     void createsJob() throws Exception {
@@ -65,6 +72,42 @@ class JobControllerTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(2))
                 .andExpect(jsonPath("$[1].id").value(1));
+    }
+
+    @Test
+    void exportsSelectedJobsAsCsvAttachment() throws Exception {
+        byte[] content = "\uFEFFID,Company\r\n1,OpenAI\r\n".getBytes(StandardCharsets.UTF_8);
+        when(jobCsvExportService.export(List.of(2L, 1L)))
+                .thenReturn(new JobCsvFile("careerpilot-jobs.csv", content));
+
+        mockMvc.perform(post("/api/jobs/export")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "jobIds": [2, 1]
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(result -> assertThat(result.getResponse().getContentType())
+                        .isEqualTo("text/csv;charset=UTF-8"))
+                .andExpect(result -> assertThat(result.getResponse().getHeader("Content-Disposition"))
+                        .isEqualTo("attachment; filename=\"careerpilot-jobs.csv\""))
+                .andExpect(result -> assertThat(result.getResponse().getContentAsByteArray())
+                        .isEqualTo(content));
+    }
+
+    @Test
+    void rejectsCsvExportWithoutJobs() throws Exception {
+        mockMvc.perform(post("/api/jobs/export")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "jobIds": []
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.jobIds")
+                        .value("At least one job is required"));
     }
 
     @Test

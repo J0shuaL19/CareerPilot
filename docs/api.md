@@ -78,6 +78,24 @@ Success: `200 OK`
 
 An empty database returns `[]`.
 
+### Export jobs as CSV
+
+`POST /api/jobs/export`
+
+Request:
+
+```json
+{
+  "jobIds": [2, 1]
+}
+```
+
+Downloads the selected jobs in the same order as `jobIds`. The frontend sends the IDs from the current filtered and sorted view, so users can export either the complete pipeline or only the opportunities they are reviewing.
+
+Success: `200 OK` with a UTF-8 `text/csv` attachment named `careerpilot-jobs.csv`. The file includes ID, company, title, status, job URL, creation time, and description columns. Text is CSV-escaped, and potentially executable spreadsheet formula values are neutralized.
+
+At least one positive job ID is required. A missing job returns `404 Not Found` so a stale list cannot produce a partial export.
+
 ### Get one job
 
 `GET /api/jobs/{id}`

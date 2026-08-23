@@ -120,6 +120,12 @@ a {
   gap: 2rem;
 }
 
+.page-header__actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 0.75rem;
+}
+
 .page-header__eyebrow {
   margin: 0 0 0.65rem;
   color: #3568e8;
@@ -2857,7 +2863,12 @@ a:focus-visible {
     flex-direction: column;
   }
 
-  .page-header--row .button {
+  .page-header__actions {
+    flex-wrap: wrap;
+  }
+
+  .page-header--row .button,
+  .page-header__actions {
     align-self: flex-start;
   }
 
