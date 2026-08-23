@@ -2,8 +2,10 @@ package com.careerpilot.controller;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -113,6 +115,45 @@ class ResumeControllerTests {
         mockMvc.perform(get("/api/resumes/not-a-number"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Invalid value for id"));
+    }
+
+    @Test
+    void updatesResume() throws Exception {
+        when(resumeService.updateResume(any(Long.class), any(ResumeRequest.class)))
+                .thenReturn(resumeResponse(1L, "Updated Resume"));
+
+        mockMvc.perform(put("/api/resumes/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "Updated Resume",
+                                  "content": "Updated experience."
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.name").value("Updated Resume"));
+    }
+
+    @Test
+    void validatesResumeUpdate() throws Exception {
+        mockMvc.perform(put("/api/resumes/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "",
+                                  "content": ""
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.name").value("Resume name is required"))
+                .andExpect(jsonPath("$.fieldErrors.content").value("Resume content is required"));
+    }
+
+    @Test
+    void deletesResume() throws Exception {
+        mockMvc.perform(delete("/api/resumes/1"))
+                .andExpect(status().isNoContent());
     }
 
     private static ResumeResponse resumeResponse(Long id, String name) {

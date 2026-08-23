@@ -1,8 +1,10 @@
 package com.careerpilot.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -88,6 +90,32 @@ class ResumeApiIntegrationTests {
                 .andExpect(jsonPath("$.fieldErrors.content").exists());
 
         assertThat(resumeRepository.count()).isZero();
+    }
+
+    @Test
+    void updatesAndDeletesResume() throws Exception {
+        Resume resume = resumeRepository.saveAndFlush(new Resume("Master Resume", "Original content"));
+
+        mockMvc.perform(put("/api/resumes/{id}", resume.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "  Backend Resume  ",
+                                  "content": "  Updated experience.  "
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Backend Resume"))
+                .andExpect(jsonPath("$.content").value("Updated experience."));
+
+        Resume updatedResume = resumeRepository.findById(resume.getId()).orElseThrow();
+        assertThat(updatedResume.getName()).isEqualTo("Backend Resume");
+        assertThat(updatedResume.getContent()).isEqualTo("Updated experience.");
+
+        mockMvc.perform(delete("/api/resumes/{id}", resume.getId()))
+                .andExpect(status().isNoContent());
+
+        assertThat(resumeRepository.existsById(resume.getId())).isFalse();
     }
 
     private static Resume resume(String name, String createdAt) {

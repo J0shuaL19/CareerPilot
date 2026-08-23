@@ -11,6 +11,7 @@ import { ScrollToTop } from './components/ScrollToTop'
 import { AddJobPage } from './pages/AddJobPage'
 import { AddResumePage } from './pages/AddResumePage'
 import { EditJobPage } from './pages/EditJobPage'
+import { EditResumePage } from './pages/EditResumePage'
 import { JobDetailPage } from './pages/JobDetailPage'
 import { JobsPage } from './pages/JobsPage'
 import { MatchAnalysesPage } from './pages/MatchAnalysesPage'
@@ -87,6 +88,27 @@ function ResumesRoute() {
     <ResumesPage
       notice={state?.notice}
       onAddResume={() => navigate('/resumes/new')}
+      onEditResume={(resumeId) => navigate(`/resumes/${resumeId}/edit`)}
+    />
+  )
+}
+
+function EditResumeRoute() {
+  const navigate = useNavigate()
+  const resumeId = Number(useParams().id)
+
+  if (!Number.isSafeInteger(resumeId) || resumeId <= 0) {
+    return <NotFoundPage />
+  }
+
+  return (
+    <EditResumePage
+      resumeId={resumeId}
+      onCancel={() => navigate('/resumes')}
+      onUpdated={(resume) => navigate('/resumes', {
+        replace: true,
+        state: { notice: `${resume.name} was updated.` },
+      })}
     />
   )
 }
@@ -132,6 +154,7 @@ function App() {
           <Route path="jobs/:id" element={<JobDetailPage />} />
           <Route path="resumes" element={<ResumesRoute />} />
           <Route path="resumes/new" element={<AddResumeRoute />} />
+          <Route path="resumes/:id/edit" element={<EditResumeRoute />} />
           <Route path="analyses" element={<MatchAnalysesPage />} />
           <Route path="analyses/new" element={<NewMatchAnalysisRoute />} />
           <Route path="analyses/:id" element={<MatchAnalysisResultPage />} />

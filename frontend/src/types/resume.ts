@@ -9,3 +9,5 @@ export interface CreateResumeInput {
   name: string
   content: string
 }
+
+export type UpdateResumeInput = CreateResumeInput

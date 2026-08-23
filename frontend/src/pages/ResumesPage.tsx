@@ -1,18 +1,23 @@
 import { useEffect, useState } from 'react'
 import { ResumeCard } from '../components/ResumeCard'
-import { getResumes } from '../services/resumeApi'
+import { deleteResume, getResumes } from '../services/resumeApi'
 import type { Resume } from '../types/resume'
 import { getErrorMessage, isAbortError } from '../utils/errors'
 
 interface ResumesPageProps {
   notice?: string
   onAddResume: () => void
+  onEditResume: (resumeId: number) => void
 }
 
-export function ResumesPage({ notice, onAddResume }: ResumesPageProps) {
+export function ResumesPage({ notice, onAddResume, onEditResume }: ResumesPageProps) {
   const [resumes, setResumes] = useState<Resume[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
+  const [actionNotice, setActionNotice] = useState<string | null>(null)
+  const [showRouteNotice, setShowRouteNotice] = useState(Boolean(notice))
+  const [deletingResumeId, setDeletingResumeId] = useState<number | null>(null)
   const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
@@ -39,6 +44,23 @@ export function ResumesPage({ notice, onAddResume }: ResumesPageProps) {
     return () => controller.abort()
   }, [reloadKey])
 
+  async function handleDelete(resume: Resume) {
+    setDeletingResumeId(resume.id)
+    setActionError(null)
+    setActionNotice(null)
+    setShowRouteNotice(false)
+
+    try {
+      await deleteResume(resume.id)
+      setResumes((current) => current.filter((item) => item.id !== resume.id))
+      setActionNotice(`${resume.name} was deleted.`)
+    } catch (deleteError) {
+      setActionError(getErrorMessage(deleteError))
+    } finally {
+      setDeletingResumeId(null)
+    }
+  }
+
   return (
     <div className="page">
       <header className="page-header page-header--row">
@@ -56,9 +78,21 @@ export function ResumesPage({ notice, onAddResume }: ResumesPageProps) {
         </button>
       </header>
 
-      {notice && (
+      {showRouteNotice && notice && (
         <div className="alert alert--success" role="status">
           <span aria-hidden="true">✓</span> {notice}
+        </div>
+      )}
+
+      {actionNotice && (
+        <div className="alert alert--success" role="status">
+          <span aria-hidden="true">✓</span> {actionNotice}
+        </div>
+      )}
+
+      {actionError && (
+        <div className="alert alert--error resume-action-error" role="alert">
+          {actionError}
         </div>
       )}
 
@@ -95,7 +129,13 @@ export function ResumesPage({ notice, onAddResume }: ResumesPageProps) {
       {!isLoading && !error && resumes.length > 0 && (
         <section className="resume-list" aria-label="Saved resumes">
           {resumes.map((resume) => (
-            <ResumeCard key={resume.id} resume={resume} />
+            <ResumeCard
+              key={resume.id}
+              resume={resume}
+              isDeleting={deletingResumeId === resume.id}
+              onEdit={onEditResume}
+              onDelete={handleDelete}
+            />
           ))}
         </section>
       )}

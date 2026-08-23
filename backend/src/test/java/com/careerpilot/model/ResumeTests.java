@@ -27,4 +27,17 @@ class ResumeTests {
 
         assertThat(resume.getCreatedAt()).isNotNull();
     }
+
+    @Test
+    void updatesResumeDetailsWithoutChangingCreationTime() {
+        Resume resume = new Resume("Master Resume", "Original content");
+        resume.setCreationTime();
+        var createdAt = resume.getCreatedAt();
+
+        resume.updateDetails("Backend Resume", "Updated content");
+
+        assertThat(resume.getName()).isEqualTo("Backend Resume");
+        assertThat(resume.getContent()).isEqualTo("Updated content");
+        assertThat(resume.getCreatedAt()).isEqualTo(createdAt);
+    }
 }

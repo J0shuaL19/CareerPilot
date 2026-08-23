@@ -801,7 +801,8 @@ a:focus-visible {
   font-weight: 650;
 }
 
-.job-action-error {
+.job-action-error,
+.resume-action-error {
   margin-bottom: 1rem;
 }
 
@@ -849,7 +850,8 @@ a:focus-visible {
   color: #a02b3e;
 }
 
-.job-card__delete-confirmation {
+.job-card__delete-confirmation,
+.resume-card__delete-confirmation {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -863,18 +865,22 @@ a:focus-visible {
 }
 
 .job-card__delete-confirmation strong,
-.job-card__delete-confirmation p {
+.job-card__delete-confirmation p,
+.resume-card__delete-confirmation strong,
+.resume-card__delete-confirmation p {
   margin: 0;
 }
 
-.job-card__delete-confirmation p {
+.job-card__delete-confirmation p,
+.resume-card__delete-confirmation p {
   margin-top: 0.2rem;
   color: #8b5260;
   font-size: 0.76rem;
   line-height: 1.45;
 }
 
-.job-card__delete-confirmation > div:last-child {
+.job-card__delete-confirmation > div:last-child,
+.resume-card__delete-confirmation > div:last-child {
   display: flex;
   flex: 0 0 auto;
   gap: 0.55rem;
@@ -929,6 +935,10 @@ a:focus-visible {
   gap: 1rem;
 }
 
+.resume-card__heading > div {
+  min-width: 0;
+}
+
 .resume-card__heading h2 {
   overflow: hidden;
   margin: 0.2rem 0 0;
@@ -961,6 +971,43 @@ a:focus-visible {
   white-space: pre-wrap;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
+}
+
+.resume-card__delete-confirmation {
+  margin-bottom: 0;
+}
+
+.resume-card__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.8rem;
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid #e8edf5;
+}
+
+.resume-card__actions button {
+  padding: 0;
+  border: 0;
+  color: #315dc9;
+  background: transparent;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.resume-card__actions button:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.resume-card__actions button:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.resume-card__actions .resume-card__delete-button {
+  color: #a02b3e;
 }
 
 .status-badge {
@@ -2019,12 +2066,14 @@ a:focus-visible {
     max-width: none;
   }
 
-  .job-card__delete-confirmation {
+  .job-card__delete-confirmation,
+  .resume-card__delete-confirmation {
     align-items: stretch;
     flex-direction: column;
   }
 
-  .job-card__delete-confirmation > div:last-child .button {
+  .job-card__delete-confirmation > div:last-child .button,
+  .resume-card__delete-confirmation > div:last-child .button {
     flex: 1;
   }
 
@@ -2044,6 +2093,11 @@ a:focus-visible {
 
   .resume-list {
     grid-template-columns: 1fr;
+  }
+
+  .resume-card__heading {
+    flex-direction: column;
+    gap: 0.35rem;
   }
 
   .job-detail__hero {

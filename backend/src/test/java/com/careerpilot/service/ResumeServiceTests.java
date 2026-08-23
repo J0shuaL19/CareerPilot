@@ -93,6 +93,53 @@ class ResumeServiceTests {
                 .hasMessage("Resume not found with id: 999");
     }
 
+    @Test
+    void updatesResumeFromNormalizedRequest() {
+        Resume resume = persistedResume(1L, "Master Resume", "2026-08-21T12:00:00Z");
+        when(resumeRepository.findById(1L)).thenReturn(Optional.of(resume));
+
+        ResumeResponse response = resumeService.updateResume(
+                1L,
+                new ResumeRequest("  Backend Resume  ", "  Updated experience.  ")
+        );
+
+        assertThat(resume.getName()).isEqualTo("Backend Resume");
+        assertThat(resume.getContent()).isEqualTo("Updated experience.");
+        assertThat(response.name()).isEqualTo("Backend Resume");
+        assertThat(response.content()).isEqualTo("Updated experience.");
+    }
+
+    @Test
+    void throwsWhenUpdatingMissingResume() {
+        when(resumeRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> resumeService.updateResume(
+                999L,
+                new ResumeRequest("Backend Resume", "Resume content")
+        ))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("Resume not found with id: 999");
+    }
+
+    @Test
+    void deletesExistingResume() {
+        Resume resume = persistedResume(1L, "Master Resume", "2026-08-21T12:00:00Z");
+        when(resumeRepository.findById(1L)).thenReturn(Optional.of(resume));
+
+        resumeService.deleteResume(1L);
+
+        verify(resumeRepository).delete(resume);
+    }
+
+    @Test
+    void throwsWhenDeletingMissingResume() {
+        when(resumeRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> resumeService.deleteResume(999L))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("Resume not found with id: 999");
+    }
+
     private static Resume persistedResume(Long id, String name, String createdAt) {
         Resume resume = new Resume(name, "Resume content");
         ReflectionTestUtils.setField(resume, "id", id);

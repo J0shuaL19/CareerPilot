@@ -37,8 +37,26 @@ public class ResumeService {
 
     @Transactional(readOnly = true)
     public ResumeResponse getResume(Long id) {
+        return toResponse(findResume(id));
+    }
+
+    @Transactional
+    public ResumeResponse updateResume(Long id, ResumeRequest request) {
+        Resume resume = findResume(id);
+        resume.updateDetails(
+                request.name().trim(),
+                request.content().trim()
+        );
+        return toResponse(resume);
+    }
+
+    @Transactional
+    public void deleteResume(Long id) {
+        resumeRepository.delete(findResume(id));
+    }
+
+    private Resume findResume(Long id) {
         return resumeRepository.findById(id)
-                .map(ResumeService::toResponse)
                 .orElseThrow(() -> new ResourceNotFoundException("Resume", id));
     }
 

@@ -8,6 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.Instant;
+import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -32,8 +33,12 @@ public class Resume {
     private Instant createdAt;
 
     public Resume(String name, String content) {
-        this.name = name;
-        this.content = content;
+        updateDetails(name, content);
+    }
+
+    public void updateDetails(String name, String content) {
+        this.name = Objects.requireNonNull(name);
+        this.content = Objects.requireNonNull(content);
     }
 
     @PrePersist

@@ -2,26 +2,32 @@ import { useState, type FormEvent } from 'react'
 import type { CreateResumeInput } from '../types/resume'
 
 interface ResumeFormProps {
+  initialValues?: CreateResumeInput
   fieldErrors?: Record<string, string>
   formError?: string | null
   isSubmitting: boolean
+  submitLabel?: string
+  submittingLabel?: string
   onSubmit: (input: CreateResumeInput) => Promise<void>
   onCancel: () => void
 }
 
-const initialValues: CreateResumeInput = {
+const emptyValues: CreateResumeInput = {
   name: '',
   content: '',
 }
 
 export function ResumeForm({
+  initialValues = emptyValues,
   fieldErrors = {},
   formError,
   isSubmitting,
+  submitLabel = 'Save resume',
+  submittingLabel = 'Saving resume…',
   onSubmit,
   onCancel,
 }: ResumeFormProps) {
-  const [values, setValues] = useState<CreateResumeInput>(initialValues)
+  const [values, setValues] = useState<CreateResumeInput>({ ...initialValues })
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -91,7 +97,7 @@ export function ResumeForm({
           Cancel
         </button>
         <button className="button button--primary" type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Saving resume…' : 'Save resume'}
+          {isSubmitting ? submittingLabel : submitLabel}
         </button>
       </div>
     </form>

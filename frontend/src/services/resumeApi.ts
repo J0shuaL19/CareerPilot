@@ -1,4 +1,4 @@
-import type { CreateResumeInput, Resume } from '../types/resume'
+import type { CreateResumeInput, Resume, UpdateResumeInput } from '../types/resume'
 import { apiRequest } from './apiClient'
 
 export function getResumes(signal?: AbortSignal): Promise<Resume[]> {
@@ -16,5 +16,21 @@ export function createResume(input: CreateResumeInput): Promise<Resume> {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(input),
+  })
+}
+
+export function updateResume(id: number, input: UpdateResumeInput): Promise<Resume> {
+  return apiRequest<Resume>(`/api/resumes/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(input),
+  })
+}
+
+export function deleteResume(id: number): Promise<void> {
+  return apiRequest<void>(`/api/resumes/${id}`, {
+    method: 'DELETE',
   })
 }

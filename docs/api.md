@@ -225,6 +225,24 @@ Missing resume: `404 Not Found`
 }
 ```
 
+### Update a resume
+
+`PUT /api/resumes/{id}`
+
+Uses the same `name` and `content` body as resume creation. Both fields are required; surrounding whitespace is removed before storage.
+
+Success: `200 OK` with the updated resume response. The original `id` and `createdAt` are preserved.
+
+Missing resume: `404 Not Found`
+
+### Delete a resume
+
+`DELETE /api/resumes/{id}`
+
+Success: `204 No Content`. Any saved match analyses linked to the resume are also permanently deleted.
+
+Missing resume: `404 Not Found`
+
 ## Validation errors
 
 Invalid job, resume, and match analysis requests return `400 Bad Request`.
