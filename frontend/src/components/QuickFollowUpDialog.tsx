@@ -1,5 +1,10 @@
 import { type FormEvent, useEffect, useRef, useState } from 'react'
 import type { CreateJobActivityInput, JobAttentionItem } from '../types/jobActivity'
+import {
+  buildFollowUpMessage,
+  followUpTemplates,
+  type FollowUpTemplateId,
+} from '../utils/followUpTemplates'
 import { toLocalDateTimeValue } from '../utils/jobActivity'
 
 interface QuickFollowUpDialogProps {
@@ -24,6 +29,8 @@ export function QuickFollowUpDialog({
   const [occurredAt, setOccurredAt] = useState(() => toLocalDateTimeValue())
   const [contact, setContact] = useState('')
   const [details, setDetails] = useState('')
+  const [selectedTemplateId, setSelectedTemplateId] = useState<FollowUpTemplateId | null>(null)
+  const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle')
 
   useEffect(() => {
     titleRef.current?.focus()
@@ -58,6 +65,25 @@ export function QuickFollowUpDialog({
       contact: contact.trim() || undefined,
       details: details.trim() || undefined,
     })
+  }
+
+  function applyTemplate(templateId: FollowUpTemplateId) {
+    setDetails(buildFollowUpMessage(templateId, {
+      company: item.company,
+      jobTitle: item.jobTitle,
+      contact,
+    }))
+    setSelectedTemplateId(templateId)
+    setCopyStatus('idle')
+  }
+
+  async function copyDraft() {
+    try {
+      await navigator.clipboard.writeText(details)
+      setCopyStatus('copied')
+    } catch {
+      setCopyStatus('error')
+    }
   }
 
   return (
@@ -124,16 +150,56 @@ export function QuickFollowUpDialog({
             </label>
           </div>
 
-          <label>
-            Notes <span>optional</span>
+          <fieldset className="quick-follow-up-templates">
+            <legend>Message template <span>optional</span></legend>
+            <div>
+              {followUpTemplates.map((template) => (
+                <button
+                  className={selectedTemplateId === template.id
+                    ? 'quick-follow-up-template quick-follow-up-template--selected'
+                    : 'quick-follow-up-template'}
+                  type="button"
+                  key={template.id}
+                  aria-pressed={selectedTemplateId === template.id}
+                  onClick={() => applyTemplate(template.id)}
+                >
+                  <strong>{template.label}</strong>
+                  <span>{template.description}</span>
+                </button>
+              ))}
+            </div>
+          </fieldset>
+
+          <div className="quick-follow-up-draft">
+            <div className="quick-follow-up-draft__heading">
+              <label htmlFor="quick-follow-up-details">
+                Message draft <span>optional</span>
+              </label>
+              <button
+                type="button"
+                disabled={!details.trim()}
+                onClick={() => void copyDraft()}
+              >
+                {copyStatus === 'copied' ? 'Copied' : 'Copy draft'}
+              </button>
+            </div>
             <textarea
-              rows={3}
+              id="quick-follow-up-details"
+              rows={7}
               maxLength={5000}
-              placeholder="What will you ask or share?"
+              placeholder="Choose a template or write your own follow-up message."
               value={details}
-              onChange={(event) => setDetails(event.target.value)}
+              onChange={(event) => {
+                setDetails(event.target.value)
+                setSelectedTemplateId(null)
+                setCopyStatus('idle')
+              }}
             />
-          </label>
+            <span className="quick-follow-up-draft__status" aria-live="polite">
+              {copyStatus === 'error' && 'Could not copy. Select the draft and copy it manually.'}
+              {copyStatus === 'copied' && 'Draft copied to your clipboard.'}
+            </span>
+          </div>
 
           {error && <p className="quick-follow-up-form__error" role="alert">{error}</p>}
 
