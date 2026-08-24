@@ -12,6 +12,7 @@ import {
 } from '../components/SnoozeReminderDialog'
 import { SnoozedRemindersPanel } from '../components/SnoozedRemindersPanel'
 import { UpcomingActivities } from '../components/UpcomingActivities'
+import { useAttentionNotifications } from '../hooks/useAttentionNotifications'
 import { getDashboardStats } from '../services/dashboardApi'
 import {
   createJobActivity,
@@ -116,6 +117,7 @@ export function DashboardPage() {
   const [bulkSnoozeUndoError, setBulkSnoozeUndoError] = useState<string | null>(null)
   const [bulkSelectionResetKey, setBulkSelectionResetKey] = useState(0)
   const [historyReloadKey, setHistoryReloadKey] = useState(0)
+  const attentionNotifications = useAttentionNotifications(data.attentionItems)
 
   async function handleFollowUpSubmit(input: CreateJobActivityInput) {
     if (!followUpItem) return
@@ -596,6 +598,10 @@ export function DashboardPage() {
               setFollowUpError(null)
               setFollowUpItem(item)
             }}
+            notificationStatus={attentionNotifications.status}
+            isNotificationRequesting={attentionNotifications.isRequesting}
+            notificationError={attentionNotifications.error}
+            onToggleNotifications={() => void attentionNotifications.toggle()}
             onSnooze={(item) => {
               setSnoozeError(null)
               setSnoozeItem(item)

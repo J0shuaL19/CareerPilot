@@ -1,3 +1,4 @@
+import type { AttentionNotificationStatus } from '../hooks/useAttentionNotifications'
 import type { JobAttentionItem, JobAttentionSettings } from '../types/jobActivity'
 import { formatDate } from '../utils/formatDate'
 import { getJobStatusConfig } from '../utils/jobStatus'
@@ -7,6 +8,10 @@ interface NeedsAttentionPanelProps {
   settings: JobAttentionSettings
   onConfigure: () => void
   onFollowUp: (item: JobAttentionItem) => void
+  notificationStatus: AttentionNotificationStatus
+  isNotificationRequesting: boolean
+  notificationError: string | null
+  onToggleNotifications: () => void
   onSnooze: (item: JobAttentionItem) => void
 }
 
@@ -15,6 +20,10 @@ export function NeedsAttentionPanel({
   settings,
   onConfigure,
   onFollowUp,
+  notificationStatus,
+  isNotificationRequesting,
+  notificationError,
+  onToggleNotifications,
   onSnooze,
 }: NeedsAttentionPanelProps) {
   const rulesSummary = [
@@ -35,11 +44,28 @@ export function NeedsAttentionPanel({
         </div>
         <div className="attention-panel__controls">
           <span>{items.length} {items.length === 1 ? 'application' : 'applications'}</span>
+          <button
+            className={`attention-panel__notification attention-panel__notification--${notificationStatus}`}
+            type="button"
+            aria-pressed={notificationStatus === 'enabled'}
+            title={getNotificationTitle(notificationStatus)}
+            disabled={isNotificationRequesting || notificationStatus === 'unsupported'}
+            onClick={onToggleNotifications}
+          >
+            <span aria-hidden="true">◉</span>
+            {getNotificationLabel(notificationStatus, isNotificationRequesting)}
+          </button>
           <button type="button" onClick={onConfigure}>
             Reminder rules
           </button>
         </div>
       </div>
+
+      {notificationError && (
+        <p className="attention-panel__notification-error" role="alert">
+          {notificationError}
+        </p>
+      )}
 
       {items.length === 0 ? (
         <div className="attention-panel__empty">
@@ -93,4 +119,25 @@ export function NeedsAttentionPanel({
       )}
     </section>
   )
+}
+function getNotificationLabel(
+  status: AttentionNotificationStatus,
+  isRequesting: boolean,
+): string {
+  if (isRequesting) return 'Enabling…'
+  return {
+    unsupported: 'Alerts unavailable',
+    disabled: 'Enable alerts',
+    enabled: 'Alerts on',
+    blocked: 'Alerts blocked',
+  }[status]
+}
+
+function getNotificationTitle(status: AttentionNotificationStatus): string {
+  return {
+    unsupported: 'Browser notifications require a supported browser and secure connection.',
+    disabled: 'Notify me about newly overdue applications while CareerPilot is open.',
+    enabled: 'Browser alerts are enabled. Click to turn them off.',
+    blocked: 'Allow notifications in your browser’s site settings, then return here.',
+  }[status]
 }
