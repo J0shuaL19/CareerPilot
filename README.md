@@ -53,7 +53,7 @@ The dashboard combines follow-ups that have reached their stage-specific reminde
 
 ## Activity calendar
 
-The Calendar page organizes interviews and follow-ups into a desktop month grid and a date-grouped mobile agenda. Use the page-level action, a desktop date number, or a mobile agenda date to choose a job and add a pre-dated interview or follow-up without leaving the calendar. Open any activity to review its schedule, contact, job stage, and status; unfinished work can be completed or rescheduled, completed work can be safely reopened, and the related job remains one click away. Completed activities stay visible as muted history. Month navigation loads an explicit bounded date range so the view is not limited by the dashboard's 14-day window.
+The Calendar page organizes interviews and follow-ups into a desktop month grid and a date-grouped mobile agenda. Search the current view by activity, company, role, or contact, and combine type, completion status, and job filters to focus the schedule. Use the page-level action, a desktop date number, or a mobile agenda date to choose a job and add a pre-dated interview or follow-up without leaving the calendar. Open any activity to review its schedule, contact, job stage, and status; unfinished work can be completed or rescheduled, completed work can be safely reopened, and the related job remains one click away. Completed activities stay visible as muted history. Month navigation loads an explicit bounded date range so the view is not limited by the dashboard's 14-day window.
 
 ## Browser reminder alerts
 

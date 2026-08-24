@@ -2,6 +2,11 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CalendarActivityDialog } from '../components/CalendarActivityDialog'
 import { CalendarActivityDetailsDialog } from '../components/CalendarActivityDetailsDialog'
+import {
+  CalendarFilters,
+  type CalendarActivityStatusFilter,
+  type CalendarActivityTypeFilter,
+} from '../components/CalendarFilters'
 import { CompleteActivityDialog } from '../components/CompleteActivityDialog'
 import { RescheduleActivityDialog } from '../components/RescheduleActivityDialog'
 import {
@@ -40,6 +45,10 @@ export function CalendarPage() {
   const [jobs, setJobs] = useState<Job[]>([])
   const [isJobsLoading, setIsJobsLoading] = useState(true)
   const [jobsError, setJobsError] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [typeFilter, setTypeFilter] = useState<CalendarActivityTypeFilter>('ALL')
+  const [statusFilter, setStatusFilter] = useState<CalendarActivityStatusFilter>('ALL')
+  const [jobIdFilter, setJobIdFilter] = useState<number | null>(null)
   const [createDate, setCreateDate] = useState<Date | null>(null)
   const [isCreating, setIsCreating] = useState(false)
   const [createError, setCreateError] = useState<string | null>(null)
@@ -104,7 +113,32 @@ export function CalendarPage() {
     return () => controller.abort()
   }, [])
 
-  const activitiesByDay = useMemo(() => groupActivitiesByDay(activities), [activities])
+  const filteredActivities = useMemo(() => {
+    const normalizedQuery = searchQuery.trim().toLocaleLowerCase()
+    return activities.filter((activity) => {
+      const matchesSearch = !normalizedQuery || [
+        activity.title,
+        activity.company,
+        activity.jobTitle,
+        activity.contact ?? '',
+      ].some((value) => value.toLocaleLowerCase().includes(normalizedQuery))
+      const matchesType = typeFilter === 'ALL' || activity.type === typeFilter
+      const matchesStatus = statusFilter === 'ALL'
+        || (statusFilter === 'COMPLETED'
+          ? activity.completedAt !== null
+          : activity.completedAt === null)
+      const matchesJob = jobIdFilter === null || activity.jobId === jobIdFilter
+      return matchesSearch && matchesType && matchesStatus && matchesJob
+    })
+  }, [activities, jobIdFilter, searchQuery, statusFilter, typeFilter])
+  const hasActiveFilters = searchQuery.trim() !== ''
+    || typeFilter !== 'ALL'
+    || statusFilter !== 'ALL'
+    || jobIdFilter !== null
+  const activitiesByDay = useMemo(
+    () => groupActivitiesByDay(filteredActivities),
+    [filteredActivities],
+  )
   const agendaDays = useMemo(
     () => days.filter((day) => (
       day.getMonth() === visibleMonth.getMonth()
@@ -129,6 +163,13 @@ export function CalendarPage() {
   function openCreateDialog(date: Date) {
     setCreateError(null)
     setCreateDate(getSuggestedActivityDate(date))
+  }
+
+  function clearFilters() {
+    setSearchQuery('')
+    setTypeFilter('ALL')
+    setStatusFilter('ALL')
+    setJobIdFilter(null)
   }
 
   async function handleCreate(jobId: number, input: CreateJobActivityInput) {
@@ -303,6 +344,22 @@ export function CalendarPage() {
           </div>
         )}
 
+        <CalendarFilters
+          searchQuery={searchQuery}
+          typeFilter={typeFilter}
+          statusFilter={statusFilter}
+          jobIdFilter={jobIdFilter}
+          jobs={jobs}
+          shownCount={filteredActivities.length}
+          totalCount={activities.length}
+          hasActiveFilters={hasActiveFilters}
+          onSearchChange={setSearchQuery}
+          onTypeChange={setTypeFilter}
+          onStatusChange={setStatusFilter}
+          onJobChange={setJobIdFilter}
+          onClear={clearFilters}
+        />
+
         <div className="calendar-weekdays" aria-hidden="true">
           {weekdayLabels.map((label) => <span key={label}>{label}</span>)}
         </div>
@@ -349,11 +406,21 @@ export function CalendarPage() {
             <div className="calendar-agenda__state">Loading activities…</div>
           ) : agendaDays.length === 0 ? (
             <div className="calendar-agenda__state">
-              <strong>No scheduled activities this month.</strong>
-              <span>Add an interview or follow-up directly from this calendar.</span>
-              <button type="button" onClick={() => openCreateDialog(getDefaultCreateDate(visibleMonth))}>
-                Add activity
-              </button>
+              {hasActiveFilters ? (
+                <>
+                  <strong>No activities match these filters.</strong>
+                  <span>Try a broader search or clear the current filters.</span>
+                  <button type="button" onClick={clearFilters}>Clear filters</button>
+                </>
+              ) : (
+                <>
+                  <strong>No scheduled activities this month.</strong>
+                  <span>Add an interview or follow-up directly from this calendar.</span>
+                  <button type="button" onClick={() => openCreateDialog(getDefaultCreateDate(visibleMonth))}>
+                    Add activity
+                  </button>
+                </>
+              )}
             </div>
           ) : agendaDays.map((day) => (
             <section className="calendar-agenda__day" key={toDateKey(day)}>
@@ -512,6 +579,7 @@ function CalendarAgendaItem({
     </article>
   )
 }
+
 function startOfMonth(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), 1)
 }
