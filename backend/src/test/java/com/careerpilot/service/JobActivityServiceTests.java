@@ -23,6 +23,8 @@ import com.careerpilot.model.JobActivityType;
 import com.careerpilot.model.JobAttentionEvent;
 import com.careerpilot.model.JobAttentionEventAction;
 import com.careerpilot.model.JobStatus;
+import com.careerpilot.model.InterviewPreparation;
+import com.careerpilot.repository.InterviewPreparationRepository;
 import com.careerpilot.repository.JobActivityRepository;
 import com.careerpilot.repository.JobAttentionEventRepository;
 import com.careerpilot.repository.JobRepository;
@@ -47,6 +49,9 @@ class JobActivityServiceTests {
 
     @Mock
     private JobActivityRepository jobActivityRepository;
+
+    @Mock
+    private InterviewPreparationRepository interviewPreparationRepository;
 
     @Mock
     private JobAttentionEventRepository jobAttentionEventRepository;
@@ -545,13 +550,32 @@ class JobActivityServiceTests {
         Instant start = Instant.parse("2026-08-01T00:00:00Z");
         Instant end = Instant.parse("2026-09-01T00:00:00Z");
         Job job = persistedJob(1L);
-        JobActivity interview = persistedActivity(2L, job, "Interview", "2026-08-12T18:00:00Z");
+        JobActivity interview = persistedActivity(
+                2L,
+                job,
+                JobActivityType.INTERVIEW,
+                "Interview",
+                "2026-08-12T18:00:00Z"
+        );
         interview.complete(Instant.parse("2026-08-12T20:00:00Z"), null, null, null);
+        InterviewPreparation preparation = new InterviewPreparation(
+                interview,
+                Instant.parse("2026-08-10T12:00:00Z")
+        );
+        preparation.update(
+                "Company", true,
+                "Role", true,
+                null, false,
+                null, false,
+                Instant.parse("2026-08-10T12:00:00Z")
+        );
         when(jobActivityRepository.findScheduledActivitiesBetween(
                 List.of(JobActivityType.INTERVIEW, JobActivityType.FOLLOW_UP),
                 start,
                 end
         )).thenReturn(List.of(interview));
+        when(interviewPreparationRepository.findAllByActivity_IdIn(List.of(2L)))
+                .thenReturn(List.of(preparation));
 
         List<ScheduledJobActivityResponse> activities =
                 jobActivityService.getCalendarActivities(start, end);
@@ -560,6 +584,10 @@ class JobActivityServiceTests {
         assertThat(activities.getFirst().company()).isEqualTo("OpenAI");
         assertThat(activities.getFirst().completedAt())
                 .isEqualTo(Instant.parse("2026-08-12T20:00:00Z"));
+        assertThat(activities.getFirst().preparationCompletedSections()).isEqualTo(2);
+        assertThat(activities.getFirst().preparationTotalSections()).isEqualTo(4);
+        assertThat(activities.getFirst().preparationProgressPercent()).isEqualTo(50);
+        verify(interviewPreparationRepository).findAllByActivity_IdIn(List.of(2L));
     }
 
     @Test

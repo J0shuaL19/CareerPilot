@@ -118,6 +118,16 @@ export function CalendarActivityDetailsDialog({
               <dt>Job stage</dt>
               <dd>{jobStatus?.label ?? 'Unavailable'}</dd>
             </div>
+            {activity.type === 'INTERVIEW' && (
+              <div>
+                <dt>Preparation</dt>
+                <dd>
+                  {activity.preparationProgressPercent === 100
+                    ? 'Ready · 4 of 4 sections'
+                    : `${activity.preparationCompletedSections ?? 0} of ${activity.preparationTotalSections ?? 4} sections`}
+                </dd>
+              </div>
+            )}
           </dl>
 
           <p className="calendar-details-dialog__guidance">
@@ -139,7 +149,9 @@ export function CalendarActivityDetailsDialog({
                 disabled={isReopening}
                 onClick={onPrepare}
               >
-                Prepare
+                {activity.preparationProgressPercent === 100
+                  ? 'Preparation ready'
+                  : `Prepare · ${activity.preparationProgressPercent ?? 0}%`}
               </button>
             )}
             {isCompleted ? (

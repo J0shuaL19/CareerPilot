@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { CalendarActivityDialog } from '../components/CalendarActivityDialog'
 import { CalendarActivityDetailsDialog } from '../components/CalendarActivityDetailsDialog'
 import { CalendarImportDialog } from '../components/CalendarImportDialog'
+import { CalendarReadinessPanel } from '../components/CalendarReadinessPanel'
 import {
   CalendarFilters,
   type CalendarActivityStatusFilter,
@@ -312,6 +313,9 @@ export function CalendarPage() {
         contact: created.contact,
         occurredAt: created.occurredAt,
         completedAt: created.completedAt,
+        preparationCompletedSections: created.type === 'INTERVIEW' ? 0 : null,
+        preparationTotalSections: created.type === 'INTERVIEW' ? 4 : null,
+        preparationProgressPercent: created.type === 'INTERVIEW' ? 0 : null,
       }
       const activityTime = new Date(created.occurredAt)
       if (activityTime >= gridStart && activityTime < gridEnd) {
@@ -484,6 +488,14 @@ export function CalendarPage() {
             <span>{exportError}</span>
           </div>
         )}
+
+        <CalendarReadinessPanel
+          activities={activities}
+          onPrepare={(activity) => {
+            setNotice(null)
+            setPreparingActivity(activity)
+          }}
+        />
 
         <CalendarFilters
           searchQuery={searchQuery}
@@ -664,6 +676,16 @@ export function CalendarPage() {
           activity={preparingActivity}
           onClose={() => setPreparingActivity(null)}
           onSaved={(preparation) => {
+            setActivities((current) => current.map((activity) => (
+              activity.id === preparation.activityId
+                ? {
+                    ...activity,
+                    preparationCompletedSections: preparation.completedSections,
+                    preparationTotalSections: preparation.totalSections,
+                    preparationProgressPercent: preparation.progressPercent,
+                  }
+                : activity
+            )))
             setPreparingActivity(null)
             setNotice(
               'Interview preparation saved · '
@@ -781,6 +803,15 @@ function CalendarEvent({
       {activity.completedAt && (
         <span className="calendar-event__check" aria-label="Completed">✓</span>
       )}
+      {activity.type === 'INTERVIEW' && (
+        <span className={'calendar-preparation-badge'
+          + (activity.preparationProgressPercent === 100
+            ? ' calendar-preparation-badge--ready' : '')}>
+          {activity.preparationProgressPercent === 100
+            ? 'Ready'
+            : `Prep ${activity.preparationProgressPercent ?? 0}%`}
+        </span>
+      )}
     </button>
   )
 }
@@ -803,6 +834,15 @@ function CalendarAgendaItem({
       <span className="calendar-agenda-item__content">
         <strong>{activity.title}</strong>
         <small>{activity.jobTitle} · {activity.company}</small>
+        {activity.type === 'INTERVIEW' && (
+          <span className={'calendar-preparation-badge'
+            + (activity.preparationProgressPercent === 100
+              ? ' calendar-preparation-badge--ready' : '')}>
+            {activity.preparationProgressPercent === 100
+              ? 'Preparation ready'
+              : `${activity.preparationCompletedSections ?? 0} of ${activity.preparationTotalSections ?? 4} ready`}
+          </span>
+        )}
       </span>
       <span className="calendar-agenda-item__actions">
         {activity.completedAt && (

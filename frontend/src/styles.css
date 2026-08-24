@@ -5934,6 +5934,193 @@ a:focus-visible {
   }
 }
 
+/* Calendar interview readiness */
+.calendar-readiness {
+  display: grid;
+  gap: 0.9rem;
+  padding: 1rem 1.3rem 1.15rem;
+  border-bottom: 1px solid #e4e9f2;
+  background: linear-gradient(135deg, #fffaf2, #fffdf8);
+}
+
+.calendar-readiness__heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.calendar-readiness__heading p,
+.calendar-readiness__heading h3,
+.calendar-readiness__more {
+  margin: 0;
+}
+
+.calendar-readiness__heading p {
+  color: #b86c16;
+  font-size: 0.64rem;
+  font-weight: 850;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.calendar-readiness__heading h3 {
+  margin-top: 0.12rem;
+  color: #3e352a;
+  font-size: 0.96rem;
+}
+
+.calendar-readiness__heading > span,
+.calendar-readiness__more {
+  color: #7d6f60;
+  font-size: 0.7rem;
+  font-weight: 750;
+}
+
+.calendar-readiness__list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.calendar-readiness-item {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 0.75rem;
+  padding: 0.8rem;
+  border: 1px solid #eadbc8;
+  border-radius: 12px;
+  background: rgb(255 255 255 / 78%);
+}
+
+.calendar-readiness-item--urgent {
+  border-color: #e6b6a2;
+  background: #fff7f3;
+  box-shadow: inset 3px 0 #d7653b;
+}
+
+.calendar-readiness-item__content,
+.calendar-readiness-item__progress {
+  display: grid;
+  min-width: 0;
+  gap: 0.22rem;
+}
+
+.calendar-readiness-item__content > strong,
+.calendar-readiness-item__content > small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calendar-readiness-item__content > strong {
+  color: #3e3a35;
+  font-size: 0.78rem;
+}
+
+.calendar-readiness-item__content > small,
+.calendar-readiness-item__time {
+  color: #817566;
+  font-size: 0.62rem;
+}
+
+.calendar-readiness-item__time {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.calendar-readiness-item__time strong {
+  color: #b94f2b;
+}
+
+.calendar-readiness-item__progress {
+  grid-column: 1;
+}
+
+.calendar-readiness-item__progress span {
+  color: #7d6f60;
+  font-size: 0.62rem;
+  font-weight: 750;
+}
+
+.calendar-readiness-item__progress progress {
+  width: 100%;
+  height: 5px;
+  accent-color: #d68a2c;
+}
+
+.calendar-readiness-item > button {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  padding: 0.48rem 0.62rem;
+  border: 1px solid #d8b887;
+  border-radius: 8px;
+  color: #8e5612;
+  background: #fffaf0;
+  font-size: 0.65rem;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.calendar-readiness-item > button:hover {
+  border-color: #bd8b42;
+  background: #fff4df;
+}
+
+.calendar-preparation-badge {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  margin-top: 0.18rem;
+  padding: 0.18rem 0.38rem;
+  border: 1px solid #e4c58f;
+  border-radius: 999px;
+  color: #925d16;
+  background: #fff8e8;
+  font-size: 0.55rem;
+  font-weight: 850;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.calendar-preparation-badge--ready {
+  border-color: #b9ddc8;
+  color: #2f7954;
+  background: #eef9f3;
+}
+
+@media (max-width: 1000px) {
+  .calendar-readiness__list {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .calendar-readiness {
+    padding: 0.9rem 1rem 1rem;
+  }
+
+  .calendar-readiness__heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .calendar-readiness-item {
+    grid-template-columns: 1fr;
+  }
+
+  .calendar-readiness-item > button {
+    grid-column: 1;
+    grid-row: auto;
+    width: 100%;
+  }
+}
+
 /* Calendar quick-add */
 .calendar-page__actions {
   display: flex;

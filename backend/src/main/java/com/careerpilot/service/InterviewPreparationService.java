@@ -17,8 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class InterviewPreparationService {
 
-    private static final int TOTAL_SECTIONS = 4;
-
     private final JobRepository jobRepository;
     private final JobActivityRepository jobActivityRepository;
     private final InterviewPreparationRepository interviewPreparationRepository;
@@ -128,14 +126,14 @@ public class InterviewPreparationService {
                 null,
                 false,
                 0,
-                TOTAL_SECTIONS,
+                InterviewPreparation.TOTAL_SECTIONS,
                 0,
                 null
         );
     }
 
     private static InterviewPreparationResponse toResponse(InterviewPreparation preparation) {
-        int completedSections = countCompleted(preparation);
+        int completedSections = preparation.completedSections();
         return new InterviewPreparationResponse(
                 preparation.getActivity().getId(),
                 preparation.getCompanyResearch(),
@@ -147,27 +145,10 @@ public class InterviewPreparationService {
                 preparation.getQuestionsToAsk(),
                 preparation.isQuestionsToAskDone(),
                 completedSections,
-                TOTAL_SECTIONS,
-                completedSections * 100 / TOTAL_SECTIONS,
+                InterviewPreparation.TOTAL_SECTIONS,
+                preparation.progressPercent(),
                 preparation.getUpdatedAt()
         );
-    }
-
-    private static int countCompleted(InterviewPreparation preparation) {
-        int completed = 0;
-        if (preparation.isCompanyResearchDone()) {
-            completed++;
-        }
-        if (preparation.isRolePrioritiesDone()) {
-            completed++;
-        }
-        if (preparation.isStarStoriesDone()) {
-            completed++;
-        }
-        if (preparation.isQuestionsToAskDone()) {
-            completed++;
-        }
-        return completed;
     }
 
     private static String normalizeOptional(String value) {

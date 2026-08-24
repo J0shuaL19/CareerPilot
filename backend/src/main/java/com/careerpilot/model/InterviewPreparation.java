@@ -21,6 +21,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class InterviewPreparation {
 
+    public static final int TOTAL_SECTIONS = 4;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -59,6 +61,27 @@ public class InterviewPreparation {
     public InterviewPreparation(JobActivity activity, Instant updatedAt) {
         this.activity = Objects.requireNonNull(activity, "Interview activity is required");
         this.updatedAt = Objects.requireNonNull(updatedAt, "Update time is required");
+    }
+
+    public int completedSections() {
+        int completedSections = 0;
+        if (companyResearchDone) {
+            completedSections++;
+        }
+        if (rolePrioritiesDone) {
+            completedSections++;
+        }
+        if (starStoriesDone) {
+            completedSections++;
+        }
+        if (questionsToAskDone) {
+            completedSections++;
+        }
+        return completedSections;
+    }
+
+    public int progressPercent() {
+        return completedSections() * 100 / TOTAL_SECTIONS;
     }
 
     public void update(

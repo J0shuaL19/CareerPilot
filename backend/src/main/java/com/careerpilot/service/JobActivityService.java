@@ -11,12 +11,14 @@ import com.careerpilot.exception.JobActivityCalendarException;
 import com.careerpilot.exception.JobActivityCompletionException;
 import com.careerpilot.exception.JobActivityRescheduleException;
 import com.careerpilot.exception.ResourceNotFoundException;
+import com.careerpilot.model.InterviewPreparation;
 import com.careerpilot.model.Job;
 import com.careerpilot.model.JobActivity;
 import com.careerpilot.model.JobActivityType;
 import com.careerpilot.model.JobAttentionEvent;
 import com.careerpilot.model.JobAttentionEventAction;
 import com.careerpilot.model.JobStatus;
+import com.careerpilot.repository.InterviewPreparationRepository;
 import com.careerpilot.repository.JobActivityRepository;
 import com.careerpilot.repository.JobAttentionEventRepository;
 import com.careerpilot.repository.JobRepository;
@@ -26,6 +28,9 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,17 +46,20 @@ public class JobActivityService {
 
     private final JobRepository jobRepository;
     private final JobActivityRepository jobActivityRepository;
+    private final InterviewPreparationRepository interviewPreparationRepository;
     private final JobAttentionEventRepository jobAttentionEventRepository;
     private final Clock clock;
 
     public JobActivityService(
             JobRepository jobRepository,
             JobActivityRepository jobActivityRepository,
+            InterviewPreparationRepository interviewPreparationRepository,
             JobAttentionEventRepository jobAttentionEventRepository,
             Clock clock
     ) {
         this.jobRepository = jobRepository;
         this.jobActivityRepository = jobActivityRepository;
+        this.interviewPreparationRepository = interviewPreparationRepository;
         this.jobAttentionEventRepository = jobAttentionEventRepository;
         this.clock = clock;
     }
@@ -225,9 +233,26 @@ public class JobActivityService {
             throw new JobActivityCalendarException("Calendar range cannot exceed 62 days.");
         }
 
-        return jobActivityRepository.findScheduledActivitiesBetween(REMINDER_TYPES, start, end)
-                .stream()
-                .map(JobActivityService::toScheduledResponse)
+        List<JobActivity> activities = jobActivityRepository
+                .findScheduledActivitiesBetween(REMINDER_TYPES, start, end);
+        List<Long> interviewActivityIds = activities.stream()
+                .filter(activity -> activity.getType() == JobActivityType.INTERVIEW)
+                .map(JobActivity::getId)
+                .toList();
+        Map<Long, InterviewPreparation> preparationsByActivityId = interviewActivityIds.isEmpty()
+                ? Map.of()
+                : interviewPreparationRepository.findAllByActivity_IdIn(interviewActivityIds)
+                        .stream()
+                        .collect(Collectors.toMap(
+                                preparation -> preparation.getActivity().getId(),
+                                Function.identity()
+                        ));
+
+        return activities.stream()
+                .map(activity -> toScheduledResponse(
+                        activity,
+                        preparationsByActivityId.get(activity.getId())
+                ))
                 .toList();
     }
 
@@ -286,7 +311,18 @@ public class JobActivityService {
         );
     }
 
-    private static ScheduledJobActivityResponse toScheduledResponse(JobActivity activity) {
+    private static ScheduledJobActivityResponse toScheduledResponse(
+            JobActivity activity,
+            InterviewPreparation preparation
+    ) {
+        Integer completedSections = null;
+        Integer totalSections = null;
+        Integer progressPercent = null;
+        if (activity.getType() == JobActivityType.INTERVIEW) {
+            completedSections = preparation == null ? 0 : preparation.completedSections();
+            totalSections = InterviewPreparation.TOTAL_SECTIONS;
+            progressPercent = preparation == null ? 0 : preparation.progressPercent();
+        }
         return new ScheduledJobActivityResponse(
                 activity.getId(),
                 activity.getJob().getId(),
@@ -296,7 +332,10 @@ public class JobActivityService {
                 activity.getTitle(),
                 activity.getContact(),
                 activity.getOccurredAt(),
-                activity.getCompletedAt()
+                activity.getCompletedAt(),
+                completedSections,
+                totalSections,
+                progressPercent
         );
     }
 }

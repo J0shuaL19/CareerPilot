@@ -53,6 +53,9 @@ export interface UpcomingJobActivity {
 
 export interface ScheduledJobActivity extends UpcomingJobActivity {
   completedAt: string | null
+  preparationCompletedSections: number | null
+  preparationTotalSections: number | null
+  preparationProgressPercent: number | null
 }
 
 export interface JobAttentionItem {

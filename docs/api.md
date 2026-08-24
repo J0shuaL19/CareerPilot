@@ -432,6 +432,8 @@ Each response includes `jobId`, `company`, and `jobTitle` so the frontend can pr
 
 Returns interviews and follow-ups whose scheduled time is greater than or equal to `start` and strictly before `end`, ordered chronologically. Both incomplete and completed activities are included; each item includes `jobId`, `company`, `jobTitle`, and nullable `completedAt` so month and agenda views can distinguish active work from completed history.
 
+Interview items also include `preparationCompletedSections`, `preparationTotalSections`, and `preparationProgressPercent`. An interview without a saved checklist returns `0`, `4`, and `0`; follow-up items return `null` for all three fields. Preparations for the requested activities are loaded in one batch rather than one query per interview.
+
 Both query parameters use ISO-8601 instants. `end` must be later than `start`, and the requested range cannot exceed 62 days. Invalid ranges return `400 Bad Request`; an empty range returns `[]` with `200 OK`.
 
 ### Export selected calendar activities

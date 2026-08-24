@@ -80,6 +80,26 @@ Each row records one dated event or note in a job's application history. Deletin
 | `completion_applied_job_status` | `VARCHAR(32)` | Stage applied during completion, used to avoid overwriting later manual changes on reopen |
 | `created_at` | `TIMESTAMP WITH TIME ZONE` | UTC record creation time |
 
+## Interview preparations table
+
+Migration: `V10__create_interview_preparations_table.sql`
+
+Each interview activity can own one persistent four-part preparation checklist. The unique activity foreign key enforces one checklist per interview, and deleting the activity removes its checklist.
+
+| Column | Type | Purpose |
+| --- | --- | --- |
+| `id` | `BIGSERIAL` | Database-generated identifier |
+| `activity_id` | `BIGINT` | Unique owning interview activity |
+| `company_research` | `TEXT` | Optional company and market notes |
+| `company_research_done` | `BOOLEAN` | Company research completion flag |
+| `role_priorities` | `TEXT` | Optional role priority notes |
+| `role_priorities_done` | `BOOLEAN` | Role review completion flag |
+| `star_stories` | `TEXT` | Optional STAR story notes |
+| `star_stories_done` | `BOOLEAN` | STAR rehearsal completion flag |
+| `questions_to_ask` | `TEXT` | Optional interviewer questions |
+| `questions_to_ask_done` | `BOOLEAN` | Question preparation completion flag |
+| `updated_at` | `TIMESTAMP WITH TIME ZONE` | Last checklist save time |
+
 ## Job attention events table
 
 Migration: `V7__create_job_attention_events_table.sql`

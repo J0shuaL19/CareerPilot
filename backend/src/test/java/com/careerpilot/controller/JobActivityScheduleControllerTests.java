@@ -205,7 +205,10 @@ class JobActivityScheduleControllerTests {
                         "Technical interview",
                         "Alex Chen",
                         Instant.parse("2026-08-23T18:00:00Z"),
-                        Instant.parse("2026-08-23T19:00:00Z")
+                        Instant.parse("2026-08-23T19:00:00Z"),
+                        2,
+                        4,
+                        50
                 )
         ));
 
@@ -214,6 +217,9 @@ class JobActivityScheduleControllerTests {
                         .param("end", end.toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].jobTitle").value("Engineer"))
-                .andExpect(jsonPath("$[0].completedAt").value("2026-08-23T19:00:00Z"));
+                .andExpect(jsonPath("$[0].completedAt").value("2026-08-23T19:00:00Z"))
+                .andExpect(jsonPath("$[0].preparationCompletedSections").value(2))
+                .andExpect(jsonPath("$[0].preparationTotalSections").value(4))
+                .andExpect(jsonPath("$[0].preparationProgressPercent").value(50));
     }
 }
