@@ -1,8 +1,14 @@
 import { type FormEvent, useEffect, useRef, useState } from 'react'
-import type { JobAttentionItem } from '../types/jobActivity'
+
+export interface SnoozeReminderTarget {
+  company: string
+  jobTitle: string
+  thresholdDays?: number
+  currentSnoozedUntil?: string | null
+}
 
 interface SnoozeReminderDialogProps {
-  item: JobAttentionItem
+  item: SnoozeReminderTarget
   isSaving: boolean
   error: string | null
   onClose: () => void
@@ -24,7 +30,12 @@ export function SnoozeReminderDialog({
 }: SnoozeReminderDialogProps) {
   const dateRef = useRef<HTMLInputElement>(null)
   const tomorrow = toDateInputValue(addDays(new Date(), 1))
-  const [snoozedUntil, setSnoozedUntil] = useState(tomorrow)
+  const isRescheduling = Boolean(item.currentSnoozedUntil)
+  const [snoozedUntil, setSnoozedUntil] = useState(
+    item.currentSnoozedUntil && item.currentSnoozedUntil >= tomorrow
+      ? item.currentSnoozedUntil
+      : tomorrow,
+  )
 
   useEffect(() => {
     dateRef.current?.focus()
@@ -62,8 +73,10 @@ export function SnoozeReminderDialog({
       >
         <header className="quick-follow-up-dialog__heading">
           <div>
-            <p>Pause one reminder</p>
-            <h2 id="snooze-reminder-heading">Snooze until later</h2>
+            <p>{isRescheduling ? 'Adjust one reminder' : 'Pause one reminder'}</p>
+            <h2 id="snooze-reminder-heading">
+              {isRescheduling ? 'Change snooze date' : 'Snooze until later'}
+            </h2>
             <span>{item.jobTitle} · {item.company}</span>
           </div>
           <button
@@ -78,7 +91,9 @@ export function SnoozeReminderDialog({
 
         <form className="quick-follow-up-form snooze-reminder-form" onSubmit={handleSubmit}>
           <p className="snooze-reminder-form__intro">
-            Hide this job from Needs attention without changing your stage rules.
+            {isRescheduling
+              ? 'Choose a new date for this reminder to return to Needs attention.'
+              : 'Hide this job from Needs attention without changing your stage rules.'}
           </p>
 
           <div className="snooze-reminder-presets" aria-label="Quick snooze dates">
@@ -122,7 +137,11 @@ export function SnoozeReminderDialog({
           {error && <p className="quick-follow-up-form__error" role="alert">{error}</p>}
 
           <div className="quick-follow-up-form__actions snooze-reminder-form__actions">
-            <span>Current rule: {item.thresholdDays} days</span>
+            <span>
+              {isRescheduling && item.currentSnoozedUntil
+                ? 'Currently: ' + formatDateLabel(item.currentSnoozedUntil)
+                : 'Current rule: ' + item.thresholdDays + ' days'}
+            </span>
             <div>
               <button
                 className="button button--secondary"
@@ -133,7 +152,9 @@ export function SnoozeReminderDialog({
                 Cancel
               </button>
               <button className="button button--primary" type="submit" disabled={isSaving}>
-                {isSaving ? 'Snoozing…' : 'Snooze reminder'}
+                {isSaving
+                  ? (isRescheduling ? 'Updating…' : 'Snoozing…')
+                  : (isRescheduling ? 'Update date' : 'Snooze reminder')}
               </button>
             </div>
           </div>

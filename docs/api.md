@@ -238,6 +238,8 @@ The date is required, uses `YYYY-MM-DD`, and must be in the future. Success: `20
 
 Clears the saved date immediately. Success: `200 OK` with the complete updated job response and `attentionSnoozedUntil` set to `null`.
 
+The dashboard derives its `Snoozed reminders` management list from active jobs returned by `GET /api/jobs` whose `attentionSnoozedUntil` date is still in the future. Users can update that date through the snooze endpoint or resume the reminder immediately through the clear endpoint.
+
 ### Delete a job
 
 `DELETE /api/jobs/{id}`

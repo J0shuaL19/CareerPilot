@@ -5,7 +5,11 @@ import { DashboardFunnel } from '../components/DashboardFunnel'
 import { NeedsAttentionPanel } from '../components/NeedsAttentionPanel'
 import { PipelineSummary } from '../components/PipelineSummary'
 import { QuickFollowUpDialog } from '../components/QuickFollowUpDialog'
-import { SnoozeReminderDialog } from '../components/SnoozeReminderDialog'
+import {
+  SnoozeReminderDialog,
+  type SnoozeReminderTarget,
+} from '../components/SnoozeReminderDialog'
+import { SnoozedRemindersPanel } from '../components/SnoozedRemindersPanel'
 import { UpcomingActivities } from '../components/UpcomingActivities'
 import { getDashboardStats } from '../services/dashboardApi'
 import {
@@ -39,6 +43,10 @@ interface SnoozeConfirmation {
   jobId: number
   company: string
   snoozedUntil: string
+}
+
+interface SnoozeDialogItem extends SnoozeReminderTarget {
+  jobId: number
 }
 
 interface DashboardData {
@@ -81,12 +89,14 @@ export function DashboardPage() {
   const [isAttentionSettingsOpen, setIsAttentionSettingsOpen] = useState(false)
   const [isAttentionSettingsSaving, setIsAttentionSettingsSaving] = useState(false)
   const [attentionSettingsError, setAttentionSettingsError] = useState<string | null>(null)
-  const [snoozeItem, setSnoozeItem] = useState<JobAttentionItem | null>(null)
+  const [snoozeItem, setSnoozeItem] = useState<SnoozeDialogItem | null>(null)
   const [isSnoozeSaving, setIsSnoozeSaving] = useState(false)
   const [snoozeError, setSnoozeError] = useState<string | null>(null)
   const [snoozeConfirmation, setSnoozeConfirmation] = useState<SnoozeConfirmation | null>(null)
   const [isSnoozeUndoing, setIsSnoozeUndoing] = useState(false)
   const [snoozeUndoError, setSnoozeUndoError] = useState<string | null>(null)
+  const [resumingSnoozeJobId, setResumingSnoozeJobId] = useState<number | null>(null)
+  const [snoozedRemindersError, setSnoozedRemindersError] = useState<string | null>(null)
 
   async function handleFollowUpSubmit(input: CreateJobActivityInput) {
     if (!followUpItem) return
@@ -142,6 +152,7 @@ export function DashboardPage() {
         snoozedUntil,
       })
       setSnoozeUndoError(null)
+      setSnoozedRemindersError(null)
       setFollowUpSuccess(null)
       setSnoozeItem(null)
     } catch (saveError) {
@@ -164,6 +175,26 @@ export function DashboardPage() {
       setSnoozeUndoError(getErrorMessage(undoError))
     } finally {
       setIsSnoozeUndoing(false)
+    }
+  }
+
+  async function handleResumeReminder(job: Job) {
+    setResumingSnoozeJobId(job.id)
+    setSnoozedRemindersError(null)
+
+    try {
+      const updatedJob = await clearJobAttentionSnooze(job.id)
+      setData((current) => ({
+        ...current,
+        jobs: current.jobs.map((item) => item.id === updatedJob.id ? updatedJob : item),
+      }))
+      setSnoozeConfirmation(null)
+      setFollowUpSuccess(job.company + ' reminder is active again.')
+      setReloadKey((key) => key + 1)
+    } catch (resumeError) {
+      setSnoozedRemindersError(getErrorMessage(resumeError))
+    } finally {
+      setResumingSnoozeJobId(null)
     }
   }
 
@@ -237,6 +268,16 @@ export function DashboardPage() {
     return () => controller.abort()
   }, [statsRange, statsReloadKey])
 
+  const today = toDateInputValue(new Date())
+  const snoozedJobs = data.jobs
+    .filter((job) => (
+      ['APPLIED', 'OA', 'INTERVIEW'].includes(job.status)
+      && job.attentionSnoozedUntil !== null
+      && job.attentionSnoozedUntil > today
+    ))
+    .sort((first, second) => (
+      (first.attentionSnoozedUntil ?? '').localeCompare(second.attentionSnoozedUntil ?? '')
+    ))
   const activeJobs = data.jobs.filter(({ status }) => (
     ['APPLIED', 'OA', 'INTERVIEW'].includes(status)
   )).length
@@ -404,6 +445,26 @@ export function DashboardPage() {
             }}
           />
 
+          {snoozedJobs.length > 0 && (
+            <SnoozedRemindersPanel
+              jobs={snoozedJobs}
+              busyJobId={resumingSnoozeJobId}
+              error={snoozedRemindersError}
+              onChangeDate={(job) => {
+                setSnoozeError(null)
+                setSnoozedRemindersError(null)
+                setSnoozeItem({
+                  jobId: job.id,
+                  company: job.company,
+                  jobTitle: job.title,
+                  currentSnoozedUntil: job.attentionSnoozedUntil,
+                })
+              }}
+              onResume={(job) => void handleResumeReminder(job)}
+              onViewJob={(jobId) => navigate('/jobs/' + jobId)}
+            />
+          )}
+
           <UpcomingActivities
             activities={data.upcomingActivities}
             isLoading={false}
@@ -547,4 +608,11 @@ function getScoreTone(score: number): 'low' | 'medium' | 'high' {
   if (score >= 75) return 'high'
   if (score >= 50) return 'medium'
   return 'low'
+}
+
+function toDateInputValue(date: Date): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return [year, month, day].join('-')
 }
