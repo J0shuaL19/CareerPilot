@@ -11,6 +11,8 @@ public record JobActivityResponse(
         String details,
         String contact,
         Instant occurredAt,
+        Instant completedAt,
+        String completionNote,
         Instant createdAt
 ) {
 }

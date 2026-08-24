@@ -56,7 +56,14 @@ export function JobTimeline({
             <div className="timeline-entry__marker" aria-hidden="true">{config.symbol}</div>
             <div className={`timeline-entry__card${isEditing ? ' timeline-entry__card--editing' : ''}`}>
               <div className="timeline-entry__meta">
-                <span>{config.shortLabel}</span>
+                <div className="timeline-entry__meta-labels">
+                  <span>{config.shortLabel}</span>
+                  {activity.completedAt && (
+                    <span className="timeline-entry__completed">
+                      Completed {dateTimeFormatter.format(new Date(activity.completedAt))}
+                    </span>
+                  )}
+                </div>
                 <time dateTime={activity.occurredAt}>
                   {dateTimeFormatter.format(new Date(activity.occurredAt))}
                 </time>
@@ -68,6 +75,12 @@ export function JobTimeline({
                 </p>
               )}
               {activity.details && <p className="timeline-entry__details">{activity.details}</p>}
+              {activity.completionNote && (
+                <div className="timeline-entry__completion-note">
+                  <strong>Outcome</strong>
+                  <p>{activity.completionNote}</p>
+                </div>
+              )}
 
               <div className="timeline-entry__actions">
                 {isConfirming ? (

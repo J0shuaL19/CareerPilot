@@ -130,6 +130,37 @@ class JobActivityControllerTests {
     }
 
     @Test
+    void completesActivity() throws Exception {
+        when(jobActivityService.completeActivity(any(Long.class), any(Long.class), any()))
+                .thenReturn(completedResponse(2L, "Technical interview"));
+
+        mockMvc.perform(put("/api/jobs/1/activities/2/complete")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "note": "Strong conversation",
+                                  "jobStatus": "INTERVIEW"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.completedAt").value("2026-08-24T18:00:00Z"))
+                .andExpect(jsonPath("$.completionNote").value("Strong conversation"));
+    }
+
+    @Test
+    void validatesCompletionNoteLength() throws Exception {
+        String note = "a".repeat(2001);
+
+        mockMvc.perform(put("/api/jobs/1/activities/2/complete")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"note\":\"" + note + "\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.note").value(
+                        "Completion note must be 2000 characters or fewer"
+                ));
+    }
+
+    @Test
     void deletesActivity() throws Exception {
         mockMvc.perform(delete("/api/jobs/1/activities/2"))
                 .andExpect(status().isNoContent());
@@ -180,6 +211,22 @@ class JobActivityControllerTests {
                 "System design round",
                 "Alex Chen",
                 Instant.parse("2026-08-25T18:00:00Z"),
+                null,
+                null,
+                Instant.parse("2026-08-22T12:00:00Z")
+        );
+    }
+    private static JobActivityResponse completedResponse(Long id, String title) {
+        return new JobActivityResponse(
+                id,
+                1L,
+                JobActivityType.INTERVIEW,
+                title,
+                "System design round",
+                "Alex Chen",
+                Instant.parse("2026-08-25T18:00:00Z"),
+                Instant.parse("2026-08-24T18:00:00Z"),
+                "Strong conversation",
                 Instant.parse("2026-08-22T12:00:00Z")
         );
     }

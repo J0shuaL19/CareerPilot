@@ -1423,7 +1423,8 @@ a:focus-visible {
 }
 
 .quick-follow-up-form input,
-.quick-follow-up-form textarea {
+.quick-follow-up-form textarea,
+.quick-follow-up-form select {
   width: 100%;
   border: 1px solid #cbd5e4;
   border-radius: 10px;
@@ -1433,7 +1434,8 @@ a:focus-visible {
   font-size: 0.82rem;
 }
 
-.quick-follow-up-form input {
+.quick-follow-up-form input,
+.quick-follow-up-form select {
   min-height: 43px;
   padding: 0 0.75rem;
 }
@@ -1445,7 +1447,8 @@ a:focus-visible {
 }
 
 .quick-follow-up-form input:focus,
-.quick-follow-up-form textarea:focus {
+.quick-follow-up-form textarea:focus,
+.quick-follow-up-form select:focus {
   border-color: #3568e8;
   outline: 3px solid rgb(53 104 232 / 16%);
 }
@@ -5301,5 +5304,85 @@ a:focus-visible {
 
   .action-center__content > span:last-child {
     white-space: normal;
+  }
+}
+
+.complete-activity-dialog {
+  max-width: 620px;
+}
+
+.complete-activity-form__intro {
+  margin: 0;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid #d9e3f5;
+  border-radius: 10px;
+  color: #53647f;
+  background: #f6f8fd;
+  font-size: 0.74rem;
+  line-height: 1.5;
+}
+
+.quick-follow-up-form .complete-activity-form__count {
+  justify-self: end;
+  color: #7f8a9e;
+  font-variant-numeric: tabular-nums;
+}
+
+.complete-activity-form__actions > span {
+  max-width: 230px;
+  color: #7e899c;
+  font-size: 0.68rem;
+  line-height: 1.4;
+}
+
+.timeline-entry__meta-labels {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.timeline-entry__meta .timeline-entry__completed {
+  padding: 0.2rem 0.42rem;
+  border-radius: 999px;
+  color: #24754d;
+  background: #e7f6ed;
+  font-size: 0.58rem;
+  letter-spacing: 0.04em;
+}
+
+.timeline-entry__completion-note {
+  margin-top: 0.7rem;
+  padding: 0.7rem 0.75rem;
+  border: 1px solid #cfe5d8;
+  border-radius: 10px;
+  color: #3d5c4a;
+  background: #f3fbf6;
+}
+
+.timeline-entry__completion-note strong {
+  color: #24754d;
+  font-size: 0.64rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.timeline-entry__completion-note p {
+  margin: 0.3rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 760px) {
+  .timeline-entry__meta {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .complete-activity-form__actions > span {
+    max-width: none;
   }
 }

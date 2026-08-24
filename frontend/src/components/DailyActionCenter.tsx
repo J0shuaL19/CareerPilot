@@ -19,6 +19,7 @@ interface DailyActionCenterProps {
   onConfigure: () => void
   onFollowUp: (item: JobAttentionItem) => void
   onSnooze: (item: JobAttentionItem) => void
+  onComplete: (item: UpcomingJobActivity) => void
   onViewJob: (jobId: number) => void
 }
 
@@ -40,6 +41,7 @@ export function DailyActionCenter({
   onConfigure,
   onFollowUp,
   onSnooze,
+  onComplete,
   onViewJob,
 }: DailyActionCenterProps) {
   const now = new Date()
@@ -116,6 +118,7 @@ export function DailyActionCenter({
                     key={'scheduled-' + action.item.id}
                     item={action.item}
                     now={now}
+                    onComplete={onComplete}
                     onViewJob={onViewJob}
                   />
                 )
@@ -165,10 +168,12 @@ function AttentionAction({
 function ScheduledAction({
   item,
   now,
+  onComplete,
   onViewJob,
 }: {
   item: UpcomingJobActivity
   now: Date
+  onComplete: (item: UpcomingJobActivity) => void
   onViewJob: (jobId: number) => void
 }) {
   const occurredAt = new Date(item.occurredAt)
@@ -191,6 +196,9 @@ function ScheduledAction({
         </span>
       </div>
       <div className="action-center__actions">
+        <button type="button" onClick={() => onComplete(item)}>
+          Complete <span aria-hidden="true">✓</span>
+        </button>
         <button type="button" onClick={() => onViewJob(item.jobId)}>
           View job <span aria-hidden="true">→</span>
         </button>

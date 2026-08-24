@@ -222,7 +222,7 @@ Uses the same request body and validation rules as job creation. Success: `200 O
 
 `PUT /api/jobs/{id}/attention-snooze`
 
-Temporarily hides one overdue job from `Needs attention` without changing the global stage rules.
+Temporarily hides one overdue job from the daily action center without changing the global stage rules.
 
 ```json
 {
@@ -324,13 +324,30 @@ Success: `201 Created` with the saved activity. Activity types are `APPLICATION`
 
 `GET /api/jobs/{jobId}/activities`
 
-Returns the job's activities ordered by occurrence time from newest to oldest. Success: `200 OK`; a job without activity returns `[]`. A missing job returns `404 Not Found`.
+Returns the job's activities ordered by occurrence time from newest to oldest. Completed activities remain in the list with `completedAt` and optional `completionNote`. Success: `200 OK`; a job without activity returns `[]`. A missing job returns `404 Not Found`.
 
 ### Update a job activity
 
 `PUT /api/jobs/{jobId}/activities/{activityId}`
 
 Uses the same request body and validation rules as activity creation. Success: `200 OK` with the complete updated activity. The activity must belong to the job in the request path; missing jobs or activities return `404 Not Found`.
+
+### Complete a scheduled activity
+
+`PUT /api/jobs/{jobId}/activities/{activityId}/complete`
+
+Marks an interview or follow-up complete, records an optional outcome, and can update the owning job's pipeline stage in the same transaction.
+
+```json
+{
+  "note": "Strong conversation; send architecture examples by Friday.",
+  "jobStatus": "INTERVIEW"
+}
+```
+
+`note` is optional and can contain at most 2000 characters. `jobStatus` is optional; omitting it preserves the current job stage. Accepted stages are `SAVED`, `APPLIED`, `OA`, `INTERVIEW`, `OFFER`, `REJECTED`, and `WITHDRAWN`.
+
+Success: `200 OK` with the completed activity, including `completedAt` and `completionNote`. Completing an application or general note, or completing the same activity twice, returns `400 Bad Request`. Missing jobs or activities return `404 Not Found`.
 
 ### Export a job activity to a calendar
 
@@ -348,7 +365,7 @@ Success: `204 No Content`. The activity must belong to the job in the request pa
 
 `GET /api/job-activities/upcoming`
 
-Returns interviews and follow-ups scheduled from the current server time through the next 14 days, ordered from nearest to latest. Past activities, applications, and general notes are excluded.
+Returns incomplete interviews and follow-ups scheduled from the current server time through the next 14 days, ordered from nearest to latest. Completed or past activities, applications, and general notes are excluded.
 
 Each response includes `jobId`, `company`, and `jobTitle` so the frontend can present reminders across the complete pipeline. Success: `200 OK`; no upcoming reminders returns `[]`.
 

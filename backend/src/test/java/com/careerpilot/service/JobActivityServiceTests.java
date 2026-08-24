@@ -6,15 +6,18 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.careerpilot.dto.JobActivityCompletionRequest;
 import com.careerpilot.dto.JobActivityRequest;
 import com.careerpilot.dto.JobActivityResponse;
 import com.careerpilot.dto.UpcomingJobActivityResponse;
+import com.careerpilot.exception.JobActivityCompletionException;
 import com.careerpilot.exception.ResourceNotFoundException;
 import com.careerpilot.model.Job;
 import com.careerpilot.model.JobActivity;
 import com.careerpilot.model.JobActivityType;
 import com.careerpilot.model.JobAttentionEvent;
 import com.careerpilot.model.JobAttentionEventAction;
+import com.careerpilot.model.JobStatus;
 import com.careerpilot.repository.JobActivityRepository;
 import com.careerpilot.repository.JobAttentionEventRepository;
 import com.careerpilot.repository.JobRepository;
@@ -154,6 +157,48 @@ class JobActivityServiceTests {
     }
 
     @Test
+    void completesReminderActivityAndUpdatesJobStatus() {
+        Instant completedAt = Instant.parse("2026-08-24T18:00:00Z");
+        Job job = persistedJob(1L);
+        JobActivity activity = persistedActivity(
+                2L,
+                job,
+                JobActivityType.INTERVIEW,
+                "Hiring manager interview",
+                "2026-08-24T16:00:00Z"
+        );
+        when(jobRepository.findById(1L)).thenReturn(Optional.of(job));
+        when(jobActivityRepository.findByIdAndJob_Id(2L, 1L)).thenReturn(Optional.of(activity));
+        when(clock.instant()).thenReturn(completedAt);
+
+        JobActivityResponse response = jobActivityService.completeActivity(
+                1L,
+                2L,
+                new JobActivityCompletionRequest("  Strong conversation  ", JobStatus.INTERVIEW)
+        );
+
+        assertThat(response.completedAt()).isEqualTo(completedAt);
+        assertThat(response.completionNote()).isEqualTo("Strong conversation");
+        assertThat(job.getStatus()).isEqualTo(JobStatus.INTERVIEW);
+    }
+
+    @Test
+    void rejectsCompletingUnsupportedActivityType() {
+        Job job = persistedJob(1L);
+        JobActivity activity = persistedActivity(2L, job, "General note", "2026-08-24T16:00:00Z");
+        when(jobRepository.findById(1L)).thenReturn(Optional.of(job));
+        when(jobActivityRepository.findByIdAndJob_Id(2L, 1L)).thenReturn(Optional.of(activity));
+
+        assertThatThrownBy(() -> jobActivityService.completeActivity(
+                1L,
+                2L,
+                new JobActivityCompletionRequest(null, null)
+        ))
+                .isInstanceOf(JobActivityCompletionException.class)
+                .hasMessage("Only interviews and follow-ups can be completed.");
+    }
+
+    @Test
     void deletesActivityOwnedByJob() {
         Job job = persistedJob(1L);
         JobActivity activity = persistedActivity(2L, job, "Interview", "2026-08-22T12:00:00Z");
@@ -224,7 +269,7 @@ class JobActivityServiceTests {
         );
         when(clock.instant()).thenReturn(now);
         when(jobActivityRepository
-                .findAllByTypeInAndOccurredAtBetweenOrderByOccurredAtAscCreatedAtAsc(
+                .findAllByTypeInAndCompletedAtIsNullAndOccurredAtBetweenOrderByOccurredAtAscCreatedAtAsc(
                         List.of(JobActivityType.INTERVIEW, JobActivityType.FOLLOW_UP),
                         now,
                         Instant.parse("2026-09-05T12:00:00Z")

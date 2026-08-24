@@ -1,8 +1,10 @@
 package com.careerpilot.service;
 
+import com.careerpilot.dto.JobActivityCompletionRequest;
 import com.careerpilot.dto.JobActivityRequest;
 import com.careerpilot.dto.JobActivityResponse;
 import com.careerpilot.dto.UpcomingJobActivityResponse;
+import com.careerpilot.exception.JobActivityCompletionException;
 import com.careerpilot.exception.ResourceNotFoundException;
 import com.careerpilot.model.Job;
 import com.careerpilot.model.JobActivity;
@@ -104,12 +106,36 @@ public class JobActivityService {
         jobActivityRepository.delete(activity);
     }
 
+    @Transactional
+    public JobActivityResponse completeActivity(
+            Long jobId,
+            Long activityId,
+            JobActivityCompletionRequest request
+    ) {
+        Job job = findJob(jobId);
+        JobActivity activity = findActivity(jobId, activityId);
+        if (!REMINDER_TYPES.contains(activity.getType())) {
+            throw new JobActivityCompletionException(
+                    "Only interviews and follow-ups can be completed."
+            );
+        }
+        if (activity.getCompletedAt() != null) {
+            throw new JobActivityCompletionException("Activity is already completed.");
+        }
+
+        activity.complete(clock.instant(), normalizeOptional(request.note()));
+        if (request.jobStatus() != null) {
+            job.updateStatus(request.jobStatus());
+        }
+        return toResponse(activity);
+    }
+
     @Transactional(readOnly = true)
     public List<UpcomingJobActivityResponse> getUpcomingActivities() {
         Instant start = clock.instant();
         Instant end = start.plus(UPCOMING_WINDOW_DAYS, ChronoUnit.DAYS);
         return jobActivityRepository
-                .findAllByTypeInAndOccurredAtBetweenOrderByOccurredAtAscCreatedAtAsc(
+                .findAllByTypeInAndCompletedAtIsNullAndOccurredAtBetweenOrderByOccurredAtAscCreatedAtAsc(
                         REMINDER_TYPES,
                         start,
                         end
@@ -142,6 +168,8 @@ public class JobActivityService {
                 activity.getDetails(),
                 activity.getContact(),
                 activity.getOccurredAt(),
+                activity.getCompletedAt(),
+                activity.getCompletionNote(),
                 activity.getCreatedAt()
         );
     }

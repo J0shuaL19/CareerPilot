@@ -48,6 +48,12 @@ public class JobActivity {
     @Column(name = "occurred_at", nullable = false)
     private Instant occurredAt;
 
+    @Column(name = "completed_at")
+    private Instant completedAt;
+
+    @Column(name = "completion_note", columnDefinition = "TEXT")
+    private String completionNote;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -79,6 +85,11 @@ public class JobActivity {
         this.details = details;
         this.contact = contact;
         this.occurredAt = Objects.requireNonNull(occurredAt, "Activity time is required");
+    }
+
+    public void complete(Instant completedAt, String completionNote) {
+        this.completedAt = Objects.requireNonNull(completedAt, "Completion time is required");
+        this.completionNote = completionNote;
     }
 
     @PrePersist

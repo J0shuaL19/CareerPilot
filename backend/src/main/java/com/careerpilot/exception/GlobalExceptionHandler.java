@@ -103,6 +103,19 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(JobActivityCompletionException.class)
+    public ResponseEntity<ApiErrorResponse> handleJobActivityCompletionFailure(
+            JobActivityCompletionException exception,
+            HttpServletRequest request
+    ) {
+        return errorResponse(
+                HttpStatus.BAD_REQUEST,
+                exception.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
+    }
+
     @ExceptionHandler(JobActivityCalendarException.class)
     public ResponseEntity<ApiErrorResponse> handleJobActivityCalendarFailure(
             JobActivityCalendarException exception,

@@ -1,5 +1,6 @@
 package com.careerpilot.controller;
 
+import com.careerpilot.dto.JobActivityCompletionRequest;
 import com.careerpilot.dto.JobActivityRequest;
 import com.careerpilot.dto.JobActivityResponse;
 import com.careerpilot.service.JobActivityCalendarFile;
@@ -56,6 +57,15 @@ public class JobActivityController {
             @Valid @RequestBody JobActivityRequest request
     ) {
         return jobActivityService.updateActivity(jobId, activityId, request);
+    }
+
+    @PutMapping("/{activityId}/complete")
+    public JobActivityResponse completeActivity(
+            @PathVariable Long jobId,
+            @PathVariable Long activityId,
+            @Valid @RequestBody JobActivityCompletionRequest request
+    ) {
+        return jobActivityService.completeActivity(jobId, activityId, request);
     }
 
     @GetMapping("/{activityId}/calendar")

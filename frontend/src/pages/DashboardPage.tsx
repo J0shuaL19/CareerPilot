@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AttentionSettingsDialog } from '../components/AttentionSettingsDialog'
+import { CompleteActivityDialog } from '../components/CompleteActivityDialog'
 import { DailyActionCenter } from '../components/DailyActionCenter'
 import { DashboardFunnel } from '../components/DashboardFunnel'
 import { PipelineSummary } from '../components/PipelineSummary'
@@ -14,6 +15,7 @@ import { SnoozedRemindersPanel } from '../components/SnoozedRemindersPanel'
 import { useAttentionNotifications } from '../hooks/useAttentionNotifications'
 import { getDashboardStats } from '../services/dashboardApi'
 import {
+  completeJobActivity,
   createJobActivity,
   getJobAttentionItems,
   getJobAttentionSettings,
@@ -34,6 +36,7 @@ import { getResumes } from '../services/resumeApi'
 import type { Job, JobAttentionSnoozeSnapshot } from '../types/job'
 import type { DashboardStats, DashboardStatsRange } from '../types/dashboard'
 import type {
+  CompleteJobActivityInput,
   CreateJobActivityInput,
   JobAttentionItem,
   JobAttentionSettings,
@@ -43,6 +46,7 @@ import type { MatchAnalysis } from '../types/matchAnalysis'
 import type { Resume } from '../types/resume'
 import { getErrorMessage, isAbortError } from '../utils/errors'
 import { formatDate } from '../utils/formatDate'
+import { getJobStatusConfig } from '../utils/jobStatus'
 
 interface SnoozeConfirmation {
   jobId: number
@@ -96,7 +100,10 @@ export function DashboardPage() {
   const [followUpItem, setFollowUpItem] = useState<JobAttentionItem | null>(null)
   const [isFollowUpSaving, setIsFollowUpSaving] = useState(false)
   const [followUpError, setFollowUpError] = useState<string | null>(null)
-  const [followUpSuccess, setFollowUpSuccess] = useState<string | null>(null)
+  const [actionSuccess, setActionSuccess] = useState<string | null>(null)
+  const [completingActivity, setCompletingActivity] = useState<UpcomingJobActivity | null>(null)
+  const [isActivityCompleting, setIsActivityCompleting] = useState(false)
+  const [activityCompletionError, setActivityCompletionError] = useState<string | null>(null)
   const [isAttentionSettingsOpen, setIsAttentionSettingsOpen] = useState(false)
   const [isAttentionSettingsSaving, setIsAttentionSettingsSaving] = useState(false)
   const [attentionSettingsError, setAttentionSettingsError] = useState<string | null>(null)
@@ -125,7 +132,7 @@ export function DashboardPage() {
     setFollowUpError(null)
     try {
       await createJobActivity(followUpItem.jobId, input)
-      setFollowUpSuccess(`Follow-up saved for ${followUpItem.company}.`)
+      setActionSuccess(`Follow-up saved for ${followUpItem.company}.`)
       setFollowUpItem(null)
       setReloadKey((key) => key + 1)
       setHistoryReloadKey((key) => key + 1)
@@ -133,6 +140,27 @@ export function DashboardPage() {
       setFollowUpError(getErrorMessage(saveError))
     } finally {
       setIsFollowUpSaving(false)
+    }
+  }
+
+  async function handleActivityComplete(input: CompleteJobActivityInput) {
+    if (!completingActivity) return
+
+    setIsActivityCompleting(true)
+    setActivityCompletionError(null)
+    try {
+      await completeJobActivity(completingActivity.jobId, completingActivity.id, input)
+      const statusDetail = input.jobStatus
+        ? ' Job stage updated to ' + getJobStatusConfig(input.jobStatus).label + '.'
+        : ''
+      setActionSuccess(completingActivity.title + ' completed.' + statusDetail)
+      setCompletingActivity(null)
+      setReloadKey((key) => key + 1)
+      setStatsReloadKey((key) => key + 1)
+    } catch (completionError) {
+      setActivityCompletionError(getErrorMessage(completionError))
+    } finally {
+      setIsActivityCompleting(false)
     }
   }
 
@@ -144,7 +172,7 @@ export function DashboardPage() {
       const updatedSettings = await updateJobAttentionSettings(settings)
       setData((current) => ({ ...current, attentionSettings: updatedSettings }))
       setIsAttentionSettingsOpen(false)
-      setFollowUpSuccess('Follow-up reminder rules updated.')
+      setActionSuccess('Follow-up reminder rules updated.')
       setReloadKey((key) => key + 1)
     } catch (saveError) {
       setAttentionSettingsError(getErrorMessage(saveError))
@@ -177,7 +205,7 @@ export function DashboardPage() {
       })
       setSnoozeUndoError(null)
       setSnoozedRemindersError(null)
-      setFollowUpSuccess(null)
+      setActionSuccess(null)
       setSnoozeItem(null)
       setHistoryReloadKey((key) => key + 1)
     } catch (saveError) {
@@ -220,7 +248,7 @@ export function DashboardPage() {
       setSnoozeConfirmation(null)
       setBulkSnoozeConfirmation(null)
       setBulkSnoozeUndoError(null)
-      setFollowUpSuccess(job.company + ' reminder is active again.')
+      setActionSuccess(job.company + ' reminder is active again.')
       setReloadKey((key) => key + 1)
       setHistoryReloadKey((key) => key + 1)
     } catch (resumeError) {
@@ -250,7 +278,7 @@ export function DashboardPage() {
       setBulkSnoozeJobs(null)
       setSnoozedRemindersError(null)
       setSnoozeConfirmation(null)
-      setFollowUpSuccess(null)
+      setActionSuccess(null)
       setBulkSnoozeUndoError(null)
       setBulkSnoozeConfirmation({
         message: updatedJobs.length + ' reminders now return on '
@@ -279,7 +307,7 @@ export function DashboardPage() {
         jobs: current.jobs.map((job) => updatesById.get(job.id) ?? job),
       }))
       setSnoozeConfirmation(null)
-      setFollowUpSuccess(null)
+      setActionSuccess(null)
       setBulkSnoozeUndoError(null)
       setBulkSnoozeConfirmation({
         message: updatedJobs.length
@@ -398,6 +426,9 @@ export function DashboardPage() {
     return () => controller.abort()
   }, [statsRange, statsReloadKey])
 
+  const completingJob = completingActivity
+    ? data.jobs.find((job) => job.id === completingActivity.jobId) ?? null
+    : null
   const today = toDateInputValue(new Date())
   const snoozedJobs = data.jobs
     .filter((job) => (
@@ -457,15 +488,15 @@ export function DashboardPage() {
         </Link>
       </header>
 
-      {followUpSuccess && (
+      {actionSuccess && (
         <div className="dashboard-feedback" role="status">
           <span aria-hidden="true">✓</span>
-          <strong>{followUpSuccess}</strong>
+          <strong>{actionSuccess}</strong>
           <button
             className="dashboard-feedback__close"
             type="button"
             aria-label="Dismiss confirmation"
-            onClick={() => setFollowUpSuccess(null)}
+            onClick={() => setActionSuccess(null)}
           >
             ×
           </button>
@@ -606,6 +637,10 @@ export function DashboardPage() {
               setSnoozeError(null)
               setSnoozeItem(item)
             }}
+            onComplete={(activity) => {
+              setActivityCompletionError(null)
+              setCompletingActivity(activity)
+            }}
             onViewJob={(jobId) => navigate('/jobs/' + jobId)}
           />
 
@@ -649,6 +684,20 @@ export function DashboardPage() {
             <LatestResumes resumes={data.resumes.slice(0, 3)} />
           </div>
         </>
+      )}
+
+      {completingActivity && completingJob && (
+        <CompleteActivityDialog
+          activity={completingActivity}
+          currentStatus={completingJob.status}
+          isSaving={isActivityCompleting}
+          error={activityCompletionError}
+          onClose={() => {
+            setActivityCompletionError(null)
+            setCompletingActivity(null)
+          }}
+          onSubmit={(input) => void handleActivityComplete(input)}
+        />
       )}
 
       {isAttentionSettingsOpen && (

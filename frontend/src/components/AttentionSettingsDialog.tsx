@@ -95,7 +95,7 @@ export function AttentionSettingsDialog({
           <div>
             <p>Reminder rules</p>
             <h2 id="attention-settings-heading">Follow-up timing</h2>
-            <span>Choose when each active stage should appear in Needs attention.</span>
+            <span>Choose when each active stage should appear in the daily action center.</span>
           </div>
           <button
             type="button"

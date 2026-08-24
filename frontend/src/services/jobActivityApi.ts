@@ -1,4 +1,5 @@
 import type {
+  CompleteJobActivityInput,
   CreateJobActivityInput,
   JobAttentionHistoryEntry,
   JobAttentionItem,
@@ -35,6 +36,20 @@ export function updateJobActivity(
   input: UpdateJobActivityInput,
 ): Promise<JobActivity> {
   return apiRequest<JobActivity>(`/api/jobs/${jobId}/activities/${activityId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(input),
+  })
+}
+
+export function completeJobActivity(
+  jobId: number,
+  activityId: number,
+  input: CompleteJobActivityInput,
+): Promise<JobActivity> {
+  return apiRequest<JobActivity>('/api/jobs/' + jobId + '/activities/' + activityId + '/complete', {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',

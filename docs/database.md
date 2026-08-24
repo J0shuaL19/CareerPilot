@@ -61,7 +61,7 @@ Each row stores one completed comparison between a saved job and resume. Analysi
 
 ## Job activities table
 
-Migration: `V4__create_job_activities_table.sql`
+Migrations: `V4__create_job_activities_table.sql`, `V8__add_job_activity_completion.sql`
 
 Each row records one dated event or note in a job's application history. Deleting the owning job removes its activities.
 
@@ -74,6 +74,8 @@ Each row records one dated event or note in a job's application history. Deletin
 | `details` | `TEXT` | Optional notes and next steps |
 | `contact` | `VARCHAR(255)` | Optional recruiter or interviewer |
 | `occurred_at` | `TIMESTAMP WITH TIME ZONE` | When the activity happened or is scheduled |
+| `completed_at` | `TIMESTAMP WITH TIME ZONE` | Optional UTC time when a scheduled interview or follow-up was completed |
+| `completion_note` | `TEXT` | Optional completion outcome, limited to 2000 characters |
 | `created_at` | `TIMESTAMP WITH TIME ZONE` | UTC record creation time |
 
 ## Job attention events table

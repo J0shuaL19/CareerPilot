@@ -54,16 +54,24 @@ class JobActivityRepositoryTests {
     @Test
     void findsUpcomingReminderTypesWithinTimeWindow() {
         Job job = jobRepository.save(new Job("OpenAI", "Engineer", "Description", null));
+        JobActivity completed = activity(
+                job,
+                JobActivityType.INTERVIEW,
+                "Completed interview",
+                "2026-08-24T12:00:00Z"
+        );
+        completed.complete(Instant.parse("2026-08-22T13:00:00Z"), "Completed");
         jobActivityRepository.saveAllAndFlush(List.of(
                 activity(job, JobActivityType.INTERVIEW, "Interview", "2026-08-23T12:00:00Z"),
                 activity(job, JobActivityType.FOLLOW_UP, "Follow-up", "2026-08-25T12:00:00Z"),
+                completed,
                 activity(job, JobActivityType.NOTE, "Future note", "2026-08-24T12:00:00Z"),
                 activity(job, JobActivityType.INTERVIEW, "Past interview", "2026-08-20T12:00:00Z"),
                 activity(job, JobActivityType.INTERVIEW, "Later interview", "2026-09-10T12:00:00Z")
         ));
 
         List<JobActivity> activities = jobActivityRepository
-                .findAllByTypeInAndOccurredAtBetweenOrderByOccurredAtAscCreatedAtAsc(
+                .findAllByTypeInAndCompletedAtIsNullAndOccurredAtBetweenOrderByOccurredAtAscCreatedAtAsc(
                         List.of(JobActivityType.INTERVIEW, JobActivityType.FOLLOW_UP),
                         Instant.parse("2026-08-22T12:00:00Z"),
                         Instant.parse("2026-09-05T12:00:00Z")
@@ -95,6 +103,26 @@ class JobActivityRepositoryTests {
             assertThat(lastTouch.getLastOccurredAt())
                     .isEqualTo(Instant.parse("2026-08-20T12:00:00Z"));
         });
+    }
+
+    @Test
+    void usesCompletionTimeAsLastTouchForCompletedScheduledActivity() {
+        Job job = jobRepository.save(new Job("OpenAI", "Engineer", "Description", null));
+        JobActivity completed = activity(
+                job,
+                JobActivityType.INTERVIEW,
+                "Completed early",
+                "2026-08-30T12:00:00Z"
+        );
+        completed.complete(Instant.parse("2026-08-24T12:00:00Z"), null);
+        jobActivityRepository.saveAndFlush(completed);
+
+        JobActivityLastTouchProjection lastTouch = jobActivityRepository
+                .findLatestOccurredAtByJobIds(List.of(job.getId()))
+                .getFirst();
+
+        assertThat(lastTouch.getLastOccurredAt())
+                .isEqualTo(Instant.parse("2026-08-24T12:00:00Z"));
     }
 
     private static JobActivity activity(Job job, String title, String occurredAt) {

@@ -107,8 +107,8 @@ export function SnoozeReminderDialog({
             {isBulkUpdate
               ? 'Give every selected application the same return date.'
               : (isRescheduling
-                  ? 'Choose a new date for this reminder to return to Needs attention.'
-                  : 'Hide this job from Needs attention without changing your stage rules.')}
+                  ? 'Choose a new date for this reminder to return to the daily action center.'
+                  : 'Hide this job from the daily action center without changing your stage rules.')}
           </p>
 
           <div className="snooze-reminder-presets" aria-label="Quick snooze dates">

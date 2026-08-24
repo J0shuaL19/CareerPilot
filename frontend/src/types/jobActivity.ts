@@ -10,6 +10,8 @@ export interface JobActivity {
   details: string | null
   contact: string | null
   occurredAt: string
+  completedAt: string | null
+  completionNote: string | null
   createdAt: string
 }
 
@@ -22,6 +24,11 @@ export interface CreateJobActivityInput {
 }
 
 export type UpdateJobActivityInput = CreateJobActivityInput
+
+export interface CompleteJobActivityInput {
+  note?: string
+  jobStatus?: JobStatus
+}
 
 export interface UpcomingJobActivity {
   id: number

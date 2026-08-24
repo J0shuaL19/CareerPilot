@@ -23,7 +23,8 @@ public interface JobActivityRepository extends JpaRepository<JobActivity, Long> 
     Optional<JobActivity> findByIdAndJob_Id(Long id, Long jobId);
 
     @Query("""
-            select activity.job.id as jobId, max(activity.occurredAt) as lastOccurredAt
+            select activity.job.id as jobId,
+                   max(coalesce(activity.completedAt, activity.occurredAt)) as lastOccurredAt
             from JobActivity activity
             where activity.job.id in :jobIds
             group by activity.job.id
@@ -33,7 +34,7 @@ public interface JobActivityRepository extends JpaRepository<JobActivity, Long> 
     );
 
     @EntityGraph(attributePaths = "job")
-    List<JobActivity> findAllByTypeInAndOccurredAtBetweenOrderByOccurredAtAscCreatedAtAsc(
+    List<JobActivity> findAllByTypeInAndCompletedAtIsNullAndOccurredAtBetweenOrderByOccurredAtAscCreatedAtAsc(
             Collection<JobActivityType> types,
             Instant start,
             Instant end

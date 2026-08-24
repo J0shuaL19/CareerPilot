@@ -18,7 +18,7 @@ CareerPilot/
 └── docs/       Architecture, database, and API notes
 ```
 
-Current features include a career dashboard with time-range funnel analytics and a unified daily action center for due follow-ups and upcoming activities, configurable stage-specific reminders with per-job snoozing, opt-in browser alerts, transactional bulk reminder actions with one-click undo, and a recent reminder change history, quick follow-up capture, and personalized follow-up message templates with one-click copy, searchable job pipeline tracking with validated CSV import and filtered export, editable job activity timelines with calendar export, PDF/DOCX resume import, searchable resume previews and version duplication, AI match analysis, and searchable saved analysis history.
+Current features include a career dashboard with time-range funnel analytics and a unified daily action center for due follow-ups and upcoming activities with completion outcomes and optional stage updates, configurable stage-specific reminders with per-job snoozing, opt-in browser alerts, transactional bulk reminder actions with one-click undo, and a recent reminder change history, quick follow-up capture, and personalized follow-up message templates with one-click copy, searchable job pipeline tracking with validated CSV import and filtered export, editable job activity timelines with calendar export, PDF/DOCX resume import, searchable resume previews and version duplication, AI match analysis, and searchable saved analysis history.
 
 ## Run locally
 
