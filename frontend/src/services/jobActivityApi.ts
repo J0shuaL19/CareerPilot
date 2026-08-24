@@ -116,6 +116,26 @@ export function getCalendarJobActivities(
   return apiRequest<ScheduledJobActivity[]>('/api/job-activities/calendar?' + query, { signal })
 }
 
+const activityConflictWindowMs = 60 * 60 * 1000
+
+export async function getActivityConflicts(
+  occurredAt: string,
+  excludeActivityId?: number,
+  signal?: AbortSignal,
+): Promise<ScheduledJobActivity[]> {
+  const proposedTime = new Date(occurredAt).getTime()
+  const activities = await getCalendarJobActivities(
+    new Date(proposedTime - activityConflictWindowMs).toISOString(),
+    new Date(proposedTime + activityConflictWindowMs).toISOString(),
+    signal,
+  )
+  return activities.filter((activity) => (
+    activity.completedAt === null
+    && activity.id !== excludeActivityId
+    && Math.abs(new Date(activity.occurredAt).getTime() - proposedTime) < activityConflictWindowMs
+  ))
+}
+
 export function getJobAttentionHistory(
   signal?: AbortSignal,
 ): Promise<JobAttentionHistoryEntry[]> {

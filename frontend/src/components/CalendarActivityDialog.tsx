@@ -1,6 +1,8 @@
 import { type FormEvent, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useActivityConflicts } from '../hooks/useActivityConflicts'
 import type { Job } from '../types/job'
+import { ActivityConflictNotice } from './ActivityConflictNotice'
 import type { CreateJobActivityInput } from '../types/jobActivity'
 import { toLocalDateTimeValue } from '../utils/jobActivity'
 
@@ -34,6 +36,10 @@ export function CalendarActivityDialog({
   const [occurredAt, setOccurredAt] = useState(() => toLocalDateTimeValue(initialDate))
   const [contact, setContact] = useState('')
   const [details, setDetails] = useState('')
+  const conflictCheck = useActivityConflicts({
+    occurredAt,
+    enabled: type === 'INTERVIEW',
+  })
 
   const selectedJobId = jobId || jobs[0]?.id || 0
 
@@ -191,6 +197,8 @@ export function CalendarActivityDialog({
                 />
               </label>
             </div>
+
+            {type === 'INTERVIEW' && <ActivityConflictNotice {...conflictCheck} />}
 
             <label>
               Details <span>optional</span>

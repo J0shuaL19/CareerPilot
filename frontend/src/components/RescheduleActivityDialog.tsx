@@ -1,5 +1,7 @@
 import { type FormEvent, useEffect, useRef, useState } from 'react'
+import { useActivityConflicts } from '../hooks/useActivityConflicts'
 import type { UpcomingJobActivity } from '../types/jobActivity'
+import { ActivityConflictNotice } from './ActivityConflictNotice'
 import { getJobActivityTypeConfig, toLocalDateTimeValue } from '../utils/jobActivity'
 
 interface RescheduleActivityDialogProps {
@@ -23,6 +25,11 @@ export function RescheduleActivityDialog({
   const [minimumTime] = useState(() => toLocalDateTimeValue(new Date(Date.now() + 60_000)))
   const [validationError, setValidationError] = useState<string | null>(null)
   const activityConfig = getJobActivityTypeConfig(activity.type)
+  const conflictCheck = useActivityConflicts({
+    occurredAt,
+    enabled: activity.type === 'INTERVIEW',
+    excludeActivityId: activity.id,
+  })
 
   useEffect(() => {
     inputRef.current?.focus()
@@ -96,6 +103,8 @@ export function RescheduleActivityDialog({
             />
             <span>The original timeline entry is updated instead of creating a duplicate.</span>
           </label>
+
+          {activity.type === 'INTERVIEW' && <ActivityConflictNotice {...conflictCheck} />}
 
           {(validationError || error) && (
             <p className="quick-follow-up-form__error" role="alert">
