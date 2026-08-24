@@ -12,6 +12,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.careerpilot.dto.JobAttentionBulkClearRequest;
+import com.careerpilot.dto.JobAttentionBulkSnoozeRequest;
 import com.careerpilot.dto.JobAttentionSnoozeRequest;
 import com.careerpilot.dto.JobRequest;
 import com.careerpilot.dto.JobCsvImportPreviewResponse;
@@ -348,6 +350,63 @@ class JobControllerTests {
         mockMvc.perform(delete("/api/jobs/1/attention-snooze"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.attentionSnoozedUntil").doesNotExist());
+    }
+
+    @Test
+    void snoozesMultipleJobReminders() throws Exception {
+        when(jobService.snoozeAttention(any(JobAttentionBulkSnoozeRequest.class)))
+                .thenReturn(List.of(
+                        jobResponse(1L, "OpenAI", JobStatus.APPLIED, LocalDate.parse("2099-09-01")),
+                        jobResponse(2L, "Anthropic", JobStatus.INTERVIEW, LocalDate.parse("2099-09-01"))
+                ));
+
+        mockMvc.perform(put("/api/jobs/attention-snooze")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "jobIds": [1, 2],
+                                  "snoozedUntil": "2099-09-01"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(1))
+                .andExpect(jsonPath("$[1].id").value(2))
+                .andExpect(jsonPath("$[1].attentionSnoozedUntil").value("2099-09-01"));
+    }
+
+    @Test
+    void rejectsEmptyBulkSnoozeSelection() throws Exception {
+        mockMvc.perform(put("/api/jobs/attention-snooze")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "jobIds": [],
+                                  "snoozedUntil": "2099-09-01"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.jobIds")
+                        .value("At least one job is required"));
+    }
+
+    @Test
+    void clearsMultipleJobReminderSnoozes() throws Exception {
+        when(jobService.clearAttentionSnooze(any(JobAttentionBulkClearRequest.class)))
+                .thenReturn(List.of(
+                        jobResponse(1L, "OpenAI", JobStatus.APPLIED),
+                        jobResponse(2L, "Anthropic", JobStatus.INTERVIEW)
+                ));
+
+        mockMvc.perform(post("/api/jobs/attention-snooze/clear")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "jobIds": [1, 2]
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].attentionSnoozedUntil").doesNotExist())
+                .andExpect(jsonPath("$[1].attentionSnoozedUntil").doesNotExist());
     }
 
     @Test

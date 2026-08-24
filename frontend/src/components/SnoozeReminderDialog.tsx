@@ -8,7 +8,8 @@ export interface SnoozeReminderTarget {
 }
 
 interface SnoozeReminderDialogProps {
-  item: SnoozeReminderTarget
+  item?: SnoozeReminderTarget
+  selectionCount?: number
   isSaving: boolean
   error: string | null
   onClose: () => void
@@ -23,6 +24,7 @@ const presets = [
 
 export function SnoozeReminderDialog({
   item,
+  selectionCount,
   isSaving,
   error,
   onClose,
@@ -30,10 +32,13 @@ export function SnoozeReminderDialog({
 }: SnoozeReminderDialogProps) {
   const dateRef = useRef<HTMLInputElement>(null)
   const tomorrow = toDateInputValue(addDays(new Date(), 1))
-  const isRescheduling = Boolean(item.currentSnoozedUntil)
+  const isBulkUpdate = selectionCount !== undefined
+  const selectedCount = selectionCount ?? 0
+  const isRescheduling = isBulkUpdate || Boolean(item?.currentSnoozedUntil)
+  const currentSnoozedUntil = item?.currentSnoozedUntil
   const [snoozedUntil, setSnoozedUntil] = useState(
-    item.currentSnoozedUntil && item.currentSnoozedUntil >= tomorrow
-      ? item.currentSnoozedUntil
+    currentSnoozedUntil && currentSnoozedUntil >= tomorrow
+      ? currentSnoozedUntil
       : tomorrow,
   )
 
@@ -55,6 +60,16 @@ export function SnoozeReminderDialog({
     onSubmit(snoozedUntil)
   }
 
+  const eyebrow = isBulkUpdate
+    ? 'Adjust several reminders'
+    : (isRescheduling ? 'Adjust one reminder' : 'Pause one reminder')
+  const heading = isBulkUpdate
+    ? 'Change selected dates'
+    : (isRescheduling ? 'Change snooze date' : 'Snooze until later')
+  const context = isBulkUpdate
+    ? selectedCount + (selectedCount === 1 ? ' reminder selected' : ' reminders selected')
+    : item?.jobTitle + ' · ' + item?.company
+
   return (
     <div
       className="quick-follow-up-backdrop"
@@ -73,11 +88,9 @@ export function SnoozeReminderDialog({
       >
         <header className="quick-follow-up-dialog__heading">
           <div>
-            <p>{isRescheduling ? 'Adjust one reminder' : 'Pause one reminder'}</p>
-            <h2 id="snooze-reminder-heading">
-              {isRescheduling ? 'Change snooze date' : 'Snooze until later'}
-            </h2>
-            <span>{item.jobTitle} · {item.company}</span>
+            <p>{eyebrow}</p>
+            <h2 id="snooze-reminder-heading">{heading}</h2>
+            <span>{context}</span>
           </div>
           <button
             type="button"
@@ -91,9 +104,11 @@ export function SnoozeReminderDialog({
 
         <form className="quick-follow-up-form snooze-reminder-form" onSubmit={handleSubmit}>
           <p className="snooze-reminder-form__intro">
-            {isRescheduling
-              ? 'Choose a new date for this reminder to return to Needs attention.'
-              : 'Hide this job from Needs attention without changing your stage rules.'}
+            {isBulkUpdate
+              ? 'Give every selected application the same return date.'
+              : (isRescheduling
+                  ? 'Choose a new date for this reminder to return to Needs attention.'
+                  : 'Hide this job from Needs attention without changing your stage rules.')}
           </p>
 
           <div className="snooze-reminder-presets" aria-label="Quick snooze dates">
@@ -131,16 +146,19 @@ export function SnoozeReminderDialog({
           </label>
 
           <p className="snooze-reminder-form__note">
-            If the job is still overdue, it will return on {formatDateLabel(snoozedUntil)}.
+            {isBulkUpdate ? 'Selected reminders' : 'This reminder'} will return on{' '}
+            {formatDateLabel(snoozedUntil)} if still overdue.
           </p>
 
           {error && <p className="quick-follow-up-form__error" role="alert">{error}</p>}
 
           <div className="quick-follow-up-form__actions snooze-reminder-form__actions">
             <span>
-              {isRescheduling && item.currentSnoozedUntil
-                ? 'Currently: ' + formatDateLabel(item.currentSnoozedUntil)
-                : 'Current rule: ' + item.thresholdDays + ' days'}
+              {isBulkUpdate
+                ? 'One date will be applied to every selection.'
+                : (currentSnoozedUntil
+                    ? 'Currently: ' + formatDateLabel(currentSnoozedUntil)
+                    : 'Current rule: ' + item?.thresholdDays + ' days')}
             </span>
             <div>
               <button
@@ -153,8 +171,10 @@ export function SnoozeReminderDialog({
               </button>
               <button className="button button--primary" type="submit" disabled={isSaving}>
                 {isSaving
-                  ? (isRescheduling ? 'Updating…' : 'Snoozing…')
-                  : (isRescheduling ? 'Update date' : 'Snooze reminder')}
+                  ? (isBulkUpdate ? 'Updating reminders…' : (isRescheduling ? 'Updating…' : 'Snoozing…'))
+                  : (isBulkUpdate
+                      ? 'Update ' + selectedCount + (selectedCount === 1 ? ' reminder' : ' reminders')
+                      : (isRescheduling ? 'Update date' : 'Snooze reminder'))}
               </button>
             </div>
           </div>

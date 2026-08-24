@@ -96,6 +96,29 @@ export function clearJobAttentionSnooze(id: number): Promise<Job> {
   })
 }
 
+export function snoozeJobAttentionBulk(
+  jobIds: number[],
+  snoozedUntil: string,
+): Promise<Job[]> {
+  return apiRequest<Job[]>('/api/jobs/attention-snooze', {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ jobIds, snoozedUntil }),
+  })
+}
+
+export function clearJobAttentionSnoozeBulk(jobIds: number[]): Promise<Job[]> {
+  return apiRequest<Job[]>('/api/jobs/attention-snooze/clear', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ jobIds }),
+  })
+}
+
 export function deleteJob(id: number): Promise<void> {
   return apiRequest<void>(`/api/jobs/${id}`, {
     method: 'DELETE',

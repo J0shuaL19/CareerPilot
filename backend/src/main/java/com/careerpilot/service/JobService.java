@@ -1,5 +1,7 @@
 package com.careerpilot.service;
 
+import com.careerpilot.dto.JobAttentionBulkClearRequest;
+import com.careerpilot.dto.JobAttentionBulkSnoozeRequest;
 import com.careerpilot.dto.JobAttentionSnoozeRequest;
 import com.careerpilot.dto.JobRequest;
 import com.careerpilot.dto.JobResponse;
@@ -82,8 +84,26 @@ public class JobService {
     }
 
     @Transactional
+    public List<JobResponse> snoozeAttention(JobAttentionBulkSnoozeRequest request) {
+        List<Job> jobs = findJobs(request.jobIds());
+        jobs.forEach(job -> job.snoozeAttentionUntil(request.snoozedUntil()));
+        return jobs.stream().map(JobService::toResponse).toList();
+    }
+
+    @Transactional
+    public List<JobResponse> clearAttentionSnooze(JobAttentionBulkClearRequest request) {
+        List<Job> jobs = findJobs(request.jobIds());
+        jobs.forEach(Job::clearAttentionSnooze);
+        return jobs.stream().map(JobService::toResponse).toList();
+    }
+
+    @Transactional
     public void deleteJob(Long id) {
         jobRepository.delete(findJob(id));
+    }
+
+    private List<Job> findJobs(List<Long> jobIds) {
+        return jobIds.stream().map(this::findJob).toList();
     }
 
     private Job findJob(Long id) {

@@ -6,6 +6,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.careerpilot.dto.JobAttentionBulkClearRequest;
+import com.careerpilot.dto.JobAttentionBulkSnoozeRequest;
 import com.careerpilot.dto.JobAttentionSnoozeRequest;
 import com.careerpilot.dto.JobRequest;
 import com.careerpilot.dto.JobResponse;
@@ -182,6 +184,57 @@ class JobServiceTests {
 
         assertThat(job.getAttentionSnoozedUntil()).isNull();
         assertThat(response.attentionSnoozedUntil()).isNull();
+    }
+
+    @Test
+    void snoozesMultipleJobRemindersInRequestOrder() {
+        Job firstJob = persistedJob(1L, "OpenAI", "2026-08-18T12:00:00Z");
+        Job secondJob = persistedJob(2L, "Anthropic", "2026-08-19T12:00:00Z");
+        when(jobRepository.findById(2L)).thenReturn(Optional.of(secondJob));
+        when(jobRepository.findById(1L)).thenReturn(Optional.of(firstJob));
+        LocalDate snoozedUntil = LocalDate.parse("2026-09-01");
+
+        List<JobResponse> responses = jobService.snoozeAttention(
+                new JobAttentionBulkSnoozeRequest(List.of(2L, 1L), snoozedUntil)
+        );
+
+        assertThat(responses).extracting(JobResponse::id).containsExactly(2L, 1L);
+        assertThat(firstJob.getAttentionSnoozedUntil()).isEqualTo(snoozedUntil);
+        assertThat(secondJob.getAttentionSnoozedUntil()).isEqualTo(snoozedUntil);
+    }
+
+    @Test
+    void clearsMultipleJobReminderSnoozes() {
+        Job firstJob = persistedJob(1L, "OpenAI", "2026-08-18T12:00:00Z");
+        Job secondJob = persistedJob(2L, "Anthropic", "2026-08-19T12:00:00Z");
+        firstJob.snoozeAttentionUntil(LocalDate.parse("2026-08-30"));
+        secondJob.snoozeAttentionUntil(LocalDate.parse("2026-08-31"));
+        when(jobRepository.findById(1L)).thenReturn(Optional.of(firstJob));
+        when(jobRepository.findById(2L)).thenReturn(Optional.of(secondJob));
+
+        List<JobResponse> responses = jobService.clearAttentionSnooze(
+                new JobAttentionBulkClearRequest(List.of(1L, 2L))
+        );
+
+        assertThat(responses).extracting(JobResponse::id).containsExactly(1L, 2L);
+        assertThat(firstJob.getAttentionSnoozedUntil()).isNull();
+        assertThat(secondJob.getAttentionSnoozedUntil()).isNull();
+    }
+
+    @Test
+    void rejectsBulkSnoozeWhenAnyJobIsMissing() {
+        Job job = persistedJob(1L, "OpenAI", "2026-08-18T12:00:00Z");
+        when(jobRepository.findById(1L)).thenReturn(Optional.of(job));
+        when(jobRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> jobService.snoozeAttention(
+                new JobAttentionBulkSnoozeRequest(
+                        List.of(1L, 999L),
+                        LocalDate.parse("2026-09-01")
+                )
+        )).isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("Job not found with id: 999");
+        assertThat(job.getAttentionSnoozedUntil()).isNull();
     }
 
     @Test

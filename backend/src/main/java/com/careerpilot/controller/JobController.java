@@ -1,5 +1,7 @@
 package com.careerpilot.controller;
 
+import com.careerpilot.dto.JobAttentionBulkClearRequest;
+import com.careerpilot.dto.JobAttentionBulkSnoozeRequest;
 import com.careerpilot.dto.JobAttentionSnoozeRequest;
 import com.careerpilot.dto.JobCsvExportRequest;
 import com.careerpilot.dto.JobCsvImportPreviewResponse;
@@ -106,6 +108,20 @@ public class JobController {
             @Valid @RequestBody JobAttentionSnoozeRequest request
     ) {
         return jobService.snoozeAttention(id, request);
+    }
+
+    @PutMapping("/attention-snooze")
+    public List<JobResponse> snoozeAttention(
+            @Valid @RequestBody JobAttentionBulkSnoozeRequest request
+    ) {
+        return jobService.snoozeAttention(request);
+    }
+
+    @PostMapping("/attention-snooze/clear")
+    public List<JobResponse> clearAttentionSnooze(
+            @Valid @RequestBody JobAttentionBulkClearRequest request
+    ) {
+        return jobService.clearAttentionSnooze(request);
     }
 
     @DeleteMapping("/{id}/attention-snooze")

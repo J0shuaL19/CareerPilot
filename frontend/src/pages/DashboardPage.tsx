@@ -21,8 +21,10 @@ import {
 } from '../services/jobActivityApi'
 import {
   clearJobAttentionSnooze,
+  clearJobAttentionSnoozeBulk,
   getJobs,
   snoozeJobAttention,
+  snoozeJobAttentionBulk,
 } from '../services/jobApi'
 import { getMatchAnalyses } from '../services/matchAnalysisApi'
 import { getResumes } from '../services/resumeApi'
@@ -97,6 +99,8 @@ export function DashboardPage() {
   const [snoozeUndoError, setSnoozeUndoError] = useState<string | null>(null)
   const [resumingSnoozeJobId, setResumingSnoozeJobId] = useState<number | null>(null)
   const [snoozedRemindersError, setSnoozedRemindersError] = useState<string | null>(null)
+  const [bulkSnoozeJobs, setBulkSnoozeJobs] = useState<Job[] | null>(null)
+  const [isBulkSnoozeBusy, setIsBulkSnoozeBusy] = useState(false)
 
   async function handleFollowUpSubmit(input: CreateJobActivityInput) {
     if (!followUpItem) return
@@ -195,6 +199,61 @@ export function DashboardPage() {
       setSnoozedRemindersError(getErrorMessage(resumeError))
     } finally {
       setResumingSnoozeJobId(null)
+    }
+  }
+
+  async function handleBulkSnoozeSubmit(snoozedUntil: string) {
+    if (!bulkSnoozeJobs) return
+
+    setIsBulkSnoozeBusy(true)
+    setSnoozeError(null)
+
+    try {
+      const updatedJobs = await snoozeJobAttentionBulk(
+        bulkSnoozeJobs.map((job) => job.id),
+        snoozedUntil,
+      )
+      const updatesById = new Map(updatedJobs.map((job) => [job.id, job]))
+      setData((current) => ({
+        ...current,
+        jobs: current.jobs.map((job) => updatesById.get(job.id) ?? job),
+      }))
+      setBulkSnoozeJobs(null)
+      setSnoozedRemindersError(null)
+      setSnoozeConfirmation(null)
+      setFollowUpSuccess(
+        updatedJobs.length + ' reminders now return on '
+          + formatDate(snoozedUntil + 'T12:00:00') + '.',
+      )
+    } catch (saveError) {
+      setSnoozeError(getErrorMessage(saveError))
+    } finally {
+      setIsBulkSnoozeBusy(false)
+    }
+  }
+
+  async function handleBulkResume(jobs: Job[]) {
+    setIsBulkSnoozeBusy(true)
+    setSnoozedRemindersError(null)
+
+    try {
+      const updatedJobs = await clearJobAttentionSnoozeBulk(jobs.map((job) => job.id))
+      const updatesById = new Map(updatedJobs.map((job) => [job.id, job]))
+      setData((current) => ({
+        ...current,
+        jobs: current.jobs.map((job) => updatesById.get(job.id) ?? job),
+      }))
+      setSnoozeConfirmation(null)
+      setFollowUpSuccess(
+        updatedJobs.length
+          + (updatedJobs.length === 1 ? ' reminder is' : ' reminders are')
+          + ' active again.',
+      )
+      setReloadKey((key) => key + 1)
+    } catch (resumeError) {
+      setSnoozedRemindersError(getErrorMessage(resumeError))
+    } finally {
+      setIsBulkSnoozeBusy(false)
     }
   }
 
@@ -449,10 +508,12 @@ export function DashboardPage() {
             <SnoozedRemindersPanel
               jobs={snoozedJobs}
               busyJobId={resumingSnoozeJobId}
+              isBulkBusy={isBulkSnoozeBusy}
               error={snoozedRemindersError}
               onChangeDate={(job) => {
                 setSnoozeError(null)
                 setSnoozedRemindersError(null)
+                setBulkSnoozeJobs(null)
                 setSnoozeItem({
                   jobId: job.id,
                   company: job.company,
@@ -461,6 +522,13 @@ export function DashboardPage() {
                 })
               }}
               onResume={(job) => void handleResumeReminder(job)}
+              onBulkChangeDate={(jobs) => {
+                setSnoozeError(null)
+                setSnoozedRemindersError(null)
+                setSnoozeItem(null)
+                setBulkSnoozeJobs(jobs)
+              }}
+              onBulkResume={(jobs) => void handleBulkResume(jobs)}
               onViewJob={(jobId) => navigate('/jobs/' + jobId)}
             />
           )}
@@ -493,16 +561,24 @@ export function DashboardPage() {
         />
       )}
 
-      {snoozeItem && (
+      {(snoozeItem || bulkSnoozeJobs) && (
         <SnoozeReminderDialog
-          item={snoozeItem}
-          isSaving={isSnoozeSaving}
+          item={snoozeItem ?? undefined}
+          selectionCount={bulkSnoozeJobs?.length}
+          isSaving={bulkSnoozeJobs ? isBulkSnoozeBusy : isSnoozeSaving}
           error={snoozeError}
           onClose={() => {
             setSnoozeError(null)
             setSnoozeItem(null)
+            setBulkSnoozeJobs(null)
           }}
-          onSubmit={(snoozedUntil) => void handleSnoozeSubmit(snoozedUntil)}
+          onSubmit={(snoozedUntil) => {
+            if (bulkSnoozeJobs) {
+              void handleBulkSnoozeSubmit(snoozedUntil)
+            } else {
+              void handleSnoozeSubmit(snoozedUntil)
+            }
+          }}
         />
       )}
 

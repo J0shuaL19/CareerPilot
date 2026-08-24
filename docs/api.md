@@ -240,6 +240,31 @@ Clears the saved date immediately. Success: `200 OK` with the complete updated j
 
 The dashboard derives its `Snoozed reminders` management list from active jobs returned by `GET /api/jobs` whose `attentionSnoozedUntil` date is still in the future. Users can update that date through the snooze endpoint or resume the reminder immediately through the clear endpoint.
 
+### Snooze multiple job reminders
+
+`PUT /api/jobs/attention-snooze`
+
+Applies one future return date to every selected job in a single transaction.
+
+```json
+{
+  "jobIds": [1, 2],
+  "snoozedUntil": "2026-09-01"
+}
+```
+
+### Clear multiple job reminder snoozes
+
+`POST /api/jobs/attention-snooze/clear`
+
+```json
+{
+  "jobIds": [1, 2]
+}
+```
+
+Both bulk endpoints require between 1 and 100 positive job IDs and return complete job responses in request order. If any selected job is missing, the complete operation fails with `404 Not Found` and no reminder is changed.
+
 ### Delete a job
 
 `DELETE /api/jobs/{id}`
