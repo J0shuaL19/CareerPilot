@@ -710,6 +710,7 @@ export function DashboardPage() {
             overdueActivities={data.overdueActivities}
             upcomingActivities={data.upcomingActivities}
             settings={data.attentionSettings}
+            onViewCalendar={() => navigate('/calendar')}
             onConfigure={() => {
               setAttentionSettingsError(null)
               setIsAttentionSettingsOpen(true)

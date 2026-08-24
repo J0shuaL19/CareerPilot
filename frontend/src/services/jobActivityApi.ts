@@ -7,6 +7,7 @@ import type {
   JobActivity,
   ReopenJobActivityResult,
   RescheduleJobActivityInput,
+  ScheduledJobActivity,
   UpcomingJobActivity,
   UpdateJobActivityInput,
 } from '../types/jobActivity'
@@ -104,6 +105,15 @@ export function getOverdueJobActivities(signal?: AbortSignal): Promise<UpcomingJ
 
 export function getUpcomingJobActivities(signal?: AbortSignal): Promise<UpcomingJobActivity[]> {
   return apiRequest<UpcomingJobActivity[]>('/api/job-activities/upcoming', { signal })
+}
+
+export function getCalendarJobActivities(
+  start: string,
+  end: string,
+  signal?: AbortSignal,
+): Promise<ScheduledJobActivity[]> {
+  const query = new URLSearchParams({ start, end })
+  return apiRequest<ScheduledJobActivity[]>('/api/job-activities/calendar?' + query, { signal })
 }
 
 export function getJobAttentionHistory(

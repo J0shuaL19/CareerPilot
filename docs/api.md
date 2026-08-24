@@ -399,6 +399,14 @@ Returns incomplete interviews and follow-ups scheduled from the current server t
 
 Each response includes `jobId`, `company`, and `jobTitle` so the frontend can present reminders across the complete pipeline. Success: `200 OK`; no upcoming reminders returns `[]`.
 
+### List scheduled activities for a calendar range
+
+`GET /api/job-activities/calendar?start={instant}&end={instant}`
+
+Returns interviews and follow-ups whose scheduled time is greater than or equal to `start` and strictly before `end`, ordered chronologically. Both incomplete and completed activities are included; each item includes `jobId`, `company`, `jobTitle`, and nullable `completedAt` so month and agenda views can distinguish active work from completed history.
+
+Both query parameters use ISO-8601 instants. `end` must be later than `start`, and the requested range cannot exceed 62 days. Invalid ranges return `400 Bad Request`; an empty range returns `[]` with `200 OK`.
+
 ### List jobs needing attention
 
 `GET /api/job-activities/needs-attention`

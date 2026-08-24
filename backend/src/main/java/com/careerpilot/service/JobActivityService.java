@@ -5,7 +5,9 @@ import com.careerpilot.dto.JobActivityRequest;
 import com.careerpilot.dto.JobActivityResponse;
 import com.careerpilot.dto.JobActivityReopenResponse;
 import com.careerpilot.dto.JobActivityRescheduleRequest;
+import com.careerpilot.dto.ScheduledJobActivityResponse;
 import com.careerpilot.dto.UpcomingJobActivityResponse;
+import com.careerpilot.exception.JobActivityCalendarException;
 import com.careerpilot.exception.JobActivityCompletionException;
 import com.careerpilot.exception.JobActivityRescheduleException;
 import com.careerpilot.exception.ResourceNotFoundException;
@@ -19,6 +21,7 @@ import com.careerpilot.repository.JobActivityRepository;
 import com.careerpilot.repository.JobAttentionEventRepository;
 import com.careerpilot.repository.JobRepository;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -30,6 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class JobActivityService {
 
     private static final long UPCOMING_WINDOW_DAYS = 14;
+    private static final long MAX_CALENDAR_RANGE_DAYS = 62;
     private static final List<JobActivityType> REMINDER_TYPES = List.of(
             JobActivityType.INTERVIEW,
             JobActivityType.FOLLOW_UP
@@ -212,6 +216,21 @@ public class JobActivityService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<ScheduledJobActivityResponse> getCalendarActivities(Instant start, Instant end) {
+        if (!end.isAfter(start)) {
+            throw new JobActivityCalendarException("Calendar end must be after start.");
+        }
+        if (Duration.between(start, end).compareTo(Duration.ofDays(MAX_CALENDAR_RANGE_DAYS)) > 0) {
+            throw new JobActivityCalendarException("Calendar range cannot exceed 62 days.");
+        }
+
+        return jobActivityRepository.findScheduledActivitiesBetween(REMINDER_TYPES, start, end)
+                .stream()
+                .map(JobActivityService::toScheduledResponse)
+                .toList();
+    }
+
     private void clearAttentionSnooze(Job job) {
         LocalDate previousSnoozeDate = job.getAttentionSnoozedUntil();
         job.clearAttentionSnooze();
@@ -264,6 +283,20 @@ public class JobActivityService {
                 activity.getTitle(),
                 activity.getContact(),
                 activity.getOccurredAt()
+        );
+    }
+
+    private static ScheduledJobActivityResponse toScheduledResponse(JobActivity activity) {
+        return new ScheduledJobActivityResponse(
+                activity.getId(),
+                activity.getJob().getId(),
+                activity.getJob().getCompany(),
+                activity.getJob().getTitle(),
+                activity.getType(),
+                activity.getTitle(),
+                activity.getContact(),
+                activity.getOccurredAt(),
+                activity.getCompletedAt()
         );
     }
 }

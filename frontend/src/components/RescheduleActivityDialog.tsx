@@ -19,6 +19,7 @@ export function RescheduleActivityDialog({
 }: RescheduleActivityDialogProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [occurredAt, setOccurredAt] = useState(() => getSuggestedTime(activity.occurredAt))
+  const [wasOverdue] = useState(() => new Date(activity.occurredAt) < new Date())
   const [minimumTime] = useState(() => toLocalDateTimeValue(new Date(Date.now() + 60_000)))
   const [validationError, setValidationError] = useState<string | null>(null)
   const activityConfig = getJobActivityTypeConfig(activity.type)
@@ -61,7 +62,7 @@ export function RescheduleActivityDialog({
       >
         <header className="quick-follow-up-dialog__heading">
           <div>
-            <p>Move overdue action</p>
+            <p>{wasOverdue ? 'Move overdue action' : 'Change scheduled time'}</p>
             <h2 id="reschedule-activity-heading">Reschedule {activityConfig.shortLabel.toLowerCase()}</h2>
             <span>{activity.title} · {activity.jobTitle} at {activity.company}</span>
           </div>

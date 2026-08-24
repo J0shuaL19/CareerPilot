@@ -18,6 +18,7 @@ interface DailyActionCenterProps {
   notificationError: string | null
   onToggleNotifications: () => void
   onConfigure: () => void
+  onViewCalendar: () => void
   onFollowUp: (item: JobAttentionItem) => void
   onSnooze: (item: JobAttentionItem) => void
   onComplete: (item: UpcomingJobActivity) => void
@@ -42,6 +43,7 @@ export function DailyActionCenter({
   notificationError,
   onToggleNotifications,
   onConfigure,
+  onViewCalendar,
   onFollowUp,
   onSnooze,
   onComplete,
@@ -83,6 +85,7 @@ export function DailyActionCenter({
             <span aria-hidden="true">◉</span>
             {getNotificationLabel(notificationStatus, isNotificationRequesting)}
           </button>
+          <button type="button" onClick={onViewCalendar}>Calendar</button>
           <button type="button" onClick={onConfigure}>Reminder rules</button>
         </div>
       </div>

@@ -51,6 +51,10 @@ export interface UpcomingJobActivity {
   occurredAt: string
 }
 
+export interface ScheduledJobActivity extends UpcomingJobActivity {
+  completedAt: string | null
+}
+
 export interface JobAttentionItem {
   jobId: number
   company: string

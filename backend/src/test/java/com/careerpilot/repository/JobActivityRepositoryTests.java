@@ -172,4 +172,33 @@ class JobActivityRepositoryTests {
                 Instant.parse(occurredAt)
         );
     }
+
+    @Test
+    void findsCompletedAndIncompleteScheduledActivitiesInExclusiveRange() {
+        Job job = jobRepository.save(new Job("OpenAI", "Engineer", "Description", null));
+        JobActivity completed = activity(
+                job,
+                JobActivityType.FOLLOW_UP,
+                "Completed follow-up",
+                "2026-08-15T12:00:00Z"
+        );
+        completed.complete(Instant.parse("2026-08-15T13:00:00Z"), null, null, null);
+        jobActivityRepository.saveAllAndFlush(List.of(
+                activity(job, JobActivityType.INTERVIEW, "At start", "2026-08-01T00:00:00Z"),
+                completed,
+                activity(job, JobActivityType.NOTE, "Hidden note", "2026-08-20T12:00:00Z"),
+                activity(job, JobActivityType.INTERVIEW, "At end", "2026-09-01T00:00:00Z")
+        ));
+
+        List<JobActivity> activities = jobActivityRepository.findScheduledActivitiesBetween(
+                List.of(JobActivityType.INTERVIEW, JobActivityType.FOLLOW_UP),
+                Instant.parse("2026-08-01T00:00:00Z"),
+                Instant.parse("2026-09-01T00:00:00Z")
+        );
+
+        assertThat(activities).extracting(JobActivity::getTitle)
+                .containsExactly("At start", "Completed follow-up");
+        assertThat(activities.get(1).getCompletedAt()).isNotNull();
+        assertThat(activities.getFirst().getJob().getCompany()).isEqualTo("OpenAI");
+    }
 }

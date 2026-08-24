@@ -11,7 +11,9 @@ import com.careerpilot.dto.JobActivityRequest;
 import com.careerpilot.dto.JobActivityReopenResponse;
 import com.careerpilot.dto.JobActivityRescheduleRequest;
 import com.careerpilot.dto.JobActivityResponse;
+import com.careerpilot.dto.ScheduledJobActivityResponse;
 import com.careerpilot.dto.UpcomingJobActivityResponse;
+import com.careerpilot.exception.JobActivityCalendarException;
 import com.careerpilot.exception.JobActivityCompletionException;
 import com.careerpilot.exception.JobActivityRescheduleException;
 import com.careerpilot.exception.ResourceNotFoundException;
@@ -536,5 +538,48 @@ class JobActivityServiceTests {
         ReflectionTestUtils.setField(activity, "id", id);
         ReflectionTestUtils.setField(activity, "createdAt", Instant.parse(occurredAt));
         return activity;
+    }
+
+    @Test
+    void listsCompletedAndIncompleteCalendarActivities() {
+        Instant start = Instant.parse("2026-08-01T00:00:00Z");
+        Instant end = Instant.parse("2026-09-01T00:00:00Z");
+        Job job = persistedJob(1L);
+        JobActivity interview = persistedActivity(2L, job, "Interview", "2026-08-12T18:00:00Z");
+        interview.complete(Instant.parse("2026-08-12T20:00:00Z"), null, null, null);
+        when(jobActivityRepository.findScheduledActivitiesBetween(
+                List.of(JobActivityType.INTERVIEW, JobActivityType.FOLLOW_UP),
+                start,
+                end
+        )).thenReturn(List.of(interview));
+
+        List<ScheduledJobActivityResponse> activities =
+                jobActivityService.getCalendarActivities(start, end);
+
+        assertThat(activities).hasSize(1);
+        assertThat(activities.getFirst().company()).isEqualTo("OpenAI");
+        assertThat(activities.getFirst().completedAt())
+                .isEqualTo(Instant.parse("2026-08-12T20:00:00Z"));
+    }
+
+    @Test
+    void rejectsCalendarRangeThatDoesNotMoveForward() {
+        Instant start = Instant.parse("2026-08-01T00:00:00Z");
+
+        assertThatThrownBy(() -> jobActivityService.getCalendarActivities(start, start))
+                .isInstanceOf(JobActivityCalendarException.class)
+                .hasMessage("Calendar end must be after start.");
+    }
+
+    @Test
+    void rejectsCalendarRangeLongerThanSixtyTwoDays() {
+        Instant start = Instant.parse("2026-08-01T00:00:00Z");
+
+        assertThatThrownBy(() -> jobActivityService.getCalendarActivities(
+                start,
+                Instant.parse("2026-10-03T00:00:01Z")
+        ))
+                .isInstanceOf(JobActivityCalendarException.class)
+                .hasMessage("Calendar range cannot exceed 62 days.");
     }
 }

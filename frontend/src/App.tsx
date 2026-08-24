@@ -10,6 +10,7 @@ import { AppLayout } from './components/AppLayout'
 import { ScrollToTop } from './components/ScrollToTop'
 import { AddJobPage } from './pages/AddJobPage'
 import { AddResumePage } from './pages/AddResumePage'
+import { CalendarPage } from './pages/CalendarPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { EditJobPage } from './pages/EditJobPage'
 import { EditResumePage } from './pages/EditResumePage'
@@ -158,6 +159,7 @@ function App() {
         <Route element={<AppLayout />}>
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<DashboardPage />} />
+          <Route path="calendar" element={<CalendarPage />} />
           <Route path="jobs" element={<JobsRoute />} />
           <Route path="jobs/new" element={<AddJobRoute />} />
           <Route path="jobs/:id/edit" element={<EditJobRoute />} />

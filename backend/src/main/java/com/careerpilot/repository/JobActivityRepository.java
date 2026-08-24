@@ -45,4 +45,19 @@ public interface JobActivityRepository extends JpaRepository<JobActivity, Long> 
             Collection<JobActivityType> types,
             Instant cutoff
     );
+
+    @EntityGraph(attributePaths = "job")
+    @Query("""
+            select activity
+            from JobActivity activity
+            where activity.type in :types
+              and activity.occurredAt >= :start
+              and activity.occurredAt < :end
+            order by activity.occurredAt asc, activity.createdAt asc
+            """)
+    List<JobActivity> findScheduledActivitiesBetween(
+            @Param("types") Collection<JobActivityType> types,
+            @Param("start") Instant start,
+            @Param("end") Instant end
+    );
 }

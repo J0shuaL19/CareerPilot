@@ -5,6 +5,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.careerpilot.dto.ScheduledJobActivityResponse;
 import com.careerpilot.dto.UpcomingJobActivityResponse;
 import com.careerpilot.model.JobActivityType;
 import com.careerpilot.service.JobActivityService;
@@ -16,8 +17,8 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-@WebMvcTest(UpcomingJobActivityController.class)
-class UpcomingJobActivityControllerTests {
+@WebMvcTest(JobActivityScheduleController.class)
+class JobActivityScheduleControllerTests {
 
     @Autowired
     private MockMvc mockMvc;
@@ -66,5 +67,31 @@ class UpcomingJobActivityControllerTests {
                 .andExpect(jsonPath("$[0].jobId").value(1))
                 .andExpect(jsonPath("$[0].company").value("OpenAI"))
                 .andExpect(jsonPath("$[0].type").value("INTERVIEW"));
+    }
+
+    @Test
+    void returnsCalendarActivitiesForRequestedRange() throws Exception {
+        Instant start = Instant.parse("2026-08-01T07:00:00Z");
+        Instant end = Instant.parse("2026-09-01T07:00:00Z");
+        when(jobActivityService.getCalendarActivities(start, end)).thenReturn(List.of(
+                new ScheduledJobActivityResponse(
+                        2L,
+                        1L,
+                        "OpenAI",
+                        "Engineer",
+                        JobActivityType.INTERVIEW,
+                        "Technical interview",
+                        "Alex Chen",
+                        Instant.parse("2026-08-23T18:00:00Z"),
+                        Instant.parse("2026-08-23T19:00:00Z")
+                )
+        ));
+
+        mockMvc.perform(get("/api/job-activities/calendar")
+                        .param("start", start.toString())
+                        .param("end", end.toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].jobTitle").value("Engineer"))
+                .andExpect(jsonPath("$[0].completedAt").value("2026-08-23T19:00:00Z"));
     }
 }
