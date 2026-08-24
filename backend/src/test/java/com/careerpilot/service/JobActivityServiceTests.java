@@ -17,6 +17,7 @@ import com.careerpilot.repository.JobActivityRepository;
 import com.careerpilot.repository.JobRepository;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -45,6 +46,7 @@ class JobActivityServiceTests {
     @Test
     void createsNormalizedActivityForJob() {
         Job job = persistedJob(1L);
+        job.snoozeAttentionUntil(LocalDate.parse("2026-08-30"));
         when(jobRepository.findById(1L)).thenReturn(Optional.of(job));
         when(jobActivityRepository.save(any(JobActivity.class))).thenAnswer(invocation -> {
             JobActivity activity = invocation.getArgument(0);
@@ -69,6 +71,7 @@ class JobActivityServiceTests {
         assertThat(captor.getValue().getTitle()).isEqualTo("Technical interview");
         assertThat(captor.getValue().getDetails()).isEqualTo("System design round");
         assertThat(captor.getValue().getContact()).isEqualTo("Alex Chen");
+        assertThat(job.getAttentionSnoozedUntil()).isNull();
         assertThat(response.id()).isEqualTo(2L);
         assertThat(response.jobId()).isEqualTo(1L);
     }

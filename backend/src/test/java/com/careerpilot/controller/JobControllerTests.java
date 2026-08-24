@@ -12,6 +12,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.careerpilot.dto.JobAttentionSnoozeRequest;
 import com.careerpilot.dto.JobRequest;
 import com.careerpilot.dto.JobCsvImportPreviewResponse;
 import com.careerpilot.dto.JobCsvImportResultResponse;
@@ -27,6 +28,7 @@ import com.careerpilot.service.JobCsvImportService;
 import com.careerpilot.service.JobService;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -302,6 +304,53 @@ class JobControllerTests {
     }
 
     @Test
+    void snoozesJobAttentionUntilFutureDate() throws Exception {
+        when(jobService.snoozeAttention(
+                any(Long.class),
+                any(JobAttentionSnoozeRequest.class)
+        )).thenReturn(jobResponse(
+                1L,
+                "OpenAI",
+                JobStatus.APPLIED,
+                LocalDate.parse("2099-08-30")
+        ));
+
+        mockMvc.perform(put("/api/jobs/1/attention-snooze")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "snoozedUntil": "2099-08-30"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.attentionSnoozedUntil").value("2099-08-30"));
+    }
+
+    @Test
+    void rejectsPastAttentionSnoozeDate() throws Exception {
+        mockMvc.perform(put("/api/jobs/1/attention-snooze")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "snoozedUntil": "2000-01-01"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.snoozedUntil")
+                        .value("Snooze date must be in the future"));
+    }
+
+    @Test
+    void clearsJobAttentionSnooze() throws Exception {
+        when(jobService.clearAttentionSnooze(1L))
+                .thenReturn(jobResponse(1L, "OpenAI", JobStatus.APPLIED));
+
+        mockMvc.perform(delete("/api/jobs/1/attention-snooze"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.attentionSnoozedUntil").doesNotExist());
+    }
+
+    @Test
     void deletesJob() throws Exception {
         mockMvc.perform(delete("/api/jobs/1"))
                 .andExpect(status().isNoContent());
@@ -312,6 +361,15 @@ class JobControllerTests {
     }
 
     private static JobResponse jobResponse(Long id, String company, JobStatus status) {
+        return jobResponse(id, company, status, null);
+    }
+
+    private static JobResponse jobResponse(
+            Long id,
+            String company,
+            JobStatus status,
+            LocalDate attentionSnoozedUntil
+    ) {
         return new JobResponse(
                 id,
                 company,
@@ -319,7 +377,8 @@ class JobControllerTests {
                 "Build reliable products.",
                 "https://example.com/jobs/1",
                 status,
-                Instant.parse("2026-08-18T12:00:00Z")
+                Instant.parse("2026-08-18T12:00:00Z"),
+                attentionSnoozedUntil
         );
     }
 }

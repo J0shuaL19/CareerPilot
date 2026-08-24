@@ -79,7 +79,8 @@ Success: `201 Created`
   "description": "Build reliable products.",
   "jobUrl": "https://example.com/jobs/1",
   "status": "SAVED",
-  "createdAt": "2026-08-19T02:00:00Z"
+  "createdAt": "2026-08-19T02:00:00Z",
+  "attentionSnoozedUntil": null
 }
 ```
 
@@ -100,7 +101,8 @@ Success: `200 OK`
     "description": "Build reliable products.",
     "jobUrl": "https://example.com/jobs/1",
     "status": "SAVED",
-    "createdAt": "2026-08-19T02:00:00Z"
+    "createdAt": "2026-08-19T02:00:00Z",
+    "attentionSnoozedUntil": null
   }
 ]
 ```
@@ -216,6 +218,26 @@ Success: `200 OK` with the complete updated job response. The change is persiste
 
 Uses the same request body and validation rules as job creation. Success: `200 OK` with the complete updated job response. The job status and creation time remain unchanged.
 
+### Snooze a job reminder
+
+`PUT /api/jobs/{id}/attention-snooze`
+
+Temporarily hides one overdue job from `Needs attention` without changing the global stage rules.
+
+```json
+{
+  "snoozedUntil": "2026-08-30"
+}
+```
+
+The date is required, uses `YYYY-MM-DD`, and must be in the future. Success: `200 OK` with the complete updated job response. The reminder becomes eligible again on the selected date if the job is still overdue. Creating a new activity for the job clears its snooze automatically.
+
+### Clear a job reminder snooze
+
+`DELETE /api/jobs/{id}/attention-snooze`
+
+Clears the saved date immediately. Success: `200 OK` with the complete updated job response and `attentionSnoozedUntil` set to `null`.
+
 ### Delete a job
 
 `DELETE /api/jobs/{id}`
@@ -278,7 +300,7 @@ Each response includes `jobId`, `company`, and `jobTitle` so the frontend can pr
 
 `GET /api/job-activities/needs-attention`
 
-Returns jobs in `APPLIED`, `OA`, or `INTERVIEW` whose latest activity meets the configured threshold for that stage. For a job without activities, its creation time is used as the last touch. A future activity is treated as a scheduled next step and keeps that job out of the reminder list.
+Returns jobs in `APPLIED`, `OA`, or `INTERVIEW` whose latest activity meets the configured threshold for that stage. For a job without activities, its creation time is used as the last touch. A future activity is treated as a scheduled next step and keeps that job out of the reminder list. A job whose `attentionSnoozedUntil` date is later than the current server-local date is also excluded.
 
 Results are ordered by how far each job is past its own threshold, from most overdue to least overdue. Each result includes `thresholdDays`, allowing clients to explain why the reminder appeared. Success: `200 OK`; when every active application has recent or scheduled activity, the endpoint returns `[]`.
 

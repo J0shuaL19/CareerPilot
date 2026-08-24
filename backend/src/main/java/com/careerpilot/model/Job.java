@@ -10,6 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -44,6 +45,9 @@ public class Job {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    @Column(name = "attention_snoozed_until")
+    private LocalDate attentionSnoozedUntil;
+
     public Job(String company, String title, String description, String jobUrl) {
         this.company = company;
         this.title = title;
@@ -61,6 +65,14 @@ public class Job {
         this.title = Objects.requireNonNull(title, "Title is required");
         this.description = Objects.requireNonNull(description, "Description is required");
         this.jobUrl = jobUrl;
+    }
+
+    public void snoozeAttentionUntil(LocalDate date) {
+        this.attentionSnoozedUntil = Objects.requireNonNull(date, "Snooze date is required");
+    }
+
+    public void clearAttentionSnooze() {
+        this.attentionSnoozedUntil = null;
     }
 
     @PrePersist

@@ -80,6 +80,22 @@ export function updateJob(id: number, input: UpdateJobInput): Promise<Job> {
   })
 }
 
+export function snoozeJobAttention(id: number, snoozedUntil: string): Promise<Job> {
+  return apiRequest<Job>('/api/jobs/' + id + '/attention-snooze', {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ snoozedUntil }),
+  })
+}
+
+export function clearJobAttentionSnooze(id: number): Promise<Job> {
+  return apiRequest<Job>('/api/jobs/' + id + '/attention-snooze', {
+    method: 'DELETE',
+  })
+}
+
 export function deleteJob(id: number): Promise<void> {
   return apiRequest<void>(`/api/jobs/${id}`, {
     method: 'DELETE',

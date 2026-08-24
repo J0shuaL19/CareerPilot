@@ -13,6 +13,7 @@ import com.careerpilot.repository.JobActivityRepository;
 import com.careerpilot.repository.JobRepository;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -105,6 +106,39 @@ class JobAttentionServiceTests {
             assertThat(response.daysWithoutActivity()).isEqualTo(13L);
             assertThat(response.thresholdDays()).isEqualTo(7);
         });
+    }
+
+    @Test
+    void excludesFutureSnoozesAndRestoresRemindersOnSelectedDate() {
+        Job futureSnooze = persistedJob(
+                1L,
+                "Future Snooze Co",
+                JobStatus.APPLIED,
+                "2026-08-01T12:00:00Z"
+        );
+        futureSnooze.snoozeAttentionUntil(LocalDate.parse("2026-08-24"));
+        Job dueToday = persistedJob(
+                2L,
+                "Due Today Co",
+                JobStatus.APPLIED,
+                "2026-08-01T12:00:00Z"
+        );
+        dueToday.snoozeAttentionUntil(LocalDate.parse("2026-08-23"));
+        when(jobRepository.findAllByStatusInOrderByCreatedAtAsc(List.of(
+                JobStatus.APPLIED,
+                JobStatus.OA,
+                JobStatus.INTERVIEW
+        ))).thenReturn(List.of(futureSnooze, dueToday));
+        when(clock.instant()).thenReturn(NOW);
+        when(jobActivityRepository.findLatestOccurredAtByJobIds(List.of(2L)))
+                .thenReturn(List.of());
+        when(settingsService.getSettings())
+                .thenReturn(new JobAttentionSettingsResponse(7, 7, 7));
+
+        List<JobAttentionResponse> responses = jobAttentionService.getJobsNeedingAttention();
+
+        assertThat(responses).extracting(JobAttentionResponse::company)
+                .containsExactly("Due Today Co");
     }
 
     @Test

@@ -15,6 +15,7 @@ export interface Job {
   jobUrl: string | null
   status: JobStatus
   createdAt: string
+  attentionSnoozedUntil: string | null
 }
 
 export interface CreateJobInput {

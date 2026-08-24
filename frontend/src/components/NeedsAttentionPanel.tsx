@@ -7,6 +7,7 @@ interface NeedsAttentionPanelProps {
   settings: JobAttentionSettings
   onConfigure: () => void
   onFollowUp: (item: JobAttentionItem) => void
+  onSnooze: (item: JobAttentionItem) => void
 }
 
 export function NeedsAttentionPanel({
@@ -14,6 +15,7 @@ export function NeedsAttentionPanel({
   settings,
   onConfigure,
   onFollowUp,
+  onSnooze,
 }: NeedsAttentionPanelProps) {
   const rulesSummary = [
     'Applied ' + settings.appliedDays + 'd',
@@ -44,7 +46,7 @@ export function NeedsAttentionPanel({
           <span aria-hidden="true">✓</span>
           <div>
             <strong>Your active applications are up to date.</strong>
-            <p>Jobs with recent or scheduled activity will stay out of this list.</p>
+            <p>Jobs with recent, scheduled, or snoozed activity will stay out of this list.</p>
           </div>
         </div>
       ) : (
@@ -53,17 +55,7 @@ export function NeedsAttentionPanel({
             const status = getJobStatusConfig(item.status)
 
             return (
-              <button
-                className="attention-card"
-                type="button"
-                key={item.jobId}
-                aria-label={[
-                  'Follow up on ' + item.jobTitle + ' at ' + item.company,
-                  item.daysWithoutActivity + ' days without activity',
-                  'reminder set to ' + item.thresholdDays + ' days',
-                ].join(', ')}
-                onClick={() => onFollowUp(item)}
-              >
+              <article className="attention-card" key={item.jobId}>
                 <span className="attention-card__age">
                   <strong>{item.daysWithoutActivity}</strong>
                   <span>days</span>
@@ -78,10 +70,23 @@ export function NeedsAttentionPanel({
                     {' '}· Rule {item.thresholdDays}d
                   </span>
                 </span>
-                <span className="attention-card__action">
-                  Follow up <span aria-hidden="true">→</span>
-                </span>
-              </button>
+                <div className="attention-card__actions">
+                  <button
+                    type="button"
+                    aria-label={'Follow up on ' + item.jobTitle + ' at ' + item.company}
+                    onClick={() => onFollowUp(item)}
+                  >
+                    Follow up <span aria-hidden="true">→</span>
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={'Snooze reminder for ' + item.jobTitle + ' at ' + item.company}
+                    onClick={() => onSnooze(item)}
+                  >
+                    Snooze
+                  </button>
+                </div>
+              </article>
             )
           })}
         </div>

@@ -5,6 +5,7 @@ import { DashboardFunnel } from '../components/DashboardFunnel'
 import { NeedsAttentionPanel } from '../components/NeedsAttentionPanel'
 import { PipelineSummary } from '../components/PipelineSummary'
 import { QuickFollowUpDialog } from '../components/QuickFollowUpDialog'
+import { SnoozeReminderDialog } from '../components/SnoozeReminderDialog'
 import { UpcomingActivities } from '../components/UpcomingActivities'
 import { getDashboardStats } from '../services/dashboardApi'
 import {
@@ -14,7 +15,11 @@ import {
   getUpcomingJobActivities,
   updateJobAttentionSettings,
 } from '../services/jobActivityApi'
-import { getJobs } from '../services/jobApi'
+import {
+  clearJobAttentionSnooze,
+  getJobs,
+  snoozeJobAttention,
+} from '../services/jobApi'
 import { getMatchAnalyses } from '../services/matchAnalysisApi'
 import { getResumes } from '../services/resumeApi'
 import type { Job } from '../types/job'
@@ -29,6 +34,12 @@ import type { MatchAnalysis } from '../types/matchAnalysis'
 import type { Resume } from '../types/resume'
 import { getErrorMessage, isAbortError } from '../utils/errors'
 import { formatDate } from '../utils/formatDate'
+
+interface SnoozeConfirmation {
+  jobId: number
+  company: string
+  snoozedUntil: string
+}
 
 interface DashboardData {
   jobs: Job[]
@@ -70,6 +81,12 @@ export function DashboardPage() {
   const [isAttentionSettingsOpen, setIsAttentionSettingsOpen] = useState(false)
   const [isAttentionSettingsSaving, setIsAttentionSettingsSaving] = useState(false)
   const [attentionSettingsError, setAttentionSettingsError] = useState<string | null>(null)
+  const [snoozeItem, setSnoozeItem] = useState<JobAttentionItem | null>(null)
+  const [isSnoozeSaving, setIsSnoozeSaving] = useState(false)
+  const [snoozeError, setSnoozeError] = useState<string | null>(null)
+  const [snoozeConfirmation, setSnoozeConfirmation] = useState<SnoozeConfirmation | null>(null)
+  const [isSnoozeUndoing, setIsSnoozeUndoing] = useState(false)
+  const [snoozeUndoError, setSnoozeUndoError] = useState<string | null>(null)
 
   async function handleFollowUpSubmit(input: CreateJobActivityInput) {
     if (!followUpItem) return
@@ -102,6 +119,51 @@ export function DashboardPage() {
       setAttentionSettingsError(getErrorMessage(saveError))
     } finally {
       setIsAttentionSettingsSaving(false)
+    }
+  }
+
+  async function handleSnoozeSubmit(snoozedUntil: string) {
+    if (!snoozeItem) return
+
+    setIsSnoozeSaving(true)
+    setSnoozeError(null)
+    try {
+      const updatedJob = await snoozeJobAttention(snoozeItem.jobId, snoozedUntil)
+      setData((current) => ({
+        ...current,
+        jobs: current.jobs.map((job) => job.id === updatedJob.id ? updatedJob : job),
+        attentionItems: current.attentionItems.filter(
+          (item) => item.jobId !== snoozeItem.jobId,
+        ),
+      }))
+      setSnoozeConfirmation({
+        jobId: snoozeItem.jobId,
+        company: snoozeItem.company,
+        snoozedUntil,
+      })
+      setSnoozeUndoError(null)
+      setFollowUpSuccess(null)
+      setSnoozeItem(null)
+    } catch (saveError) {
+      setSnoozeError(getErrorMessage(saveError))
+    } finally {
+      setIsSnoozeSaving(false)
+    }
+  }
+
+  async function handleSnoozeUndo() {
+    if (!snoozeConfirmation) return
+
+    setIsSnoozeUndoing(true)
+    setSnoozeUndoError(null)
+    try {
+      await clearJobAttentionSnooze(snoozeConfirmation.jobId)
+      setSnoozeConfirmation(null)
+      setReloadKey((key) => key + 1)
+    } catch (undoError) {
+      setSnoozeUndoError(getErrorMessage(undoError))
+    } finally {
+      setIsSnoozeUndoing(false)
     }
   }
 
@@ -229,9 +291,38 @@ export function DashboardPage() {
           <span aria-hidden="true">✓</span>
           <strong>{followUpSuccess}</strong>
           <button
+            className="dashboard-feedback__close"
             type="button"
             aria-label="Dismiss confirmation"
             onClick={() => setFollowUpSuccess(null)}
+          >
+            ×
+          </button>
+        </div>
+      )}
+
+      {snoozeConfirmation && (
+        <div className="dashboard-feedback dashboard-feedback--snoozed" role="status">
+          <span aria-hidden="true">◷</span>
+          <strong>
+            {snoozeConfirmation.company} snoozed until{' '}
+            {formatDate(snoozeConfirmation.snoozedUntil + 'T12:00:00')}.
+          </strong>
+          {snoozeUndoError && <small role="alert">{snoozeUndoError}</small>}
+          <button
+            className="dashboard-feedback__undo"
+            type="button"
+            disabled={isSnoozeUndoing}
+            onClick={() => void handleSnoozeUndo()}
+          >
+            {isSnoozeUndoing ? 'Undoing…' : 'Undo'}
+          </button>
+          <button
+            className="dashboard-feedback__close"
+            type="button"
+            aria-label="Dismiss snooze confirmation"
+            disabled={isSnoozeUndoing}
+            onClick={() => setSnoozeConfirmation(null)}
           >
             ×
           </button>
@@ -307,6 +398,10 @@ export function DashboardPage() {
               setFollowUpError(null)
               setFollowUpItem(item)
             }}
+            onSnooze={(item) => {
+              setSnoozeError(null)
+              setSnoozeItem(item)
+            }}
           />
 
           <UpcomingActivities
@@ -334,6 +429,19 @@ export function DashboardPage() {
             setIsAttentionSettingsOpen(false)
           }}
           onSubmit={(settings) => void handleAttentionSettingsSubmit(settings)}
+        />
+      )}
+
+      {snoozeItem && (
+        <SnoozeReminderDialog
+          item={snoozeItem}
+          isSaving={isSnoozeSaving}
+          error={snoozeError}
+          onClose={() => {
+            setSnoozeError(null)
+            setSnoozeItem(null)
+          }}
+          onSubmit={(snoozedUntil) => void handleSnoozeSubmit(snoozedUntil)}
         />
       )}
 

@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.careerpilot.dto.JobAttentionSnoozeRequest;
 import com.careerpilot.dto.JobRequest;
 import com.careerpilot.dto.JobResponse;
 import com.careerpilot.dto.JobStatusUpdateRequest;
@@ -14,6 +15,7 @@ import com.careerpilot.model.Job;
 import com.careerpilot.model.JobStatus;
 import com.careerpilot.repository.JobRepository;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -153,6 +155,33 @@ class JobServiceTests {
         assertThat(response.description()).isEqualTo("Build safe AI systems.");
         assertThat(response.jobUrl()).isNull();
         assertThat(response.status()).isEqualTo(JobStatus.APPLIED);
+    }
+
+    @Test
+    void snoozesJobAttentionUntilRequestedDate() {
+        Job job = persistedJob(1L, "OpenAI", "2026-08-18T12:00:00Z");
+        when(jobRepository.findById(1L)).thenReturn(Optional.of(job));
+        LocalDate snoozedUntil = LocalDate.parse("2026-08-30");
+
+        JobResponse response = jobService.snoozeAttention(
+                1L,
+                new JobAttentionSnoozeRequest(snoozedUntil)
+        );
+
+        assertThat(job.getAttentionSnoozedUntil()).isEqualTo(snoozedUntil);
+        assertThat(response.attentionSnoozedUntil()).isEqualTo(snoozedUntil);
+    }
+
+    @Test
+    void clearsExistingJobAttentionSnooze() {
+        Job job = persistedJob(1L, "OpenAI", "2026-08-18T12:00:00Z");
+        job.snoozeAttentionUntil(LocalDate.parse("2026-08-30"));
+        when(jobRepository.findById(1L)).thenReturn(Optional.of(job));
+
+        JobResponse response = jobService.clearAttentionSnooze(1L);
+
+        assertThat(job.getAttentionSnoozedUntil()).isNull();
+        assertThat(response.attentionSnoozedUntil()).isNull();
     }
 
     @Test

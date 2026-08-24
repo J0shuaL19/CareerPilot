@@ -1113,7 +1113,6 @@ a:focus-visible {
   background: #fff;
   font: inherit;
   text-align: left;
-  cursor: pointer;
   transition: border-color 150ms ease, transform 150ms ease, box-shadow 150ms ease;
 }
 
@@ -1171,11 +1170,36 @@ a:focus-visible {
   font-weight: 650;
 }
 
-.attention-card__action {
-  grid-column: 2;
-  color: #986716;
+.attention-card__actions {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.45rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid #eee4d6;
+}
+
+.attention-card__actions button {
+  padding: 0.42rem 0.6rem;
+  border: 1px solid #d9c9b1;
+  border-radius: 8px;
+  color: #795619;
+  background: #fff;
+  font: inherit;
   font-size: 0.66rem;
-  font-weight: 850;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.attention-card__actions button:first-child {
+  border-color: #d3b47d;
+  background: #fff8eb;
+}
+
+.attention-card__actions button:hover {
+  border-color: #b58e50;
+  background: #fffaf1;
 }
 
 .dashboard-feedback {
@@ -1195,8 +1219,26 @@ a:focus-visible {
   font-weight: 900;
 }
 
-.dashboard-feedback > button {
+.dashboard-feedback > small {
+  color: #922438;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.dashboard-feedback__undo {
   margin-left: auto;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid #8bc9a8;
+  border-radius: 8px;
+  color: inherit;
+  background: #fff;
+  font: inherit;
+  font-size: 0.7rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.dashboard-feedback__close {
   padding: 0;
   border: 0;
   color: inherit;
@@ -1204,6 +1246,11 @@ a:focus-visible {
   font: inherit;
   font-size: 1.2rem;
   cursor: pointer;
+}
+
+.dashboard-feedback button:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 .quick-follow-up-backdrop {
@@ -1462,6 +1509,69 @@ a:focus-visible {
 .quick-follow-up-form__actions > div {
   display: flex;
   gap: 0.65rem;
+}
+
+.snooze-reminder-dialog {
+  width: min(100%, 560px);
+}
+
+.snooze-reminder-form__intro {
+  margin: 0;
+  color: #5f6c81;
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+.snooze-reminder-presets {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.snooze-reminder-preset {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+  padding: 0.72rem;
+  border: 1px solid #d7deea;
+  border-radius: 10px;
+  color: #68758a;
+  background: #f9fafc;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.snooze-reminder-preset strong {
+  color: #37445a;
+  font-size: 0.72rem;
+}
+
+.snooze-reminder-preset span {
+  font-size: 0.64rem;
+  font-weight: 650;
+}
+
+.snooze-reminder-preset--selected {
+  border-color: #6f91e8;
+  background: #f0f4ff;
+  box-shadow: 0 0 0 2px rgb(53 104 232 / 10%);
+}
+
+.snooze-reminder-form__note {
+  margin: 0;
+  padding: 0.68rem 0.78rem;
+  border-radius: 10px;
+  color: #637087;
+  background: #f2f5fa;
+  font-size: 0.7rem;
+  line-height: 1.45;
+}
+
+.snooze-reminder-form__actions > span {
+  color: #7a8495;
+  font-size: 0.68rem;
+  font-weight: 700;
 }
 
 .attention-settings-dialog {
@@ -4115,6 +4225,14 @@ a:focus-visible {
 
   .quick-follow-up-form .attention-settings-fields > label {
     align-items: flex-start;
+  }
+
+  .snooze-reminder-presets {
+    grid-template-columns: 1fr;
+  }
+
+  .snooze-reminder-form__actions > span {
+    text-align: center;
   }
 
   .quick-follow-up-form__row {

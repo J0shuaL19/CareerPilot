@@ -2,6 +2,7 @@ package com.careerpilot.dto;
 
 import com.careerpilot.model.JobStatus;
 import java.time.Instant;
+import java.time.LocalDate;
 
 public record JobResponse(
         Long id,
@@ -10,6 +11,7 @@ public record JobResponse(
         String description,
         String jobUrl,
         JobStatus status,
-        Instant createdAt
+        Instant createdAt,
+        LocalDate attentionSnoozedUntil
 ) {
 }

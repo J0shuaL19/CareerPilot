@@ -9,6 +9,8 @@ import com.careerpilot.repository.JobActivityRepository;
 import com.careerpilot.repository.JobRepository;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
@@ -51,17 +53,26 @@ public class JobAttentionService {
             return List.of();
         }
 
+        Instant now = clock.instant();
+        LocalDate today = now.atZone(ZoneId.systemDefault()).toLocalDate();
+        List<Job> unsnoozedJobs = activeJobs.stream()
+                .filter(job -> job.getAttentionSnoozedUntil() == null
+                        || !job.getAttentionSnoozedUntil().isAfter(today))
+                .toList();
+        if (unsnoozedJobs.isEmpty()) {
+            return List.of();
+        }
+
         Map<Long, JobActivityLastTouchProjection> lastTouches = jobActivityRepository
-                .findLatestOccurredAtByJobIds(activeJobs.stream().map(Job::getId).toList())
+                .findLatestOccurredAtByJobIds(unsnoozedJobs.stream().map(Job::getId).toList())
                 .stream()
                 .collect(Collectors.toMap(
                         JobActivityLastTouchProjection::getJobId,
                         Function.identity()
                 ));
-        Instant now = clock.instant();
         JobAttentionSettingsResponse settings = settingsService.getSettings();
 
-        return activeJobs.stream()
+        return unsnoozedJobs.stream()
                 .map(job -> toResponse(
                         job,
                         lastTouches.get(job.getId()),

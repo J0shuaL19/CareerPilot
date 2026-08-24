@@ -42,6 +42,7 @@ public class JobActivityService {
     @Transactional
     public JobActivityResponse createActivity(Long jobId, JobActivityRequest request) {
         Job job = findJob(jobId);
+        job.clearAttentionSnooze();
         JobActivity activity = new JobActivity(
                 job,
                 request.type(),

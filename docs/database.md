@@ -16,7 +16,7 @@ The values shown in `.env.example` are documentation; Spring Boot reads the actu
 
 ## Jobs table
 
-Migration: `V1__create_jobs_table.sql`
+Migrations: `V1__create_jobs_table.sql`, `V6__add_job_attention_snooze.sql`
 
 | Column | Type | Purpose |
 | --- | --- | --- |
@@ -27,6 +27,7 @@ Migration: `V1__create_jobs_table.sql`
 | `job_url` | `VARCHAR(2048)` | Optional source URL |
 | `status` | `VARCHAR(32)` | Application pipeline status |
 | `created_at` | `TIMESTAMP WITH TIME ZONE` | UTC creation time |
+| `attention_snoozed_until` | `DATE` | Optional date until which the dashboard reminder is hidden |
 
 ## Resumes table
 

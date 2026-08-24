@@ -1,5 +1,6 @@
 package com.careerpilot.service;
 
+import com.careerpilot.dto.JobAttentionSnoozeRequest;
 import com.careerpilot.dto.JobRequest;
 import com.careerpilot.dto.JobResponse;
 import com.careerpilot.dto.JobStatusUpdateRequest;
@@ -67,6 +68,20 @@ public class JobService {
     }
 
     @Transactional
+    public JobResponse snoozeAttention(Long id, JobAttentionSnoozeRequest request) {
+        Job job = findJob(id);
+        job.snoozeAttentionUntil(request.snoozedUntil());
+        return toResponse(job);
+    }
+
+    @Transactional
+    public JobResponse clearAttentionSnooze(Long id) {
+        Job job = findJob(id);
+        job.clearAttentionSnooze();
+        return toResponse(job);
+    }
+
+    @Transactional
     public void deleteJob(Long id) {
         jobRepository.delete(findJob(id));
     }
@@ -88,7 +103,8 @@ public class JobService {
                 job.getDescription(),
                 job.getJobUrl(),
                 job.getStatus(),
-                job.getCreatedAt()
+                job.getCreatedAt(),
+                job.getAttentionSnoozedUntil()
         );
     }
 }
