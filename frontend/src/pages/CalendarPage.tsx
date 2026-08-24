@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { type DragEvent, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CalendarActivityDialog } from '../components/CalendarActivityDialog'
 import { CalendarActivityDetailsDialog } from '../components/CalendarActivityDetailsDialog'
@@ -72,8 +72,12 @@ export function CalendarPage() {
   const [completionError, setCompletionError] = useState<string | null>(null)
   const [reschedulingActivity, setReschedulingActivity] =
     useState<ScheduledJobActivity | null>(null)
+  const [rescheduleInitialOccurredAt, setRescheduleInitialOccurredAt] =
+    useState<string | null>(null)
   const [isRescheduling, setIsRescheduling] = useState(false)
   const [rescheduleError, setRescheduleError] = useState<string | null>(null)
+  const [draggingActivityId, setDraggingActivityId] = useState<number | null>(null)
+  const [dropTargetDateKey, setDropTargetDateKey] = useState<string | null>(null)
 
   const gridStart = useMemo(
     () => viewMode === 'MONTH'
@@ -176,6 +180,9 @@ export function CalendarPage() {
   const completingJob = completingActivity
     ? jobs.find((job) => job.id === completingActivity.jobId)
     : undefined
+  const draggingActivity = draggingActivityId === null
+    ? null
+    : activities.find((activity) => activity.id === draggingActivityId) ?? null
 
   function movePeriod(offset: number) {
     setNotice(null)
@@ -206,6 +213,47 @@ export function CalendarPage() {
     setTypeFilter('ALL')
     setStatusFilter('ALL')
     setJobIdFilter(null)
+  }
+
+  function handleDragStart(
+    event: DragEvent<HTMLButtonElement>,
+    activity: ScheduledJobActivity,
+  ) {
+    if (activity.completedAt) {
+      event.preventDefault()
+      return
+    }
+    event.dataTransfer.effectAllowed = 'move'
+    event.dataTransfer.setData('text/plain', String(activity.id))
+    setDraggingActivityId(activity.id)
+    setNotice(null)
+  }
+
+  function handleDragEnd() {
+    setDraggingActivityId(null)
+    setDropTargetDateKey(null)
+  }
+
+  function canDropOnDay(day: Date): boolean {
+    return draggingActivity !== null
+      && moveActivityToDay(draggingActivity.occurredAt, day) > new Date()
+  }
+
+  function handleDrop(event: DragEvent<HTMLElement>, day: Date) {
+    event.preventDefault()
+    const activityId = Number(event.dataTransfer.getData('text/plain'))
+    const activity = activities.find((item) => item.id === activityId)
+    handleDragEnd()
+    if (!activity || activity.completedAt) return
+
+    const nextTime = moveActivityToDay(activity.occurredAt, day)
+    if (nextTime <= new Date()) {
+      setNotice('Choose a future day when moving an activity.')
+      return
+    }
+    setRescheduleError(null)
+    setRescheduleInitialOccurredAt(nextTime.toISOString())
+    setReschedulingActivity(activity)
   }
 
   async function handleCreate(jobId: number, input: CreateJobActivityInput) {
@@ -328,6 +376,7 @@ export function CalendarPage() {
       ))
       setNotice(nextActivity.title + ' moved to ' + dayHeadingFormatter.format(nextTime)
         + ' at ' + timeFormatter.format(nextTime) + '.')
+      setRescheduleInitialOccurredAt(null)
       setReschedulingActivity(null)
     } catch (saveError) {
       setRescheduleError(getErrorMessage(saveError))
@@ -397,6 +446,11 @@ export function CalendarPage() {
           onClear={clearFilters}
         />
 
+        <p className="calendar-drag-hint" id="calendar-drag-instructions">
+          <span aria-hidden="true">↗</span>
+          Drag an unfinished activity onto another day to reschedule it. You will confirm before saving.
+        </p>
+
         <div className="calendar-weekdays" aria-hidden="true">
           {weekdayLabels.map((label) => <span key={label}>{label}</span>)}
         </div>
@@ -413,9 +467,28 @@ export function CalendarPage() {
             return (
               <section
                 className={'calendar-day' + (isOutsideMonth ? ' calendar-day--outside' : '')
-                  + (isToday(day) ? ' calendar-day--today' : '')}
+                  + (isToday(day) ? ' calendar-day--today' : '')
+                  + (dropTargetDateKey === toDateKey(day) ? ' calendar-day--drop-target' : '')}
                 key={toDateKey(day)}
                 aria-label={dayHeadingFormatter.format(day)}
+                onDragEnter={() => {
+                  if (canDropOnDay(day)) setDropTargetDateKey(toDateKey(day))
+                }}
+                onDragLeave={(event) => {
+                  const relatedTarget = event.relatedTarget
+                  if (!(relatedTarget instanceof Node)
+                    || !event.currentTarget.contains(relatedTarget)) {
+                    setDropTargetDateKey((current) => (
+                      current === toDateKey(day) ? null : current
+                    ))
+                  }
+                }}
+                onDragOver={(event) => {
+                  if (!canDropOnDay(day)) return
+                  event.preventDefault()
+                  event.dataTransfer.dropEffect = 'move'
+                }}
+                onDrop={(event) => handleDrop(event, day)}
               >
                 <button
                   className="calendar-day__number calendar-day__add"
@@ -431,6 +504,9 @@ export function CalendarPage() {
                     <CalendarEvent
                       key={activity.id}
                       activity={activity}
+                      isDragging={activity.id === draggingActivityId}
+                      onDragStart={handleDragStart}
+                      onDragEnd={handleDragEnd}
                       onOpen={(item) => {
                         setDetailsError(null)
                         setSelectedActivity(item)
@@ -514,6 +590,7 @@ export function CalendarPage() {
           }}
           onReschedule={() => {
             setRescheduleError(null)
+            setRescheduleInitialOccurredAt(null)
             setReschedulingActivity(selectedActivity)
             setSelectedActivity(null)
           }}
@@ -554,10 +631,12 @@ export function CalendarPage() {
       {reschedulingActivity && (
         <RescheduleActivityDialog
           activity={reschedulingActivity}
+          initialOccurredAt={rescheduleInitialOccurredAt ?? undefined}
           isSaving={isRescheduling}
           error={rescheduleError}
           onClose={() => {
             setRescheduleError(null)
+            setRescheduleInitialOccurredAt(null)
             setReschedulingActivity(null)
           }}
           onSubmit={(occurredAt) => void handleReschedule(occurredAt)}
@@ -569,19 +648,34 @@ export function CalendarPage() {
 
 function CalendarEvent({
   activity,
+  isDragging,
+  onDragStart,
+  onDragEnd,
   onOpen,
 }: {
   activity: ScheduledJobActivity
+  isDragging: boolean
+  onDragStart: (
+    event: DragEvent<HTMLButtonElement>,
+    activity: ScheduledJobActivity,
+  ) => void
+  onDragEnd: () => void
   onOpen: (activity: ScheduledJobActivity) => void
 }) {
   const config = getJobActivityTypeConfig(activity.type)
   return (
     <button
       className={'calendar-event calendar-event--' + activity.type.toLowerCase()
-        + (activity.completedAt ? ' calendar-event--completed' : '')}
+        + (activity.completedAt ? ' calendar-event--completed' : '')
+        + (isDragging ? ' calendar-event--dragging' : '')}
       type="button"
+      draggable={!activity.completedAt}
+      aria-describedby={activity.completedAt ? undefined : 'calendar-drag-instructions'}
       title={'Open ' + config.shortLabel.toLowerCase() + ' details · ' + activity.jobTitle
-        + ' at ' + activity.company}
+        + ' at ' + activity.company
+        + (activity.completedAt ? '' : ' · Drag to reschedule')}
+      onDragStart={(event) => onDragStart(event, activity)}
+      onDragEnd={onDragEnd}
       onClick={() => onOpen(activity)}
     >
       <span>{timeFormatter.format(new Date(activity.occurredAt))}</span>
@@ -692,4 +786,15 @@ function getSuggestedActivityDate(date: Date): Date {
     suggested.setHours(now.getHours() + 1, 0, 0, 0)
   }
   return suggested
+}
+
+function moveActivityToDay(occurredAt: string, day: Date): Date {
+  const currentTime = new Date(occurredAt)
+  return new Date(
+    day.getFullYear(),
+    day.getMonth(),
+    day.getDate(),
+    currentTime.getHours(),
+    currentTime.getMinutes(),
+  )
 }

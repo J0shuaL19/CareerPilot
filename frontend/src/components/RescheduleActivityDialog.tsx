@@ -6,6 +6,7 @@ import { getJobActivityTypeConfig, toLocalDateTimeValue } from '../utils/jobActi
 
 interface RescheduleActivityDialogProps {
   activity: UpcomingJobActivity
+  initialOccurredAt?: string
   isSaving: boolean
   error: string | null
   onClose: () => void
@@ -14,13 +15,17 @@ interface RescheduleActivityDialogProps {
 
 export function RescheduleActivityDialog({
   activity,
+  initialOccurredAt,
   isSaving,
   error,
   onClose,
   onSubmit,
 }: RescheduleActivityDialogProps) {
   const inputRef = useRef<HTMLInputElement>(null)
-  const [occurredAt, setOccurredAt] = useState(() => getSuggestedTime(activity.occurredAt))
+  const [occurredAt, setOccurredAt] = useState(() => (
+    getSuggestedTime(initialOccurredAt ?? activity.occurredAt)
+  ))
+  const [isDropMove] = useState(() => initialOccurredAt !== undefined)
   const [wasOverdue] = useState(() => new Date(activity.occurredAt) < new Date())
   const [minimumTime] = useState(() => toLocalDateTimeValue(new Date(Date.now() + 60_000)))
   const [validationError, setValidationError] = useState<string | null>(null)
@@ -69,7 +74,9 @@ export function RescheduleActivityDialog({
       >
         <header className="quick-follow-up-dialog__heading">
           <div>
-            <p>{wasOverdue ? 'Move overdue action' : 'Change scheduled time'}</p>
+            <p>{isDropMove
+              ? 'Confirm calendar move'
+              : wasOverdue ? 'Move overdue action' : 'Change scheduled time'}</p>
             <h2 id="reschedule-activity-heading">Reschedule {activityConfig.shortLabel.toLowerCase()}</h2>
             <span>{activity.title} · {activity.jobTitle} at {activity.company}</span>
           </div>
@@ -85,7 +92,9 @@ export function RescheduleActivityDialog({
 
         <form className="quick-follow-up-form" onSubmit={handleSubmit}>
           <p className="reschedule-activity-dialog__intro">
-            Pick the next time this action should return to your daily plan.
+            {isDropMove
+              ? 'Review the dropped date and original time before saving this change.'
+              : 'Pick the next time this action should return to your daily plan.'}
           </p>
           <label>
             New date and time
