@@ -1,11 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { CalendarActivityDialog } from '../components/CalendarActivityDialog'
 import { RescheduleActivityDialog } from '../components/RescheduleActivityDialog'
 import {
+  createJobActivity,
   getCalendarJobActivities,
   rescheduleJobActivity,
 } from '../services/jobActivityApi'
-import type { ScheduledJobActivity } from '../types/jobActivity'
+import { getJobs } from '../services/jobApi'
+import type { Job } from '../types/job'
+import type { CreateJobActivityInput, ScheduledJobActivity } from '../types/jobActivity'
 import { getErrorMessage, isAbortError } from '../utils/errors'
 import { getJobActivityTypeConfig } from '../utils/jobActivity'
 
@@ -24,6 +28,12 @@ export function CalendarPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+  const [jobs, setJobs] = useState<Job[]>([])
+  const [isJobsLoading, setIsJobsLoading] = useState(true)
+  const [jobsError, setJobsError] = useState<string | null>(null)
+  const [createDate, setCreateDate] = useState<Date | null>(null)
+  const [isCreating, setIsCreating] = useState(false)
+  const [createError, setCreateError] = useState<string | null>(null)
   const [reschedulingActivity, setReschedulingActivity] =
     useState<ScheduledJobActivity | null>(null)
   const [isRescheduling, setIsRescheduling] = useState(false)
@@ -59,6 +69,25 @@ export function CalendarPage() {
     return () => controller.abort()
   }, [gridEnd, gridStart])
 
+  useEffect(() => {
+    const controller = new AbortController()
+
+    async function loadJobs() {
+      setIsJobsLoading(true)
+      setJobsError(null)
+      try {
+        setJobs(await getJobs(controller.signal))
+      } catch (loadError) {
+        if (!isAbortError(loadError)) setJobsError(getErrorMessage(loadError))
+      } finally {
+        if (!controller.signal.aborted) setIsJobsLoading(false)
+      }
+    }
+
+    void loadJobs()
+    return () => controller.abort()
+  }, [])
+
   const activitiesByDay = useMemo(() => groupActivitiesByDay(activities), [activities])
   const agendaDays = useMemo(
     () => days.filter((day) => (
@@ -72,6 +101,46 @@ export function CalendarPage() {
   function moveMonth(offset: number) {
     setNotice(null)
     setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() + offset, 1))
+  }
+
+  function openCreateDialog(date: Date) {
+    setCreateError(null)
+    setCreateDate(getSuggestedActivityDate(date))
+  }
+
+  async function handleCreate(jobId: number, input: CreateJobActivityInput) {
+    const job = jobs.find((item) => item.id === jobId)
+    if (!job) return
+
+    setIsCreating(true)
+    setCreateError(null)
+    try {
+      const created = await createJobActivity(jobId, input)
+      const scheduledActivity: ScheduledJobActivity = {
+        id: created.id,
+        jobId,
+        company: job.company,
+        jobTitle: job.title,
+        type: created.type as ScheduledJobActivity['type'],
+        title: created.title,
+        contact: created.contact,
+        occurredAt: created.occurredAt,
+        completedAt: created.completedAt,
+      }
+      const activityTime = new Date(created.occurredAt)
+      if (activityTime >= gridStart && activityTime < gridEnd) {
+        setActivities((current) => [...current, scheduledActivity].sort(compareActivities))
+      } else {
+        setVisibleMonth(startOfMonth(activityTime))
+      }
+      setNotice(created.title + ' added for ' + dayHeadingFormatter.format(activityTime)
+        + ' at ' + timeFormatter.format(activityTime) + '.')
+      setCreateDate(null)
+    } catch (saveError) {
+      setCreateError(getErrorMessage(saveError))
+    } finally {
+      setIsCreating(false)
+    }
   }
 
   async function handleReschedule(occurredAt: string) {
@@ -113,9 +182,18 @@ export function CalendarPage() {
         <div>
           <p className="calendar-page__eyebrow">Interviews and follow-ups</p>
           <h1>Activity calendar</h1>
-          <span>See scheduled work in context and move unfinished actions without leaving the month.</span>
+          <span>Plan new activities, review scheduled work, and move unfinished actions without leaving the month.</span>
         </div>
-        <Link className="button button--secondary" to="/dashboard">Back to dashboard</Link>
+        <div className="calendar-page__actions">
+          <button
+            className="button button--primary"
+            type="button"
+            onClick={() => openCreateDialog(getDefaultCreateDate(visibleMonth))}
+          >
+            <span aria-hidden="true">＋</span> Add activity
+          </button>
+          <Link className="button button--secondary" to="/dashboard">Back to dashboard</Link>
+        </div>
       </header>
 
       <section className="calendar-shell" aria-labelledby="calendar-month-heading">
@@ -157,7 +235,15 @@ export function CalendarPage() {
                 key={toDateKey(day)}
                 aria-label={dayHeadingFormatter.format(day)}
               >
-                <span className="calendar-day__number">{day.getDate()}</span>
+                <button
+                  className="calendar-day__number calendar-day__add"
+                  type="button"
+                  aria-label={'Add activity on ' + dayHeadingFormatter.format(day)}
+                  title="Add activity"
+                  onClick={() => openCreateDialog(day)}
+                >
+                  {day.getDate()}
+                </button>
                 <div className="calendar-day__events">
                   {dayActivities.map((activity) => (
                     <CalendarEvent
@@ -178,11 +264,23 @@ export function CalendarPage() {
           ) : agendaDays.length === 0 ? (
             <div className="calendar-agenda__state">
               <strong>No scheduled activities this month.</strong>
-              <span>Add an interview or follow-up from a job page to see it here.</span>
+              <span>Add an interview or follow-up directly from this calendar.</span>
+              <button type="button" onClick={() => openCreateDialog(getDefaultCreateDate(visibleMonth))}>
+                Add activity
+              </button>
             </div>
           ) : agendaDays.map((day) => (
             <section className="calendar-agenda__day" key={toDateKey(day)}>
-              <h3>{dayHeadingFormatter.format(day)}</h3>
+              <header>
+                <h3>{dayHeadingFormatter.format(day)}</h3>
+                <button
+                  type="button"
+                  aria-label={'Add activity on ' + dayHeadingFormatter.format(day)}
+                  onClick={() => openCreateDialog(day)}
+                >
+                  ＋ Add
+                </button>
+              </header>
               <div>
                 {(activitiesByDay.get(toDateKey(day)) ?? []).map((activity) => (
                   <CalendarAgendaItem
@@ -198,6 +296,22 @@ export function CalendarPage() {
 
         {isLoading && <div className="calendar-loading" aria-label="Loading calendar activities" />}
       </section>
+
+      {createDate && (
+        <CalendarActivityDialog
+          jobs={jobs}
+          initialDate={createDate}
+          isJobsLoading={isJobsLoading}
+          jobsError={jobsError}
+          isSaving={isCreating}
+          error={createError}
+          onClose={() => {
+            setCreateError(null)
+            setCreateDate(null)
+          }}
+          onSubmit={(jobId, input) => void handleCreate(jobId, input)}
+        />
+      )}
 
       {reschedulingActivity && (
         <RescheduleActivityDialog
@@ -320,4 +434,21 @@ function compareActivities(first: ScheduledJobActivity, second: ScheduledJobActi
 function isToday(date: Date): boolean {
   const today = new Date()
   return toDateKey(date) === toDateKey(today)
+}
+
+function getDefaultCreateDate(visibleMonth: Date): Date {
+  const today = new Date()
+  return visibleMonth.getFullYear() === today.getFullYear()
+    && visibleMonth.getMonth() === today.getMonth()
+    ? today
+    : visibleMonth
+}
+
+function getSuggestedActivityDate(date: Date): Date {
+  const suggested = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 9)
+  const now = new Date()
+  if (isToday(suggested) && suggested <= now) {
+    suggested.setHours(now.getHours() + 1, 0, 0, 0)
+  }
+  return suggested
 }
