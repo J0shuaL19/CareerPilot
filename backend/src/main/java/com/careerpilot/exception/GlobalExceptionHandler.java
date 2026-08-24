@@ -142,6 +142,19 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(JobActivityCalendarImportException.class)
+    public ResponseEntity<ApiErrorResponse> handleJobActivityCalendarImportFailure(
+            JobActivityCalendarImportException exception,
+            HttpServletRequest request
+    ) {
+        return errorResponse(
+                HttpStatus.BAD_REQUEST,
+                exception.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
+    }
+
     @ExceptionHandler(JobCsvImportException.class)
     public ResponseEntity<ApiErrorResponse> handleJobCsvImportFailure(
             JobCsvImportException exception,

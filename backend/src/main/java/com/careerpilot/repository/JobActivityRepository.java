@@ -22,6 +22,13 @@ public interface JobActivityRepository extends JpaRepository<JobActivity, Long> 
 
     Optional<JobActivity> findByIdAndJob_Id(Long id, Long jobId);
 
+    boolean existsByJob_IdAndTypeAndTitleIgnoreCaseAndOccurredAt(
+            Long jobId,
+            JobActivityType type,
+            String title,
+            Instant occurredAt
+    );
+
     @EntityGraph(attributePaths = "job")
     List<JobActivity> findAllByIdIn(Collection<Long> ids);
 

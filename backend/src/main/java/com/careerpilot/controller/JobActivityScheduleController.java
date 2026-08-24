@@ -1,9 +1,13 @@
 package com.careerpilot.controller;
 
 import com.careerpilot.dto.JobActivityCalendarExportRequest;
+import com.careerpilot.dto.JobActivityCalendarImportPreviewResponse;
+import com.careerpilot.dto.JobActivityCalendarImportRequest;
+import com.careerpilot.dto.JobActivityCalendarImportResultResponse;
 import com.careerpilot.dto.ScheduledJobActivityResponse;
 import com.careerpilot.dto.UpcomingJobActivityResponse;
 import com.careerpilot.service.JobActivityCalendarFile;
+import com.careerpilot.service.JobActivityCalendarImportService;
 import com.careerpilot.service.JobActivityCalendarService;
 import com.careerpilot.service.JobActivityService;
 import jakarta.validation.Valid;
@@ -17,7 +21,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/job-activities")
@@ -25,13 +31,16 @@ public class JobActivityScheduleController {
 
     private final JobActivityService jobActivityService;
     private final JobActivityCalendarService jobActivityCalendarService;
+    private final JobActivityCalendarImportService jobActivityCalendarImportService;
 
     public JobActivityScheduleController(
             JobActivityService jobActivityService,
-            JobActivityCalendarService jobActivityCalendarService
+            JobActivityCalendarService jobActivityCalendarService,
+            JobActivityCalendarImportService jobActivityCalendarImportService
     ) {
         this.jobActivityService = jobActivityService;
         this.jobActivityCalendarService = jobActivityCalendarService;
+        this.jobActivityCalendarImportService = jobActivityCalendarImportService;
     }
 
     @GetMapping("/overdue")
@@ -64,5 +73,19 @@ public class JobActivityScheduleController {
                         "attachment; filename=\"" + file.filename() + "\""
                 )
                 .body(file.content());
+    }
+
+    @PostMapping(path = "/calendar/import/preview", consumes = "multipart/form-data")
+    public JobActivityCalendarImportPreviewResponse previewCalendarImport(
+            @RequestPart("file") MultipartFile file
+    ) {
+        return jobActivityCalendarImportService.preview(file);
+    }
+
+    @PostMapping("/calendar/import")
+    public JobActivityCalendarImportResultResponse importCalendar(
+            @Valid @RequestBody JobActivityCalendarImportRequest request
+    ) {
+        return jobActivityCalendarImportService.importEvents(request.events());
     }
 }

@@ -2,6 +2,7 @@ import { type DragEvent, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CalendarActivityDialog } from '../components/CalendarActivityDialog'
 import { CalendarActivityDetailsDialog } from '../components/CalendarActivityDetailsDialog'
+import { CalendarImportDialog } from '../components/CalendarImportDialog'
 import {
   CalendarFilters,
   type CalendarActivityStatusFilter,
@@ -26,6 +27,7 @@ import type { Job } from '../types/job'
 import type {
   CompleteJobActivityInput,
   CreateJobActivityInput,
+  JobActivityCalendarImportResult,
   ScheduledJobActivity,
 } from '../types/jobActivity'
 import { getErrorMessage, isAbortError } from '../utils/errors'
@@ -56,6 +58,8 @@ export function CalendarPage() {
   const [notice, setNotice] = useState<string | null>(null)
   const [isExportingCalendar, setIsExportingCalendar] = useState(false)
   const [exportError, setExportError] = useState<string | null>(null)
+  const [isImportOpen, setIsImportOpen] = useState(false)
+  const [calendarRefreshKey, setCalendarRefreshKey] = useState(0)
   const [jobs, setJobs] = useState<Job[]>([])
   const [isJobsLoading, setIsJobsLoading] = useState(true)
   const [jobsError, setJobsError] = useState<string | null>(null)
@@ -119,7 +123,7 @@ export function CalendarPage() {
 
     void loadCalendar()
     return () => controller.abort()
-  }, [gridEnd, gridStart])
+  }, [calendarRefreshKey, gridEnd, gridStart])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -427,6 +431,17 @@ export function CalendarPage() {
         </div>
         <div className="calendar-page__actions">
           <button
+            className="button button--secondary"
+            type="button"
+            disabled={isJobsLoading}
+            onClick={() => {
+              setNotice(null)
+              setIsImportOpen(true)
+            }}
+          >
+            <span aria-hidden="true">⇧</span> Import .ics
+          </button>
+          <button
             className="button button--primary"
             type="button"
             onClick={() => openCreateDialog(
@@ -635,6 +650,27 @@ export function CalendarPage() {
             setSelectedActivity(null)
           }}
           onReopen={() => void handleReopen()}
+        />
+      )}
+
+      {isImportOpen && (
+        <CalendarImportDialog
+          jobs={jobs}
+          preferredJobId={jobIdFilter}
+          onClose={() => setIsImportOpen(false)}
+          onImported={(result: JobActivityCalendarImportResult) => {
+            setIsImportOpen(false)
+            setCalendarRefreshKey((current) => current + 1)
+            setNotice(
+              result.imported + ' '
+                + (result.imported === 1 ? 'activity' : 'activities')
+                + ' imported.'
+                + (result.skippedDuplicates
+                  ? ' ' + result.skippedDuplicates + ' duplicate'
+                    + (result.skippedDuplicates === 1 ? ' was' : 's were') + ' skipped.'
+                  : ''),
+            )
+          }}
         />
       )}
 

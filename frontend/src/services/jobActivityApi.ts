@@ -5,6 +5,9 @@ import type {
   JobAttentionItem,
   JobAttentionSettings,
   JobActivity,
+  JobActivityCalendarImportInput,
+  JobActivityCalendarImportPreview,
+  JobActivityCalendarImportResult,
   ReopenJobActivityResult,
   RescheduleJobActivityInput,
   ScheduledJobActivity,
@@ -105,6 +108,30 @@ export function downloadJobActivitiesCalendar(activityIds: number[]): Promise<Bl
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ activityIds }),
   })
+}
+
+export function previewJobActivityCalendar(
+  file: File,
+): Promise<JobActivityCalendarImportPreview> {
+  const formData = new FormData()
+  formData.append('file', file)
+  return apiRequest<JobActivityCalendarImportPreview>(
+    '/api/job-activities/calendar/import/preview',
+    { method: 'POST', body: formData },
+  )
+}
+
+export function importJobActivityCalendar(
+  input: JobActivityCalendarImportInput,
+): Promise<JobActivityCalendarImportResult> {
+  return apiRequest<JobActivityCalendarImportResult>(
+    '/api/job-activities/calendar/import',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(input),
+    },
+  )
 }
 
 export function getOverdueJobActivities(signal?: AbortSignal): Promise<UpcomingJobActivity[]> {

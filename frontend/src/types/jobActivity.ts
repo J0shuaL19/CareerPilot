@@ -88,3 +88,44 @@ export interface JobAttentionSettings {
   onlineAssessmentDays: number
   interviewDays: number
 }
+export type JobActivityCalendarImportType = Extract<
+  JobActivityType,
+  'INTERVIEW' | 'FOLLOW_UP'
+>
+
+export interface JobActivityCalendarImportEvent {
+  eventNumber: number
+  title: string
+  details: string | null
+  contact: string | null
+  occurredAt: string | null
+  suggestedType: JobActivityCalendarImportType
+  importable: boolean
+  errors: string[]
+}
+
+export interface JobActivityCalendarImportPreview {
+  filename: string
+  totalEvents: number
+  importableEvents: number
+  invalidEvents: number
+  events: JobActivityCalendarImportEvent[]
+}
+
+export interface JobActivityCalendarImportItem {
+  jobId: number
+  type: JobActivityCalendarImportType
+  title: string
+  details?: string
+  contact?: string
+  occurredAt: string
+}
+
+export interface JobActivityCalendarImportInput {
+  events: JobActivityCalendarImportItem[]
+}
+
+export interface JobActivityCalendarImportResult {
+  imported: number
+  skippedDuplicates: number
+}

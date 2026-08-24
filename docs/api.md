@@ -421,6 +421,63 @@ Downloads one UTF-8 RFC 5545 iCalendar file containing the selected interviews a
 
 The request accepts between 1 and 500 positive activity IDs. Duplicate IDs are exported once. Every selected activity must exist and be an interview or follow-up; a missing activity returns `404 Not Found` without producing a partial file, while an unsupported activity type returns `400 Bad Request`. Success: `200 OK` with a `text/calendar;charset=UTF-8` attachment. The Calendar page sends the IDs from its current month or week after applying search, type, completion status, and job filters.
 
+### Preview an ICS calendar import
+
+`POST /api/job-activities/calendar/import/preview`
+
+Send `multipart/form-data` with the UTF-8 `.ics` file in the `file` part. The file may be at most 1 MB and contain at most 100 `VEVENT` entries. Previewing never writes data.
+
+```json
+{
+  "filename": "interviews.ics",
+  "totalEvents": 2,
+  "importableEvents": 1,
+  "invalidEvents": 1,
+  "events": [
+    {
+      "eventNumber": 1,
+      "title": "Technical interview",
+      "details": "Panel round",
+      "contact": "Zoom",
+      "occurredAt": "2026-08-25T16:00:00Z",
+      "suggestedType": "INTERVIEW",
+      "importable": true,
+      "errors": []
+    }
+  ]
+}
+```
+
+The parser unfolds RFC 5545 continuation lines, unescapes calendar text, and reads `SUMMARY`, `DESCRIPTION`, `LOCATION`, and `DTSTART`. UTC values, named `TZID` values, floating date-times, and all-day dates are supported; floating values and all-day dates use the server clock zone. An invalid event remains visible with per-event errors while other valid events can still be selected.
+
+### Import selected ICS calendar events
+
+`POST /api/job-activities/calendar/import`
+
+```json
+{
+  "events": [
+    {
+      "jobId": 4,
+      "type": "INTERVIEW",
+      "title": "Technical interview",
+      "details": "Panel round",
+      "contact": "Zoom",
+      "occurredAt": "2026-08-25T16:00:00Z"
+    }
+  ]
+}
+```
+
+The request accepts 1 to 100 events. Every event must be an `INTERVIEW` or `FOLLOW_UP` and must reference an existing job. Exact duplicates use job, type, case-insensitive title, and scheduled instant; duplicates already stored or repeated in the same request are skipped. Missing jobs return `404 Not Found`, invalid values return `400 Bad Request`, and the transaction does not leave a partial import after an error.
+
+```json
+{
+  "imported": 1,
+  "skippedDuplicates": 0
+}
+```
+
 ### List jobs needing attention
 
 `GET /api/job-activities/needs-attention`
