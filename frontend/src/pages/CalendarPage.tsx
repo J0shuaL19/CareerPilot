@@ -1,17 +1,26 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CalendarActivityDialog } from '../components/CalendarActivityDialog'
+import { CalendarActivityDetailsDialog } from '../components/CalendarActivityDetailsDialog'
+import { CompleteActivityDialog } from '../components/CompleteActivityDialog'
 import { RescheduleActivityDialog } from '../components/RescheduleActivityDialog'
 import {
+  completeJobActivity,
   createJobActivity,
   getCalendarJobActivities,
+  reopenJobActivity,
   rescheduleJobActivity,
 } from '../services/jobActivityApi'
 import { getJobs } from '../services/jobApi'
 import type { Job } from '../types/job'
-import type { CreateJobActivityInput, ScheduledJobActivity } from '../types/jobActivity'
+import type {
+  CompleteJobActivityInput,
+  CreateJobActivityInput,
+  ScheduledJobActivity,
+} from '../types/jobActivity'
 import { getErrorMessage, isAbortError } from '../utils/errors'
 import { getJobActivityTypeConfig } from '../utils/jobActivity'
+import { getJobStatusConfig } from '../utils/jobStatus'
 
 const monthFormatter = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' })
 const dayHeadingFormatter = new Intl.DateTimeFormat('en-US', {
@@ -34,6 +43,13 @@ export function CalendarPage() {
   const [createDate, setCreateDate] = useState<Date | null>(null)
   const [isCreating, setIsCreating] = useState(false)
   const [createError, setCreateError] = useState<string | null>(null)
+  const [selectedActivity, setSelectedActivity] = useState<ScheduledJobActivity | null>(null)
+  const [detailsError, setDetailsError] = useState<string | null>(null)
+  const [isReopening, setIsReopening] = useState(false)
+  const [completingActivity, setCompletingActivity] =
+    useState<ScheduledJobActivity | null>(null)
+  const [isCompleting, setIsCompleting] = useState(false)
+  const [completionError, setCompletionError] = useState<string | null>(null)
   const [reschedulingActivity, setReschedulingActivity] =
     useState<ScheduledJobActivity | null>(null)
   const [isRescheduling, setIsRescheduling] = useState(false)
@@ -98,6 +114,13 @@ export function CalendarPage() {
     [activitiesByDay, days, visibleMonth],
   )
 
+  const selectedJob = selectedActivity
+    ? jobs.find((job) => job.id === selectedActivity.jobId)
+    : undefined
+  const completingJob = completingActivity
+    ? jobs.find((job) => job.id === completingActivity.jobId)
+    : undefined
+
   function moveMonth(offset: number) {
     setNotice(null)
     setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() + offset, 1))
@@ -140,6 +163,66 @@ export function CalendarPage() {
       setCreateError(getErrorMessage(saveError))
     } finally {
       setIsCreating(false)
+    }
+  }
+
+  async function handleComplete(input: CompleteJobActivityInput) {
+    if (!completingActivity) return
+
+    setIsCompleting(true)
+    setCompletionError(null)
+    try {
+      const updated = await completeJobActivity(
+        completingActivity.jobId,
+        completingActivity.id,
+        input,
+      )
+      setActivities((current) => current.map((activity) => (
+        activity.id === completingActivity.id
+          ? { ...activity, completedAt: updated.completedAt }
+          : activity
+      )))
+      if (input.jobStatus) {
+        const nextStatus = input.jobStatus
+        setJobs((current) => current.map((job) => (
+          job.id === completingActivity.jobId ? { ...job, status: nextStatus } : job
+        )))
+      }
+      const statusDetail = input.jobStatus
+        ? ' Job stage updated to ' + getJobStatusConfig(input.jobStatus).label + '.'
+        : ''
+      setNotice(completingActivity.title + ' completed.' + statusDetail)
+      setCompletingActivity(null)
+    } catch (saveError) {
+      setCompletionError(getErrorMessage(saveError))
+    } finally {
+      setIsCompleting(false)
+    }
+  }
+
+  async function handleReopen() {
+    if (!selectedActivity) return
+
+    setIsReopening(true)
+    setDetailsError(null)
+    try {
+      const result = await reopenJobActivity(selectedActivity.jobId, selectedActivity.id)
+      const reopenedActivity = { ...selectedActivity, completedAt: result.activity.completedAt }
+      setActivities((current) => current.map((activity) => (
+        activity.id === reopenedActivity.id ? reopenedActivity : activity
+      )))
+      setJobs((current) => current.map((job) => (
+        job.id === selectedActivity.jobId ? { ...job, status: result.jobStatus } : job
+      )))
+      setSelectedActivity(reopenedActivity)
+      const statusDetail = result.jobStatusRestored
+        ? ' Job stage restored to ' + getJobStatusConfig(result.jobStatus).label + '.'
+        : ''
+      setNotice(selectedActivity.title + ' reopened.' + statusDetail)
+    } catch (saveError) {
+      setDetailsError(getErrorMessage(saveError))
+    } finally {
+      setIsReopening(false)
     }
   }
 
@@ -249,7 +332,10 @@ export function CalendarPage() {
                     <CalendarEvent
                       key={activity.id}
                       activity={activity}
-                      onReschedule={setReschedulingActivity}
+                      onOpen={(item) => {
+                        setDetailsError(null)
+                        setSelectedActivity(item)
+                      }}
                     />
                   ))}
                 </div>
@@ -286,7 +372,10 @@ export function CalendarPage() {
                   <CalendarAgendaItem
                     key={activity.id}
                     activity={activity}
-                    onReschedule={setReschedulingActivity}
+                    onOpen={(item) => {
+                      setDetailsError(null)
+                      setSelectedActivity(item)
+                    }}
                   />
                 ))}
               </div>
@@ -296,6 +385,30 @@ export function CalendarPage() {
 
         {isLoading && <div className="calendar-loading" aria-label="Loading calendar activities" />}
       </section>
+
+      {selectedActivity && (
+        <CalendarActivityDetailsDialog
+          activity={selectedActivity}
+          job={selectedJob}
+          isReopening={isReopening}
+          error={detailsError}
+          onClose={() => {
+            setDetailsError(null)
+            setSelectedActivity(null)
+          }}
+          onComplete={() => {
+            setCompletionError(null)
+            setCompletingActivity(selectedActivity)
+            setSelectedActivity(null)
+          }}
+          onReschedule={() => {
+            setRescheduleError(null)
+            setReschedulingActivity(selectedActivity)
+            setSelectedActivity(null)
+          }}
+          onReopen={() => void handleReopen()}
+        />
+      )}
 
       {createDate && (
         <CalendarActivityDialog
@@ -310,6 +423,20 @@ export function CalendarPage() {
             setCreateDate(null)
           }}
           onSubmit={(jobId, input) => void handleCreate(jobId, input)}
+        />
+      )}
+
+      {completingActivity && completingJob && (
+        <CompleteActivityDialog
+          activity={completingActivity}
+          currentStatus={completingJob.status}
+          isSaving={isCompleting}
+          error={completionError}
+          onClose={() => {
+            setCompletionError(null)
+            setCompletingActivity(null)
+          }}
+          onSubmit={(input) => void handleComplete(input)}
         />
       )}
 
@@ -331,48 +458,37 @@ export function CalendarPage() {
 
 function CalendarEvent({
   activity,
-  onReschedule,
+  onOpen,
 }: {
   activity: ScheduledJobActivity
-  onReschedule: (activity: ScheduledJobActivity) => void
+  onOpen: (activity: ScheduledJobActivity) => void
 }) {
   const config = getJobActivityTypeConfig(activity.type)
-  const content = (
-    <>
+  return (
+    <button
+      className={'calendar-event calendar-event--' + activity.type.toLowerCase()
+        + (activity.completedAt ? ' calendar-event--completed' : '')}
+      type="button"
+      title={'Open ' + config.shortLabel.toLowerCase() + ' details · ' + activity.jobTitle
+        + ' at ' + activity.company}
+      onClick={() => onOpen(activity)}
+    >
       <span>{timeFormatter.format(new Date(activity.occurredAt))}</span>
       <strong>{activity.title}</strong>
       <small>{activity.company}</small>
-    </>
-  )
-
-  return activity.completedAt ? (
-    <Link
-      className={'calendar-event calendar-event--' + activity.type.toLowerCase()
-        + ' calendar-event--completed'}
-      to={'/jobs/' + activity.jobId}
-      title={'Completed · ' + activity.jobTitle + ' at ' + activity.company}
-    >
-      {content}<span className="calendar-event__check" aria-label="Completed">✓</span>
-    </Link>
-  ) : (
-    <button
-      className={'calendar-event calendar-event--' + activity.type.toLowerCase()}
-      type="button"
-      title={'Reschedule ' + config.shortLabel.toLowerCase() + ' · ' + activity.jobTitle
-        + ' at ' + activity.company}
-      onClick={() => onReschedule(activity)}
-    >
-      {content}
+      {activity.completedAt && (
+        <span className="calendar-event__check" aria-label="Completed">✓</span>
+      )}
     </button>
   )
 }
 
 function CalendarAgendaItem({
   activity,
-  onReschedule,
+  onOpen,
 }: {
   activity: ScheduledJobActivity
-  onReschedule: (activity: ScheduledJobActivity) => void
+  onOpen: (activity: ScheduledJobActivity) => void
 }) {
   const config = getJobActivityTypeConfig(activity.type)
   return (
@@ -387,17 +503,15 @@ function CalendarAgendaItem({
         <small>{activity.jobTitle} · {activity.company}</small>
       </span>
       <span className="calendar-agenda-item__actions">
-        {activity.completedAt ? (
+        {activity.completedAt && (
           <span className="calendar-agenda-item__done">✓ Completed</span>
-        ) : (
-          <button type="button" onClick={() => onReschedule(activity)}>Reschedule</button>
         )}
+        <button type="button" onClick={() => onOpen(activity)}>Details</button>
         <Link to={'/jobs/' + activity.jobId}>View job</Link>
       </span>
     </article>
   )
 }
-
 function startOfMonth(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), 1)
 }
