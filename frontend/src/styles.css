@@ -1026,10 +1026,35 @@ a:focus-visible {
   letter-spacing: -0.02em;
 }
 
-.attention-panel__heading > span {
+.attention-panel__controls {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.attention-panel__controls > span {
   color: #927d61;
   font-size: 0.72rem;
   font-weight: 700;
+}
+
+.attention-panel__controls > button {
+  padding: 0.45rem 0.65rem;
+  border: 1px solid #d8c6a9;
+  border-radius: 9px;
+  color: #805811;
+  background: #fff;
+  font: inherit;
+  font-size: 0.68rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: border-color 150ms ease, background 150ms ease, box-shadow 150ms ease;
+}
+
+.attention-panel__controls > button:hover {
+  border-color: #b99966;
+  background: #fffaf1;
+  box-shadow: 0 5px 14px rgb(96 67 28 / 8%);
 }
 
 .attention-panel__empty {
@@ -1437,6 +1462,91 @@ a:focus-visible {
 .quick-follow-up-form__actions > div {
   display: flex;
   gap: 0.65rem;
+}
+
+.attention-settings-dialog {
+  width: min(100%, 560px);
+}
+
+.attention-settings-fields {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.quick-follow-up-form .attention-settings-fields > label {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.82rem 0.9rem;
+  border: 1px solid #e0e6ef;
+  border-radius: 12px;
+  background: #f9fafc;
+}
+
+.quick-follow-up-form label > .attention-settings-field__label {
+  display: grid;
+  min-width: 0;
+  gap: 0.2rem;
+}
+
+.attention-settings-field__label strong {
+  color: #344157;
+  font-size: 0.78rem;
+}
+
+.attention-settings-field__label small {
+  color: #7f899a;
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+.quick-follow-up-form label > .attention-settings-field__input {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.45rem;
+  color: #667287;
+  font-size: 0.7rem;
+  font-weight: 750;
+}
+
+.quick-follow-up-form .attention-settings-field__input input {
+  width: 78px;
+  text-align: center;
+}
+
+.attention-settings-note {
+  margin: 0;
+  padding: 0.68rem 0.78rem;
+  border-radius: 10px;
+  color: #637087;
+  background: #f2f5fa;
+  font-size: 0.7rem;
+  line-height: 1.45;
+}
+
+.attention-settings-reset {
+  padding: 0;
+  border: 0;
+  color: #58709c;
+  background: transparent;
+  font: inherit;
+  font-size: 0.7rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.attention-settings-reset:hover {
+  color: #315dc9;
+  text-decoration: underline;
+}
+
+.attention-settings-reset:disabled {
+  color: #a5adba;
+  cursor: default;
+  text-decoration: none;
 }
 
 .upcoming-panel {
@@ -3996,6 +4106,15 @@ a:focus-visible {
   .attention-panel__heading {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .attention-panel__controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .quick-follow-up-form .attention-settings-fields > label {
+    align-items: flex-start;
   }
 
   .quick-follow-up-form__row {

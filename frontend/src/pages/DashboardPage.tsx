@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { AttentionSettingsDialog } from '../components/AttentionSettingsDialog'
 import { DashboardFunnel } from '../components/DashboardFunnel'
 import { NeedsAttentionPanel } from '../components/NeedsAttentionPanel'
 import { PipelineSummary } from '../components/PipelineSummary'
@@ -9,7 +10,9 @@ import { getDashboardStats } from '../services/dashboardApi'
 import {
   createJobActivity,
   getJobAttentionItems,
+  getJobAttentionSettings,
   getUpcomingJobActivities,
+  updateJobAttentionSettings,
 } from '../services/jobActivityApi'
 import { getJobs } from '../services/jobApi'
 import { getMatchAnalyses } from '../services/matchAnalysisApi'
@@ -19,6 +22,7 @@ import type { DashboardStats, DashboardStatsRange } from '../types/dashboard'
 import type {
   CreateJobActivityInput,
   JobAttentionItem,
+  JobAttentionSettings,
   UpcomingJobActivity,
 } from '../types/jobActivity'
 import type { MatchAnalysis } from '../types/matchAnalysis'
@@ -31,6 +35,7 @@ interface DashboardData {
   resumes: Resume[]
   analyses: MatchAnalysis[]
   attentionItems: JobAttentionItem[]
+  attentionSettings: JobAttentionSettings
   upcomingActivities: UpcomingJobActivity[]
 }
 
@@ -39,6 +44,11 @@ const emptyData: DashboardData = {
   resumes: [],
   analyses: [],
   attentionItems: [],
+  attentionSettings: {
+    appliedDays: 7,
+    onlineAssessmentDays: 7,
+    interviewDays: 7,
+  },
   upcomingActivities: [],
 }
 
@@ -57,6 +67,9 @@ export function DashboardPage() {
   const [isFollowUpSaving, setIsFollowUpSaving] = useState(false)
   const [followUpError, setFollowUpError] = useState<string | null>(null)
   const [followUpSuccess, setFollowUpSuccess] = useState<string | null>(null)
+  const [isAttentionSettingsOpen, setIsAttentionSettingsOpen] = useState(false)
+  const [isAttentionSettingsSaving, setIsAttentionSettingsSaving] = useState(false)
+  const [attentionSettingsError, setAttentionSettingsError] = useState<string | null>(null)
 
   async function handleFollowUpSubmit(input: CreateJobActivityInput) {
     if (!followUpItem) return
@@ -75,6 +88,23 @@ export function DashboardPage() {
     }
   }
 
+  async function handleAttentionSettingsSubmit(settings: JobAttentionSettings) {
+    setIsAttentionSettingsSaving(true)
+    setAttentionSettingsError(null)
+
+    try {
+      const updatedSettings = await updateJobAttentionSettings(settings)
+      setData((current) => ({ ...current, attentionSettings: updatedSettings }))
+      setIsAttentionSettingsOpen(false)
+      setFollowUpSuccess('Follow-up reminder rules updated.')
+      setReloadKey((key) => key + 1)
+    } catch (saveError) {
+      setAttentionSettingsError(getErrorMessage(saveError))
+    } finally {
+      setIsAttentionSettingsSaving(false)
+    }
+  }
+
   useEffect(() => {
     const controller = new AbortController()
 
@@ -83,14 +113,29 @@ export function DashboardPage() {
       setError(null)
 
       try {
-        const [jobs, resumes, analyses, attentionItems, upcomingActivities] = await Promise.all([
+        const [
+          jobs,
+          resumes,
+          analyses,
+          attentionItems,
+          attentionSettings,
+          upcomingActivities,
+        ] = await Promise.all([
           getJobs(controller.signal),
           getResumes(controller.signal),
           getMatchAnalyses(controller.signal),
           getJobAttentionItems(controller.signal),
+          getJobAttentionSettings(controller.signal),
           getUpcomingJobActivities(controller.signal),
         ])
-        setData({ jobs, resumes, analyses, attentionItems, upcomingActivities })
+        setData({
+          jobs,
+          resumes,
+          analyses,
+          attentionItems,
+          attentionSettings,
+          upcomingActivities,
+        })
       } catch (loadError) {
         if (!isAbortError(loadError)) {
           setError(getErrorMessage(loadError))
@@ -253,6 +298,11 @@ export function DashboardPage() {
 
           <NeedsAttentionPanel
             items={data.attentionItems}
+            settings={data.attentionSettings}
+            onConfigure={() => {
+              setAttentionSettingsError(null)
+              setIsAttentionSettingsOpen(true)
+            }}
             onFollowUp={(item) => {
               setFollowUpError(null)
               setFollowUpItem(item)
@@ -272,6 +322,19 @@ export function DashboardPage() {
             <LatestResumes resumes={data.resumes.slice(0, 3)} />
           </div>
         </>
+      )}
+
+      {isAttentionSettingsOpen && (
+        <AttentionSettingsDialog
+          settings={data.attentionSettings}
+          isSaving={isAttentionSettingsSaving}
+          error={attentionSettingsError}
+          onClose={() => {
+            setAttentionSettingsError(null)
+            setIsAttentionSettingsOpen(false)
+          }}
+          onSubmit={(settings) => void handleAttentionSettingsSubmit(settings)}
+        />
       )}
 
       {followUpItem && (

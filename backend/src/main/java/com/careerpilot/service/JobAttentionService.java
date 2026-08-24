@@ -1,6 +1,7 @@
 package com.careerpilot.service;
 
 import com.careerpilot.dto.JobAttentionResponse;
+import com.careerpilot.dto.JobAttentionSettingsResponse;
 import com.careerpilot.model.Job;
 import com.careerpilot.model.JobStatus;
 import com.careerpilot.repository.JobActivityLastTouchProjection;
@@ -20,7 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class JobAttentionService {
 
-    static final long ATTENTION_THRESHOLD_DAYS = 7;
     private static final List<JobStatus> ACTIVE_STATUSES = List.of(
             JobStatus.APPLIED,
             JobStatus.OA,
@@ -29,15 +29,18 @@ public class JobAttentionService {
 
     private final JobRepository jobRepository;
     private final JobActivityRepository jobActivityRepository;
+    private final JobAttentionSettingsService settingsService;
     private final Clock clock;
 
     public JobAttentionService(
             JobRepository jobRepository,
             JobActivityRepository jobActivityRepository,
+            JobAttentionSettingsService settingsService,
             Clock clock
     ) {
         this.jobRepository = jobRepository;
         this.jobActivityRepository = jobActivityRepository;
+        this.settingsService = settingsService;
         this.clock = clock;
     }
 
@@ -56,12 +59,20 @@ public class JobAttentionService {
                         Function.identity()
                 ));
         Instant now = clock.instant();
-        Instant cutoff = now.minus(ATTENTION_THRESHOLD_DAYS, ChronoUnit.DAYS);
+        JobAttentionSettingsResponse settings = settingsService.getSettings();
 
         return activeJobs.stream()
-                .map(job -> toResponse(job, lastTouches.get(job.getId()), now))
-                .filter(response -> !response.lastActivityAt().isAfter(cutoff))
-                .sorted(Comparator.comparing(JobAttentionResponse::lastActivityAt)
+                .map(job -> toResponse(
+                        job,
+                        lastTouches.get(job.getId()),
+                        now,
+                        thresholdFor(job.getStatus(), settings)
+                ))
+                .filter(response -> response.daysWithoutActivity() >= response.thresholdDays())
+                .sorted(Comparator
+                        .comparingLong(JobAttentionService::daysOverdue)
+                        .reversed()
+                        .thenComparing(JobAttentionResponse::lastActivityAt)
                         .thenComparing(JobAttentionResponse::jobId))
                 .toList();
     }
@@ -69,7 +80,8 @@ public class JobAttentionService {
     private static JobAttentionResponse toResponse(
             Job job,
             JobActivityLastTouchProjection lastTouch,
-            Instant now
+            Instant now,
+            int thresholdDays
     ) {
         Instant lastActivityAt = lastTouch == null
                 ? job.getCreatedAt()
@@ -80,7 +92,24 @@ public class JobAttentionService {
                 job.getTitle(),
                 job.getStatus(),
                 lastActivityAt,
-                ChronoUnit.DAYS.between(lastActivityAt, now)
+                ChronoUnit.DAYS.between(lastActivityAt, now),
+                thresholdDays
         );
+    }
+
+    private static int thresholdFor(
+            JobStatus status,
+            JobAttentionSettingsResponse settings
+    ) {
+        return switch (status) {
+            case APPLIED -> settings.appliedDays();
+            case OA -> settings.onlineAssessmentDays();
+            case INTERVIEW -> settings.interviewDays();
+            default -> throw new IllegalArgumentException("Inactive job status: " + status);
+        };
+    }
+
+    private static long daysOverdue(JobAttentionResponse response) {
+        return response.daysWithoutActivity() - response.thresholdDays();
     }
 }

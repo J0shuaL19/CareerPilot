@@ -9,6 +9,7 @@ public record JobAttentionResponse(
         String jobTitle,
         JobStatus status,
         Instant lastActivityAt,
-        long daysWithoutActivity
+        long daysWithoutActivity,
+        int thresholdDays
 ) {
 }

@@ -278,9 +278,9 @@ Each response includes `jobId`, `company`, and `jobTitle` so the frontend can pr
 
 `GET /api/job-activities/needs-attention`
 
-Returns jobs in `APPLIED`, `OA`, or `INTERVIEW` whose latest activity occurred at least seven full days ago. For a job without activities, its creation time is used as the last touch. A future activity is treated as a scheduled next step and keeps that job out of the reminder list.
+Returns jobs in `APPLIED`, `OA`, or `INTERVIEW` whose latest activity meets the configured threshold for that stage. For a job without activities, its creation time is used as the last touch. A future activity is treated as a scheduled next step and keeps that job out of the reminder list.
 
-Results are ordered from the longest-stalled job to the most recent. Success: `200 OK`; when every active application has recent or scheduled activity, the endpoint returns `[]`.
+Results are ordered by how far each job is past its own threshold, from most overdue to least overdue. Each result includes `thresholdDays`, allowing clients to explain why the reminder appeared. Success: `200 OK`; when every active application has recent or scheduled activity, the endpoint returns `[]`.
 
 ```json
 [
@@ -290,9 +290,38 @@ Results are ordered from the longest-stalled job to the most recent. Success: `2
     "jobTitle": "Software Engineer",
     "status": "APPLIED",
     "lastActivityAt": "2026-08-10T12:00:00Z",
-    "daysWithoutActivity": 13
+    "daysWithoutActivity": 13,
+    "thresholdDays": 7
   }
 ]
+```
+
+### Read follow-up reminder settings
+
+`GET /api/job-activities/attention-settings`
+
+Returns the persisted reminder threshold for each active pipeline stage. A fresh installation starts with seven days for every stage.
+
+```json
+{
+  "appliedDays": 7,
+  "onlineAssessmentDays": 7,
+  "interviewDays": 7
+}
+```
+
+### Update follow-up reminder settings
+
+`PUT /api/job-activities/attention-settings`
+
+All three fields are required integers from `1` through `90`. Success: `200 OK` with the persisted settings. Invalid values return `400 Bad Request` with field-level validation errors.
+
+```json
+{
+  "appliedDays": 10,
+  "onlineAssessmentDays": 5,
+  "interviewDays": 3
+}
 ```
 
 ## Resumes

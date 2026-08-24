@@ -1,6 +1,7 @@
 import type {
   CreateJobActivityInput,
   JobAttentionItem,
+  JobAttentionSettings,
   JobActivity,
   UpcomingJobActivity,
   UpdateJobActivityInput,
@@ -60,4 +61,19 @@ export function getUpcomingJobActivities(signal?: AbortSignal): Promise<Upcoming
 
 export function getJobAttentionItems(signal?: AbortSignal): Promise<JobAttentionItem[]> {
   return apiRequest<JobAttentionItem[]>('/api/job-activities/needs-attention', { signal })
+}
+export function getJobAttentionSettings(signal?: AbortSignal): Promise<JobAttentionSettings> {
+  return apiRequest<JobAttentionSettings>('/api/job-activities/attention-settings', { signal })
+}
+
+export function updateJobAttentionSettings(
+  input: JobAttentionSettings,
+): Promise<JobAttentionSettings> {
+  return apiRequest<JobAttentionSettings>('/api/job-activities/attention-settings', {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(input),
+  })
 }

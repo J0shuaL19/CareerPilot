@@ -34,7 +34,8 @@ class JobAttentionControllerTests {
                         "Engineer",
                         JobStatus.APPLIED,
                         Instant.parse("2026-08-10T12:00:00Z"),
-                        13L
+                        13L,
+                        7
                 )
         ));
 
@@ -43,6 +44,7 @@ class JobAttentionControllerTests {
                 .andExpect(jsonPath("$[0].jobId").value(1))
                 .andExpect(jsonPath("$[0].company").value("OpenAI"))
                 .andExpect(jsonPath("$[0].status").value("APPLIED"))
-                .andExpect(jsonPath("$[0].daysWithoutActivity").value(13));
+                .andExpect(jsonPath("$[0].daysWithoutActivity").value(13))
+                .andExpect(jsonPath("$[0].thresholdDays").value(7));
     }
 }

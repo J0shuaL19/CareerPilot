@@ -5,6 +5,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.careerpilot.dto.JobAttentionResponse;
+import com.careerpilot.dto.JobAttentionSettingsResponse;
 import com.careerpilot.model.Job;
 import com.careerpilot.model.JobStatus;
 import com.careerpilot.repository.JobActivityLastTouchProjection;
@@ -32,13 +33,16 @@ class JobAttentionServiceTests {
     private JobActivityRepository jobActivityRepository;
 
     @Mock
+    private JobAttentionSettingsService settingsService;
+
+    @Mock
     private Clock clock;
 
     @InjectMocks
     private JobAttentionService jobAttentionService;
 
     @Test
-    void returnsMostOverdueActiveJobsFirst() {
+    void appliesStageThresholdsAndReturnsMostOverdueJobsFirst() {
         Job applied = persistedJob(1L, "Older Co", JobStatus.APPLIED, "2026-08-01T12:00:00Z");
         Job interview = persistedJob(
                 2L,
@@ -66,6 +70,8 @@ class JobAttentionServiceTests {
                         lastTouch(4L, "2026-08-25T12:00:00Z")
                 ));
         when(clock.instant()).thenReturn(NOW);
+        when(settingsService.getSettings())
+                .thenReturn(new JobAttentionSettingsResponse(14, 2, 7));
 
         List<JobAttentionResponse> responses = jobAttentionService.getJobsNeedingAttention();
 
@@ -73,6 +79,8 @@ class JobAttentionServiceTests {
                 .containsExactly("Older Co", "Boundary Co");
         assertThat(responses).extracting(JobAttentionResponse::daysWithoutActivity)
                 .containsExactly(18L, 7L);
+        assertThat(responses).extracting(JobAttentionResponse::thresholdDays)
+                .containsExactly(14, 7);
     }
 
     @Test
@@ -86,6 +94,8 @@ class JobAttentionServiceTests {
         when(jobActivityRepository.findLatestOccurredAtByJobIds(List.of(1L)))
                 .thenReturn(List.of());
         when(clock.instant()).thenReturn(NOW);
+        when(settingsService.getSettings())
+                .thenReturn(new JobAttentionSettingsResponse(7, 7, 7));
 
         List<JobAttentionResponse> responses = jobAttentionService.getJobsNeedingAttention();
 
@@ -93,11 +103,12 @@ class JobAttentionServiceTests {
             assertThat(response.jobId()).isEqualTo(1L);
             assertThat(response.lastActivityAt()).isEqualTo(Instant.parse("2026-08-10T12:00:00Z"));
             assertThat(response.daysWithoutActivity()).isEqualTo(13L);
+            assertThat(response.thresholdDays()).isEqualTo(7);
         });
     }
 
     @Test
-    void returnsEmptyWithoutQueryingActivitiesWhenThereAreNoActiveJobs() {
+    void returnsEmptyWithoutQueryingActivitiesOrSettingsWhenThereAreNoActiveJobs() {
         when(jobRepository.findAllByStatusInOrderByCreatedAtAsc(List.of(
                 JobStatus.APPLIED,
                 JobStatus.OA,
@@ -106,7 +117,7 @@ class JobAttentionServiceTests {
 
         assertThat(jobAttentionService.getJobsNeedingAttention()).isEmpty();
 
-        verifyNoInteractions(jobActivityRepository, clock);
+        verifyNoInteractions(jobActivityRepository, settingsService, clock);
     }
 
     private static Job persistedJob(

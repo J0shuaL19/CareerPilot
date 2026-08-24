@@ -75,4 +75,20 @@ Each row records one dated event or note in a job's application history. Deletin
 | `occurred_at` | `TIMESTAMP WITH TIME ZONE` | When the activity happened or is scheduled |
 | `created_at` | `TIMESTAMP WITH TIME ZONE` | UTC record creation time |
 
+## Job attention settings table
+
+Migration: `V5__create_job_attention_settings_table.sql`
+
+A single row stores the reminder timing used by the dashboard. The seeded row uses identifier `1` and preserves the original seven-day behavior until the user customizes it.
+
+| Column | Type | Purpose |
+| --- | --- | --- |
+| `id` | `BIGINT` | Stable singleton identifier |
+| `applied_days` | `INTEGER` | Reminder threshold for submitted applications |
+| `online_assessment_days` | `INTEGER` | Reminder threshold while waiting after an assessment |
+| `interview_days` | `INTEGER` | Reminder threshold after interviews or recruiter calls |
+| `updated_at` | `TIMESTAMP WITH TIME ZONE` | Last settings update time |
+
+Each threshold is constrained to `1` through `90`.
+
 Future schema changes must be added as new Flyway migrations. Do not edit a migration after it has been applied to a shared database.

@@ -41,4 +41,11 @@ export interface JobAttentionItem {
   status: JobStatus
   lastActivityAt: string
   daysWithoutActivity: number
+  thresholdDays: number
+}
+
+export interface JobAttentionSettings {
+  appliedDays: number
+  onlineAssessmentDays: number
+  interviewDays: number
 }
