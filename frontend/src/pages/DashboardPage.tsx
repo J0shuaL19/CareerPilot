@@ -3,15 +3,24 @@ import { Link, useNavigate } from 'react-router-dom'
 import { DashboardFunnel } from '../components/DashboardFunnel'
 import { NeedsAttentionPanel } from '../components/NeedsAttentionPanel'
 import { PipelineSummary } from '../components/PipelineSummary'
+import { QuickFollowUpDialog } from '../components/QuickFollowUpDialog'
 import { UpcomingActivities } from '../components/UpcomingActivities'
 import { getDashboardStats } from '../services/dashboardApi'
-import { getJobAttentionItems, getUpcomingJobActivities } from '../services/jobActivityApi'
+import {
+  createJobActivity,
+  getJobAttentionItems,
+  getUpcomingJobActivities,
+} from '../services/jobActivityApi'
 import { getJobs } from '../services/jobApi'
 import { getMatchAnalyses } from '../services/matchAnalysisApi'
 import { getResumes } from '../services/resumeApi'
 import type { Job } from '../types/job'
 import type { DashboardStats, DashboardStatsRange } from '../types/dashboard'
-import type { JobAttentionItem, UpcomingJobActivity } from '../types/jobActivity'
+import type {
+  CreateJobActivityInput,
+  JobAttentionItem,
+  UpcomingJobActivity,
+} from '../types/jobActivity'
 import type { MatchAnalysis } from '../types/matchAnalysis'
 import type { Resume } from '../types/resume'
 import { getErrorMessage, isAbortError } from '../utils/errors'
@@ -44,6 +53,27 @@ export function DashboardPage() {
   const [isStatsLoading, setIsStatsLoading] = useState(true)
   const [statsError, setStatsError] = useState<string | null>(null)
   const [statsReloadKey, setStatsReloadKey] = useState(0)
+  const [followUpItem, setFollowUpItem] = useState<JobAttentionItem | null>(null)
+  const [isFollowUpSaving, setIsFollowUpSaving] = useState(false)
+  const [followUpError, setFollowUpError] = useState<string | null>(null)
+  const [followUpSuccess, setFollowUpSuccess] = useState<string | null>(null)
+
+  async function handleFollowUpSubmit(input: CreateJobActivityInput) {
+    if (!followUpItem) return
+
+    setIsFollowUpSaving(true)
+    setFollowUpError(null)
+    try {
+      await createJobActivity(followUpItem.jobId, input)
+      setFollowUpSuccess(`Follow-up saved for ${followUpItem.company}.`)
+      setFollowUpItem(null)
+      setReloadKey((key) => key + 1)
+    } catch (saveError) {
+      setFollowUpError(getErrorMessage(saveError))
+    } finally {
+      setIsFollowUpSaving(false)
+    }
+  }
 
   useEffect(() => {
     const controller = new AbortController()
@@ -149,6 +179,20 @@ export function DashboardPage() {
         </Link>
       </header>
 
+      {followUpSuccess && (
+        <div className="dashboard-feedback" role="status">
+          <span aria-hidden="true">✓</span>
+          <strong>{followUpSuccess}</strong>
+          <button
+            type="button"
+            aria-label="Dismiss confirmation"
+            onClick={() => setFollowUpSuccess(null)}
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       {isLoading && (
         <div className="state-card" role="status">
           <div className="spinner" aria-hidden="true" />
@@ -209,7 +253,10 @@ export function DashboardPage() {
 
           <NeedsAttentionPanel
             items={data.attentionItems}
-            onViewJob={(jobId) => navigate(`/jobs/${jobId}`)}
+            onFollowUp={(item) => {
+              setFollowUpError(null)
+              setFollowUpItem(item)
+            }}
           />
 
           <UpcomingActivities
@@ -225,6 +272,20 @@ export function DashboardPage() {
             <LatestResumes resumes={data.resumes.slice(0, 3)} />
           </div>
         </>
+      )}
+
+      {followUpItem && (
+        <QuickFollowUpDialog
+          item={followUpItem}
+          isSaving={isFollowUpSaving}
+          error={followUpError}
+          onClose={() => {
+            setFollowUpError(null)
+            setFollowUpItem(null)
+          }}
+          onSubmit={(input) => void handleFollowUpSubmit(input)}
+          onViewJob={(jobId) => navigate(`/jobs/${jobId}`)}
+        />
       )}
     </div>
   )

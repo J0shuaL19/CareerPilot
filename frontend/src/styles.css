@@ -1153,6 +1153,184 @@ a:focus-visible {
   font-weight: 850;
 }
 
+.dashboard-feedback {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid #b8e5ce;
+  border-radius: 12px;
+  color: #17633f;
+  background: #eaf9f1;
+  font-size: 0.82rem;
+}
+
+.dashboard-feedback > span {
+  font-weight: 900;
+}
+
+.dashboard-feedback > button {
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.quick-follow-up-backdrop {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  overflow-y: auto;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgb(20 29 46 / 58%);
+  backdrop-filter: blur(4px);
+}
+
+.quick-follow-up-dialog {
+  width: min(100%, 620px);
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  border: 1px solid #d5deec;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 28px 80px rgb(20 29 46 / 28%);
+}
+
+.quick-follow-up-dialog__heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 1.35rem;
+  border-bottom: 1px solid #e4e9f2;
+  background: linear-gradient(145deg, #fff 0%, #fff9ee 100%);
+}
+
+.quick-follow-up-dialog__heading p,
+.quick-follow-up-dialog__heading h2 {
+  margin: 0;
+}
+
+.quick-follow-up-dialog__heading p {
+  color: #a06b16;
+  font-size: 0.64rem;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.quick-follow-up-dialog__heading h2 {
+  margin-top: 0.15rem;
+  color: #273248;
+  font-size: 1.3rem;
+}
+
+.quick-follow-up-dialog__heading div > span {
+  display: block;
+  margin-top: 0.25rem;
+  color: #768196;
+  font-size: 0.75rem;
+  font-weight: 650;
+}
+
+.quick-follow-up-dialog__heading > button {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 10px;
+  color: #687489;
+  background: #edf1f7;
+  font: inherit;
+  font-size: 1.25rem;
+  cursor: pointer;
+}
+
+.quick-follow-up-form {
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem 1.35rem 1.35rem;
+}
+
+.quick-follow-up-form label {
+  display: grid;
+  gap: 0.38rem;
+  color: #46536a;
+  font-size: 0.76rem;
+  font-weight: 750;
+}
+
+.quick-follow-up-form label > span {
+  color: #929bad;
+  font-size: 0.68rem;
+  font-weight: 650;
+}
+
+.quick-follow-up-form input,
+.quick-follow-up-form textarea {
+  width: 100%;
+  border: 1px solid #cbd5e4;
+  border-radius: 10px;
+  color: #273248;
+  background: #fff;
+  font: inherit;
+  font-size: 0.82rem;
+}
+
+.quick-follow-up-form input {
+  min-height: 43px;
+  padding: 0 0.75rem;
+}
+
+.quick-follow-up-form textarea {
+  min-height: 96px;
+  padding: 0.7rem 0.75rem;
+  resize: vertical;
+}
+
+.quick-follow-up-form input:focus,
+.quick-follow-up-form textarea:focus {
+  border-color: #3568e8;
+  outline: 3px solid rgb(53 104 232 / 16%);
+}
+
+.quick-follow-up-form__row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.quick-follow-up-form__error {
+  margin: 0;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid #f0bdc4;
+  border-radius: 10px;
+  color: #922438;
+  background: #fff2f4;
+  font-size: 0.76rem;
+  font-weight: 650;
+}
+
+.quick-follow-up-form__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-top: 0.15rem;
+}
+
+.quick-follow-up-form__actions > div {
+  display: flex;
+  gap: 0.65rem;
+}
+
 .upcoming-panel {
   margin-bottom: 1rem;
   padding: 1.15rem;
@@ -3710,6 +3888,24 @@ a:focus-visible {
   .attention-panel__heading {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .quick-follow-up-form__row {
+    grid-template-columns: 1fr;
+  }
+
+  .quick-follow-up-form__actions {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .quick-follow-up-form__actions > div {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .quick-follow-up-form__actions .button {
+    width: 100%;
   }
 
   .upcoming-card {

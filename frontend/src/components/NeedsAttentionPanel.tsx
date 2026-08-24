@@ -4,10 +4,10 @@ import { getJobStatusConfig } from '../utils/jobStatus'
 
 interface NeedsAttentionPanelProps {
   items: JobAttentionItem[]
-  onViewJob: (jobId: number) => void
+  onFollowUp: (item: JobAttentionItem) => void
 }
 
-export function NeedsAttentionPanel({ items, onViewJob }: NeedsAttentionPanelProps) {
+export function NeedsAttentionPanel({ items, onFollowUp }: NeedsAttentionPanelProps) {
   return (
     <section className="attention-panel" aria-labelledby="attention-heading">
       <div className="attention-panel__heading">
@@ -39,8 +39,8 @@ export function NeedsAttentionPanel({ items, onViewJob }: NeedsAttentionPanelPro
                 className="attention-card"
                 type="button"
                 key={item.jobId}
-                aria-label={`View ${item.jobTitle} at ${item.company}, ${item.daysWithoutActivity} days without activity`}
-                onClick={() => onViewJob(item.jobId)}
+                aria-label={`Follow up on ${item.jobTitle} at ${item.company}, ${item.daysWithoutActivity} days without activity`}
+                onClick={() => onFollowUp(item)}
               >
                 <span className="attention-card__age">
                   <strong>{item.daysWithoutActivity}</strong>
