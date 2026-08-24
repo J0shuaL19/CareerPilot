@@ -15,6 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -79,6 +80,64 @@ class JobActivityCalendarServiceTests {
         assertThat(content.split("\r\n"))
                 .allSatisfy(line -> assertThat(line.getBytes(StandardCharsets.UTF_8).length)
                         .isLessThanOrEqualTo(75));
+    }
+
+    @Test
+    void exportsMultipleActivitiesInOneCalendar() {
+        Job firstJob = persistedJob(1L);
+        Job secondJob = persistedJob(4L);
+        JobActivity first = persistedActivity(
+                2L,
+                firstJob,
+                JobActivityType.INTERVIEW,
+                "Technical interview",
+                "System design",
+                "Alex Chen"
+        );
+        JobActivity second = persistedActivity(
+                3L,
+                secondJob,
+                JobActivityType.FOLLOW_UP,
+                "Send portfolio",
+                null,
+                null
+        );
+        ReflectionTestUtils.setField(first, "occurredAt", Instant.parse("2026-08-26T18:00:00Z"));
+        ReflectionTestUtils.setField(second, "occurredAt", Instant.parse("2026-08-25T18:00:00Z"));
+        when(jobActivityRepository.findAllByIdIn(List.of(2L, 3L)))
+                .thenReturn(List.of(first, second));
+
+        JobActivityCalendarFile file = calendarService.export(List.of(2L, 3L, 2L));
+        String content = new String(file.content(), StandardCharsets.UTF_8);
+        String unfolded = content.replace("\r\n ", "");
+
+        assertThat(file.filename()).isEqualTo("careerpilot-calendar-20260823T190000Z.ics");
+        assertThat(content).startsWith("BEGIN:VCALENDAR\r\n");
+        assertThat(content).endsWith("END:VCALENDAR\r\n");
+        assertThat(content.split("BEGIN:VEVENT", -1)).hasSize(3);
+        assertThat(unfolded).contains("UID:job-1-activity-2@careerpilot.local");
+        assertThat(unfolded).contains("UID:job-4-activity-3@careerpilot.local");
+        assertThat(unfolded.indexOf("activity-3@careerpilot.local"))
+                .isLessThan(unfolded.indexOf("activity-2@careerpilot.local"));
+    }
+
+    @Test
+    void rejectsPartialBatchWhenAnActivityIsMissing() {
+        Job job = persistedJob(1L);
+        JobActivity activity = persistedActivity(
+                2L,
+                job,
+                JobActivityType.INTERVIEW,
+                "Technical interview",
+                null,
+                null
+        );
+        when(jobActivityRepository.findAllByIdIn(List.of(2L, 99L)))
+                .thenReturn(List.of(activity));
+
+        assertThatThrownBy(() -> calendarService.export(List.of(2L, 99L)))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("Job activity not found with id: 99");
     }
 
     @Test

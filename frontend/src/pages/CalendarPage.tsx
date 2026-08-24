@@ -16,6 +16,7 @@ import { RescheduleActivityDialog } from '../components/RescheduleActivityDialog
 import {
   completeJobActivity,
   createJobActivity,
+  downloadJobActivitiesCalendar,
   getCalendarJobActivities,
   reopenJobActivity,
   rescheduleJobActivity,
@@ -53,6 +54,8 @@ export function CalendarPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+  const [isExportingCalendar, setIsExportingCalendar] = useState(false)
+  const [exportError, setExportError] = useState<string | null>(null)
   const [jobs, setJobs] = useState<Job[]>([])
   const [isJobsLoading, setIsJobsLoading] = useState(true)
   const [jobsError, setJobsError] = useState<string | null>(null)
@@ -213,6 +216,35 @@ export function CalendarPage() {
     setTypeFilter('ALL')
     setStatusFilter('ALL')
     setJobIdFilter(null)
+  }
+
+  async function handleExportCurrentView() {
+    if (filteredActivities.length === 0) return
+
+    setIsExportingCalendar(true)
+    setExportError(null)
+    setNotice(null)
+    try {
+      const calendar = await downloadJobActivitiesCalendar(
+        filteredActivities.map((activity) => activity.id),
+      )
+      const downloadUrl = URL.createObjectURL(calendar)
+      const link = document.createElement('a')
+      link.href = downloadUrl
+      link.download = getCalendarExportFilename(viewMode, visibleDate, gridStart)
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      URL.revokeObjectURL(downloadUrl)
+      setNotice(
+        `${filteredActivities.length} ${filteredActivities.length === 1
+          ? 'activity' : 'activities'} exported from ${periodLabel}.`,
+      )
+    } catch (downloadError) {
+      setExportError(getErrorMessage(downloadError))
+    } finally {
+      setIsExportingCalendar(false)
+    }
   }
 
   function handleDragStart(
@@ -429,6 +461,12 @@ export function CalendarPage() {
             <span>{error}</span>
           </div>
         )}
+        {exportError && (
+          <div className="calendar-error" role="alert">
+            <strong>Calendar could not be exported.</strong>
+            <span>{exportError}</span>
+          </div>
+        )}
 
         <CalendarFilters
           searchQuery={searchQuery}
@@ -439,6 +477,8 @@ export function CalendarPage() {
           shownCount={filteredActivities.length}
           totalCount={activities.length}
           hasActiveFilters={hasActiveFilters}
+          isExporting={isExportingCalendar}
+          onExport={() => void handleExportCurrentView()}
           onSearchChange={setSearchQuery}
           onTypeChange={setTypeFilter}
           onStatusChange={setStatusFilter}
@@ -777,6 +817,16 @@ function getDefaultCreateDate(
 function formatWeekRange(weekStart: Date): string {
   const weekEnd = addDays(weekStart, 6)
   return shortDateFormatter.format(weekStart) + ' – ' + shortDateYearFormatter.format(weekEnd)
+}
+
+function getCalendarExportFilename(
+  viewMode: CalendarViewMode,
+  visibleDate: Date,
+  gridStart: Date,
+): string {
+  if (viewMode === 'WEEK') return `careerpilot-week-${toDateKey(gridStart)}.ics`
+  const month = String(visibleDate.getMonth() + 1).padStart(2, '0')
+  return `careerpilot-month-${visibleDate.getFullYear()}-${month}.ics`
 }
 
 function getSuggestedActivityDate(date: Date): Date {

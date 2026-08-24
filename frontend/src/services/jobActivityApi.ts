@@ -99,6 +99,14 @@ export function downloadJobActivityCalendar(
   return apiDownload(`/api/jobs/${jobId}/activities/${activityId}/calendar`)
 }
 
+export function downloadJobActivitiesCalendar(activityIds: number[]): Promise<Blob> {
+  return apiDownload('/api/job-activities/calendar/export', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ activityIds }),
+  })
+}
+
 export function getOverdueJobActivities(signal?: AbortSignal): Promise<UpcomingJobActivity[]> {
   return apiRequest<UpcomingJobActivity[]>('/api/job-activities/overdue', { signal })
 }

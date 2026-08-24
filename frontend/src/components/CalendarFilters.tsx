@@ -12,6 +12,8 @@ interface CalendarFiltersProps {
   shownCount: number
   totalCount: number
   hasActiveFilters: boolean
+  isExporting: boolean
+  onExport: () => void
   onSearchChange: (value: string) => void
   onTypeChange: (value: CalendarActivityTypeFilter) => void
   onStatusChange: (value: CalendarActivityStatusFilter) => void
@@ -28,6 +30,8 @@ export function CalendarFilters({
   shownCount,
   totalCount,
   hasActiveFilters,
+  isExporting,
+  onExport,
   onSearchChange,
   onTypeChange,
   onStatusChange,
@@ -45,9 +49,21 @@ export function CalendarFilters({
           <p>Focus view</p>
           <h3 id="calendar-filters-heading">Find activities</h3>
         </div>
-        <span role="status" aria-live="polite">
-          Showing {shownCount} of {totalCount} {totalCount === 1 ? 'activity' : 'activities'}
-        </span>
+        <div className="calendar-filters__summary">
+          <span role="status" aria-live="polite">
+            Showing {shownCount} of {totalCount} {totalCount === 1 ? 'activity' : 'activities'}
+          </span>
+          <button
+            className="button button--secondary calendar-filters__export"
+            type="button"
+            title="Export exactly the activities shown in this calendar view"
+            disabled={shownCount === 0 || isExporting}
+            onClick={onExport}
+          >
+            <span aria-hidden="true">⇩</span>
+            {isExporting ? 'Exporting…' : `Export view (${shownCount})`}
+          </button>
+        </div>
       </div>
 
       <div className="calendar-filters__controls">

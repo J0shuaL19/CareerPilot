@@ -407,6 +407,20 @@ Returns interviews and follow-ups whose scheduled time is greater than or equal 
 
 Both query parameters use ISO-8601 instants. `end` must be later than `start`, and the requested range cannot exceed 62 days. Invalid ranges return `400 Bad Request`; an empty range returns `[]` with `200 OK`.
 
+### Export selected calendar activities
+
+`POST /api/job-activities/calendar/export`
+
+Downloads one UTF-8 RFC 5545 iCalendar file containing the selected interviews and follow-ups as chronologically ordered `VEVENT` entries.
+
+```json
+{
+  "activityIds": [12, 18, 24]
+}
+```
+
+The request accepts between 1 and 500 positive activity IDs. Duplicate IDs are exported once. Every selected activity must exist and be an interview or follow-up; a missing activity returns `404 Not Found` without producing a partial file, while an unsupported activity type returns `400 Bad Request`. Success: `200 OK` with a `text/calendar;charset=UTF-8` attachment. The Calendar page sends the IDs from its current month or week after applying search, type, completion status, and job filters.
+
 ### List jobs needing attention
 
 `GET /api/job-activities/needs-attention`

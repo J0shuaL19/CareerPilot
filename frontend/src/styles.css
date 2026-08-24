@@ -6272,10 +6272,34 @@ a:focus-visible {
   letter-spacing: -0.015em;
 }
 
-.calendar-filters__heading > span {
+.calendar-filters__summary {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.calendar-filters__summary > span {
   color: #7b879b;
   font-size: 0.74rem;
   font-weight: 750;
+}
+
+.calendar-filters__export {
+  min-height: 36px;
+  padding: 0.48rem 0.72rem;
+  white-space: nowrap;
+}
+
+.calendar-filters__export > span {
+  margin-right: 0.22rem;
+  color: #3568e8;
+  font-weight: 900;
+}
+
+.calendar-filters__export:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .calendar-filters__controls {
@@ -6367,7 +6391,13 @@ a:focus-visible {
   .calendar-filters__heading {
     align-items: flex-start;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: 0.55rem;
+  }
+
+  .calendar-filters__summary {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
   }
 
   .calendar-filters__controls {

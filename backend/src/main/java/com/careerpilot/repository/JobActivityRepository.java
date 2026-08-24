@@ -22,6 +22,9 @@ public interface JobActivityRepository extends JpaRepository<JobActivity, Long> 
 
     Optional<JobActivity> findByIdAndJob_Id(Long id, Long jobId);
 
+    @EntityGraph(attributePaths = "job")
+    List<JobActivity> findAllByIdIn(Collection<Long> ids);
+
     @Query("""
             select activity.job.id as jobId,
                    max(coalesce(activity.completedAt, activity.occurredAt)) as lastOccurredAt

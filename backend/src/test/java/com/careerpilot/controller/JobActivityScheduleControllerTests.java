@@ -1,19 +1,25 @@
 package com.careerpilot.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.careerpilot.dto.ScheduledJobActivityResponse;
 import com.careerpilot.dto.UpcomingJobActivityResponse;
 import com.careerpilot.model.JobActivityType;
+import com.careerpilot.service.JobActivityCalendarFile;
+import com.careerpilot.service.JobActivityCalendarService;
 import com.careerpilot.service.JobActivityService;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -25,6 +31,9 @@ class JobActivityScheduleControllerTests {
 
     @MockitoBean
     private JobActivityService jobActivityService;
+
+    @MockitoBean
+    private JobActivityCalendarService jobActivityCalendarService;
 
     @Test
     void returnsOverdueActivities() throws Exception {
@@ -67,6 +76,41 @@ class JobActivityScheduleControllerTests {
                 .andExpect(jsonPath("$[0].jobId").value(1))
                 .andExpect(jsonPath("$[0].company").value("OpenAI"))
                 .andExpect(jsonPath("$[0].type").value("INTERVIEW"));
+    }
+
+    @Test
+    void downloadsFilteredCalendarActivities() throws Exception {
+        when(jobActivityCalendarService.export(List.of(2L, 3L))).thenReturn(
+                new JobActivityCalendarFile(
+                        "careerpilot-calendar-20260823T190000Z.ics",
+                        "BEGIN:VCALENDAR\r\nEND:VCALENDAR\r\n"
+                                .getBytes(StandardCharsets.UTF_8)
+                )
+        );
+
+        mockMvc.perform(post("/api/job-activities/calendar/export")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"activityIds\":[2,3]}"))
+                .andExpect(status().isOk())
+                .andExpect(result -> assertThat(result.getResponse().getContentType())
+                        .isEqualTo("text/calendar;charset=UTF-8"))
+                .andExpect(result -> assertThat(
+                        result.getResponse().getHeader("Content-Disposition")
+                ).isEqualTo(
+                        "attachment; filename=\"careerpilot-calendar-20260823T190000Z.ics\""
+                ))
+                .andExpect(result -> assertThat(result.getResponse().getContentAsString())
+                        .contains("BEGIN:VCALENDAR"));
+    }
+
+    @Test
+    void validatesCalendarExportSelection() throws Exception {
+        mockMvc.perform(post("/api/job-activities/calendar/export")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"activityIds\":[]}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.activityIds")
+                        .value("At least one activity is required"));
     }
 
     @Test

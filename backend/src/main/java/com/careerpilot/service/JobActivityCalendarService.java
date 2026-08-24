@@ -13,7 +13,12 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,47 +47,87 @@ public class JobActivityCalendarService {
 
     @Transactional(readOnly = true)
     public JobActivityCalendarFile export(Long jobId, Long activityId) {
-        Job job = jobRepository.findById(jobId)
+        jobRepository.findById(jobId)
                 .orElseThrow(() -> new ResourceNotFoundException("Job", jobId));
         JobActivity activity = jobActivityRepository.findByIdAndJob_Id(activityId, jobId)
                 .orElseThrow(() -> new ResourceNotFoundException("Job activity", activityId));
+        validateExportable(activity);
 
-        if (activity.getType() != JobActivityType.INTERVIEW
-                && activity.getType() != JobActivityType.FOLLOW_UP) {
-            throw new JobActivityCalendarException(
-                    "Only interviews and follow-ups can be exported to a calendar."
-            );
-        }
-
-        String calendar = buildCalendar(job, activity, clock.instant());
+        String calendar = buildCalendar(List.of(activity), clock.instant());
         return new JobActivityCalendarFile(
                 "careerpilot-activity-" + activityId + ".ics",
                 calendar.getBytes(StandardCharsets.UTF_8)
         );
     }
 
-    private static String buildCalendar(Job job, JobActivity activity, Instant generatedAt) {
+    @Transactional(readOnly = true)
+    public JobActivityCalendarFile export(List<Long> activityIds) {
+        if (activityIds == null || activityIds.isEmpty()) {
+            throw new JobActivityCalendarException("At least one activity is required.");
+        }
+
+        List<Long> uniqueIds = new ArrayList<>(new LinkedHashSet<>(activityIds));
+        Map<Long, JobActivity> activitiesById = jobActivityRepository.findAllByIdIn(uniqueIds)
+                .stream()
+                .collect(Collectors.toMap(JobActivity::getId, Function.identity()));
+        for (Long activityId : uniqueIds) {
+            if (!activitiesById.containsKey(activityId)) {
+                throw new ResourceNotFoundException("Job activity", activityId);
+            }
+        }
+
+        List<JobActivity> activities = uniqueIds.stream()
+                .map(activitiesById::get)
+                .sorted(Comparator.comparing(JobActivity::getOccurredAt)
+                        .thenComparing(JobActivity::getId))
+                .toList();
+        activities.forEach(JobActivityCalendarService::validateExportable);
+
+        Instant generatedAt = clock.instant();
+        String calendar = buildCalendar(activities, generatedAt);
+        return new JobActivityCalendarFile(
+                "careerpilot-calendar-" + formatUtc(generatedAt) + ".ics",
+                calendar.getBytes(StandardCharsets.UTF_8)
+        );
+    }
+
+    private static String buildCalendar(List<JobActivity> activities, Instant generatedAt) {
         List<String> lines = new ArrayList<>(List.of(
                 "BEGIN:VCALENDAR",
                 "VERSION:2.0",
                 "PRODID:-//CareerPilot//Job Activity//EN",
-                "CALSCALE:GREGORIAN",
-                "BEGIN:VEVENT",
-                "UID:job-" + job.getId() + "-activity-" + activity.getId() + "@careerpilot.local",
-                "DTSTAMP:" + formatUtc(generatedAt),
-                "DTSTART:" + formatUtc(activity.getOccurredAt()),
-                "SUMMARY:" + escapeText(activity.getTitle() + " - " + job.getCompany()),
-                "DESCRIPTION:" + escapeText(description(job, activity)),
-                "STATUS:CONFIRMED",
-                "END:VEVENT",
-                "END:VCALENDAR"
+                "CALSCALE:GREGORIAN"
         ));
+        activities.forEach(activity -> {
+            Job job = activity.getJob();
+            lines.addAll(List.of(
+                    "BEGIN:VEVENT",
+                    "UID:job-" + job.getId() + "-activity-" + activity.getId()
+                            + "@careerpilot.local",
+                    "DTSTAMP:" + formatUtc(generatedAt),
+                    "DTSTART:" + formatUtc(activity.getOccurredAt()),
+                    "SUMMARY:" + escapeText(activity.getTitle() + " - " + job.getCompany()),
+                    "DESCRIPTION:" + escapeText(description(job, activity)),
+                    "STATUS:CONFIRMED",
+                    "END:VEVENT"
+            ));
+        });
+        lines.add("END:VCALENDAR");
 
         return lines.stream()
                 .map(JobActivityCalendarService::foldLine)
                 .reduce((left, right) -> left + CRLF + right)
                 .orElseThrow()
                 + CRLF;
+    }
+
+    private static void validateExportable(JobActivity activity) {
+        if (activity.getType() != JobActivityType.INTERVIEW
+                && activity.getType() != JobActivityType.FOLLOW_UP) {
+            throw new JobActivityCalendarException(
+                    "Only interviews and follow-ups can be exported to a calendar."
+            );
+        }
     }
 
     private static String description(Job job, JobActivity activity) {
