@@ -7,6 +7,10 @@ import {
   type CalendarActivityStatusFilter,
   type CalendarActivityTypeFilter,
 } from '../components/CalendarFilters'
+import {
+  CalendarNavigation,
+  type CalendarViewMode,
+} from '../components/CalendarNavigation'
 import { CompleteActivityDialog } from '../components/CompleteActivityDialog'
 import { RescheduleActivityDialog } from '../components/RescheduleActivityDialog'
 import {
@@ -28,6 +32,12 @@ import { getJobActivityTypeConfig } from '../utils/jobActivity'
 import { getJobStatusConfig } from '../utils/jobStatus'
 
 const monthFormatter = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' })
+const shortDateFormatter = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' })
+const shortDateYearFormatter = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: 'numeric',
+  year: 'numeric',
+})
 const dayHeadingFormatter = new Intl.DateTimeFormat('en-US', {
   weekday: 'long',
   month: 'short',
@@ -37,7 +47,8 @@ const timeFormatter = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute
 const weekdayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 export function CalendarPage() {
-  const [visibleMonth, setVisibleMonth] = useState(() => startOfMonth(new Date()))
+  const [visibleDate, setVisibleDate] = useState(() => startOfDay(new Date()))
+  const [viewMode, setViewMode] = useState<CalendarViewMode>('MONTH')
   const [activities, setActivities] = useState<ScheduledJobActivity[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -64,12 +75,21 @@ export function CalendarPage() {
   const [isRescheduling, setIsRescheduling] = useState(false)
   const [rescheduleError, setRescheduleError] = useState<string | null>(null)
 
-  const gridStart = useMemo(() => getGridStart(visibleMonth), [visibleMonth])
-  const gridEnd = useMemo(() => addDays(gridStart, 42), [gridStart])
-  const days = useMemo(
-    () => Array.from({ length: 42 }, (_, index) => addDays(gridStart, index)),
-    [gridStart],
+  const gridStart = useMemo(
+    () => viewMode === 'MONTH'
+      ? startOfWeek(startOfMonth(visibleDate))
+      : startOfWeek(visibleDate),
+    [viewMode, visibleDate],
   )
+  const dayCount = viewMode === 'MONTH' ? 42 : 7
+  const gridEnd = useMemo(() => addDays(gridStart, dayCount), [dayCount, gridStart])
+  const days = useMemo(
+    () => Array.from({ length: dayCount }, (_, index) => addDays(gridStart, index)),
+    [dayCount, gridStart],
+  )
+  const periodLabel = viewMode === 'MONTH'
+    ? monthFormatter.format(visibleDate)
+    : formatWeekRange(gridStart)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -141,11 +161,13 @@ export function CalendarPage() {
   )
   const agendaDays = useMemo(
     () => days.filter((day) => (
-      day.getMonth() === visibleMonth.getMonth()
-      && day.getFullYear() === visibleMonth.getFullYear()
+      (viewMode === 'WEEK' || (
+        day.getMonth() === visibleDate.getMonth()
+        && day.getFullYear() === visibleDate.getFullYear()
+      ))
       && (activitiesByDay.get(toDateKey(day))?.length ?? 0) > 0
     )),
-    [activitiesByDay, days, visibleMonth],
+    [activitiesByDay, days, viewMode, visibleDate],
   )
 
   const selectedJob = selectedActivity
@@ -155,9 +177,23 @@ export function CalendarPage() {
     ? jobs.find((job) => job.id === completingActivity.jobId)
     : undefined
 
-  function moveMonth(offset: number) {
+  function movePeriod(offset: number) {
     setNotice(null)
-    setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() + offset, 1))
+    setVisibleDate((current) => viewMode === 'MONTH'
+      ? new Date(current.getFullYear(), current.getMonth() + offset, 1)
+      : addDays(current, offset * 7))
+  }
+
+  function changeView(nextViewMode: CalendarViewMode) {
+    setNotice(null)
+    setViewMode(nextViewMode)
+  }
+
+  function jumpToDate(value: string) {
+    const [year, month, day] = value.split('-').map(Number)
+    if (!year || !month || !day) return
+    setNotice(null)
+    setVisibleDate(new Date(year, month - 1, day))
   }
 
   function openCreateDialog(date: Date) {
@@ -195,7 +231,7 @@ export function CalendarPage() {
       if (activityTime >= gridStart && activityTime < gridEnd) {
         setActivities((current) => [...current, scheduledActivity].sort(compareActivities))
       } else {
-        setVisibleMonth(startOfMonth(activityTime))
+        setVisibleDate(startOfDay(activityTime))
       }
       setNotice(created.title + ' added for ' + dayHeadingFormatter.format(activityTime)
         + ' at ' + timeFormatter.format(activityTime) + '.')
@@ -306,13 +342,15 @@ export function CalendarPage() {
         <div>
           <p className="calendar-page__eyebrow">Interviews and follow-ups</p>
           <h1>Activity calendar</h1>
-          <span>Plan new activities, review scheduled work, and move unfinished actions without leaving the month.</span>
+          <span>Plan new activities, review scheduled work, and move unfinished actions without leaving the calendar.</span>
         </div>
         <div className="calendar-page__actions">
           <button
             className="button button--primary"
             type="button"
-            onClick={() => openCreateDialog(getDefaultCreateDate(visibleMonth))}
+            onClick={() => openCreateDialog(
+              getDefaultCreateDate(visibleDate, gridStart, gridEnd, viewMode)
+            )}
           >
             <span aria-hidden="true">＋</span> Add activity
           </button>
@@ -320,21 +358,20 @@ export function CalendarPage() {
         </div>
       </header>
 
-      <section className="calendar-shell" aria-labelledby="calendar-month-heading">
-        <div className="calendar-toolbar">
-          <div>
-            <p>Schedule</p>
-            <h2 id="calendar-month-heading">{monthFormatter.format(visibleMonth)}</h2>
-          </div>
-          <div className="calendar-toolbar__actions">
-            <button type="button" aria-label="Previous month" onClick={() => moveMonth(-1)}>←</button>
-            <button type="button" onClick={() => {
-              setNotice(null)
-              setVisibleMonth(startOfMonth(new Date()))
-            }}>Today</button>
-            <button type="button" aria-label="Next month" onClick={() => moveMonth(1)}>→</button>
-          </div>
-        </div>
+      <section className="calendar-shell" aria-labelledby="calendar-period-heading">
+        <CalendarNavigation
+          viewMode={viewMode}
+          periodLabel={periodLabel}
+          selectedDate={toDateKey(visibleDate)}
+          onViewChange={changeView}
+          onDateChange={jumpToDate}
+          onPrevious={() => movePeriod(-1)}
+          onToday={() => {
+            setNotice(null)
+            setVisibleDate(startOfDay(new Date()))
+          }}
+          onNext={() => movePeriod(1)}
+        />
 
         {notice && <p className="calendar-notice" role="status">{notice}</p>}
         {error && (
@@ -363,11 +400,16 @@ export function CalendarPage() {
         <div className="calendar-weekdays" aria-hidden="true">
           {weekdayLabels.map((label) => <span key={label}>{label}</span>)}
         </div>
-        <div className="calendar-grid" aria-label={monthFormatter.format(visibleMonth)}>
+        <div
+          className={'calendar-grid' + (viewMode === 'WEEK' ? ' calendar-grid--week' : '')}
+          aria-label={periodLabel}
+        >
           {days.map((day) => {
             const dayActivities = activitiesByDay.get(toDateKey(day)) ?? []
-            const isOutsideMonth = day.getMonth() !== visibleMonth.getMonth()
-              || day.getFullYear() !== visibleMonth.getFullYear()
+            const isOutsideMonth = viewMode === 'MONTH' && (
+              day.getMonth() !== visibleDate.getMonth()
+              || day.getFullYear() !== visibleDate.getFullYear()
+            )
             return (
               <section
                 className={'calendar-day' + (isOutsideMonth ? ' calendar-day--outside' : '')
@@ -401,7 +443,7 @@ export function CalendarPage() {
           })}
         </div>
 
-        <div className="calendar-agenda" aria-label={monthFormatter.format(visibleMonth) + ' agenda'}>
+        <div className="calendar-agenda" aria-label={periodLabel + ' agenda'}>
           {isLoading ? (
             <div className="calendar-agenda__state">Loading activities…</div>
           ) : agendaDays.length === 0 ? (
@@ -414,9 +456,11 @@ export function CalendarPage() {
                 </>
               ) : (
                 <>
-                  <strong>No scheduled activities this month.</strong>
+                  <strong>No scheduled activities this {viewMode === 'MONTH' ? 'month' : 'week'}.</strong>
                   <span>Add an interview or follow-up directly from this calendar.</span>
-                  <button type="button" onClick={() => openCreateDialog(getDefaultCreateDate(visibleMonth))}>
+                  <button type="button" onClick={() => openCreateDialog(
+                    getDefaultCreateDate(visibleDate, gridStart, gridEnd, viewMode)
+                  )}>
                     Add activity
                   </button>
                 </>
@@ -584,8 +628,12 @@ function startOfMonth(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), 1)
 }
 
-function getGridStart(month: Date): Date {
-  return new Date(month.getFullYear(), month.getMonth(), 1 - month.getDay())
+function startOfDay(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate())
+}
+
+function startOfWeek(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() - date.getDay())
 }
 
 function addDays(date: Date, days: number): Date {
@@ -618,12 +666,23 @@ function isToday(date: Date): boolean {
   return toDateKey(date) === toDateKey(today)
 }
 
-function getDefaultCreateDate(visibleMonth: Date): Date {
+function getDefaultCreateDate(
+  visibleDate: Date,
+  rangeStart: Date,
+  rangeEnd: Date,
+  viewMode: CalendarViewMode,
+): Date {
   const today = new Date()
-  return visibleMonth.getFullYear() === today.getFullYear()
-    && visibleMonth.getMonth() === today.getMonth()
-    ? today
-    : visibleMonth
+  const includesToday = viewMode === 'MONTH'
+    ? visibleDate.getFullYear() === today.getFullYear()
+      && visibleDate.getMonth() === today.getMonth()
+    : today >= rangeStart && today < rangeEnd
+  return includesToday ? today : visibleDate
+}
+
+function formatWeekRange(weekStart: Date): string {
+  const weekEnd = addDays(weekStart, 6)
+  return shortDateFormatter.format(weekStart) + ' – ' + shortDateYearFormatter.format(weekEnd)
 }
 
 function getSuggestedActivityDate(date: Date): Date {
