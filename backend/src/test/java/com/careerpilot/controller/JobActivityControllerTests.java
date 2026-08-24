@@ -11,9 +11,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.careerpilot.dto.JobActivityRequest;
+import com.careerpilot.dto.JobActivityReopenResponse;
 import com.careerpilot.dto.JobActivityResponse;
 import com.careerpilot.exception.JobActivityCalendarException;
 import com.careerpilot.model.JobActivityType;
+import com.careerpilot.model.JobStatus;
 import com.careerpilot.service.JobActivityCalendarFile;
 import com.careerpilot.service.JobActivityCalendarService;
 import com.careerpilot.service.JobActivityService;
@@ -158,6 +160,23 @@ class JobActivityControllerTests {
                 .andExpect(jsonPath("$.fieldErrors.note").value(
                         "Completion note must be 2000 characters or fewer"
                 ));
+    }
+
+    @Test
+    void reopensActivity() throws Exception {
+        when(jobActivityService.reopenActivity(1L, 2L)).thenReturn(
+                new JobActivityReopenResponse(
+                        response(2L, "Technical interview"),
+                        JobStatus.APPLIED,
+                        true
+                )
+        );
+
+        mockMvc.perform(put("/api/jobs/1/activities/2/reopen"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.activity.id").value(2))
+                .andExpect(jsonPath("$.jobStatus").value("APPLIED"))
+                .andExpect(jsonPath("$.jobStatusRestored").value(true));
     }
 
     @Test

@@ -349,6 +349,16 @@ Marks an interview or follow-up complete, records an optional outcome, and can u
 
 Success: `200 OK` with the completed activity, including `completedAt` and `completionNote`. Completing an application or general note, or completing the same activity twice, returns `400 Bad Request`. Missing jobs or activities return `404 Not Found`.
 
+### Reopen a completed activity
+
+`PUT /api/jobs/{jobId}/activities/{activityId}/reopen`
+
+Clears `completedAt` and `completionNote` so an interview or follow-up can be actioned again. The response contains the reopened `activity`, the current `jobStatus`, and `jobStatusRestored`.
+
+If completion changed the job stage and that stage has not changed since, reopening restores the stage that was active before completion and returns `jobStatusRestored: true`. If the stage was changed again afterward, reopening preserves the newer stage and returns `jobStatusRestored: false`.
+
+Success: `200 OK`. Reopening an activity that is not completed returns `400 Bad Request`; missing jobs or activities return `404 Not Found`. A future reopened activity returns to the daily action center, while a past activity remains outside the upcoming window.
+
 ### Export a job activity to a calendar
 
 `GET /api/jobs/{jobId}/activities/{activityId}/calendar`

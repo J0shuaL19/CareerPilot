@@ -54,6 +54,14 @@ public class JobActivity {
     @Column(name = "completion_note", columnDefinition = "TEXT")
     private String completionNote;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "completion_previous_job_status", length = 32)
+    private JobStatus completionPreviousJobStatus;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "completion_applied_job_status", length = 32)
+    private JobStatus completionAppliedJobStatus;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -87,9 +95,26 @@ public class JobActivity {
         this.occurredAt = Objects.requireNonNull(occurredAt, "Activity time is required");
     }
 
-    public void complete(Instant completedAt, String completionNote) {
+    public void complete(
+            Instant completedAt,
+            String completionNote,
+            JobStatus previousJobStatus,
+            JobStatus appliedJobStatus
+    ) {
+        if ((previousJobStatus == null) != (appliedJobStatus == null)) {
+            throw new IllegalArgumentException("Completion status snapshots must be paired");
+        }
         this.completedAt = Objects.requireNonNull(completedAt, "Completion time is required");
         this.completionNote = completionNote;
+        this.completionPreviousJobStatus = previousJobStatus;
+        this.completionAppliedJobStatus = appliedJobStatus;
+    }
+
+    public void reopen() {
+        this.completedAt = null;
+        this.completionNote = null;
+        this.completionPreviousJobStatus = null;
+        this.completionAppliedJobStatus = null;
     }
 
     @PrePersist

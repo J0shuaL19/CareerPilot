@@ -20,6 +20,7 @@ import {
   getJobAttentionItems,
   getJobAttentionSettings,
   getUpcomingJobActivities,
+  reopenJobActivity,
   updateJobAttentionSettings,
 } from '../services/jobActivityApi'
 import {
@@ -104,6 +105,10 @@ export function DashboardPage() {
   const [completingActivity, setCompletingActivity] = useState<UpcomingJobActivity | null>(null)
   const [isActivityCompleting, setIsActivityCompleting] = useState(false)
   const [activityCompletionError, setActivityCompletionError] = useState<string | null>(null)
+  const [completionUndoActivity, setCompletionUndoActivity] =
+    useState<UpcomingJobActivity | null>(null)
+  const [isCompletionUndoing, setIsCompletionUndoing] = useState(false)
+  const [completionUndoError, setCompletionUndoError] = useState<string | null>(null)
   const [isAttentionSettingsOpen, setIsAttentionSettingsOpen] = useState(false)
   const [isAttentionSettingsSaving, setIsAttentionSettingsSaving] = useState(false)
   const [attentionSettingsError, setAttentionSettingsError] = useState<string | null>(null)
@@ -125,6 +130,12 @@ export function DashboardPage() {
   const [historyReloadKey, setHistoryReloadKey] = useState(0)
   const attentionNotifications = useAttentionNotifications(data.attentionItems)
 
+  function showActionSuccess(message: string) {
+    setCompletionUndoActivity(null)
+    setCompletionUndoError(null)
+    setActionSuccess(message)
+  }
+
   async function handleFollowUpSubmit(input: CreateJobActivityInput) {
     if (!followUpItem) return
 
@@ -132,7 +143,7 @@ export function DashboardPage() {
     setFollowUpError(null)
     try {
       await createJobActivity(followUpItem.jobId, input)
-      setActionSuccess(`Follow-up saved for ${followUpItem.company}.`)
+      showActionSuccess(`Follow-up saved for ${followUpItem.company}.`)
       setFollowUpItem(null)
       setReloadKey((key) => key + 1)
       setHistoryReloadKey((key) => key + 1)
@@ -153,6 +164,8 @@ export function DashboardPage() {
       const statusDetail = input.jobStatus
         ? ' Job stage updated to ' + getJobStatusConfig(input.jobStatus).label + '.'
         : ''
+      setCompletionUndoActivity(completingActivity)
+      setCompletionUndoError(null)
       setActionSuccess(completingActivity.title + ' completed.' + statusDetail)
       setCompletingActivity(null)
       setReloadKey((key) => key + 1)
@@ -164,6 +177,30 @@ export function DashboardPage() {
     }
   }
 
+  async function handleActivityCompletionUndo() {
+    if (!completionUndoActivity) return
+
+    setIsCompletionUndoing(true)
+    setCompletionUndoError(null)
+    try {
+      const result = await reopenJobActivity(
+        completionUndoActivity.jobId,
+        completionUndoActivity.id,
+      )
+      const statusDetail = result.jobStatusRestored
+        ? ' Job stage restored to ' + getJobStatusConfig(result.jobStatus).label + '.'
+        : ''
+      setActionSuccess(completionUndoActivity.title + ' reopened.' + statusDetail)
+      setCompletionUndoActivity(null)
+      setReloadKey((key) => key + 1)
+      setStatsReloadKey((key) => key + 1)
+    } catch (undoError) {
+      setCompletionUndoError(getErrorMessage(undoError))
+    } finally {
+      setIsCompletionUndoing(false)
+    }
+  }
+
   async function handleAttentionSettingsSubmit(settings: JobAttentionSettings) {
     setIsAttentionSettingsSaving(true)
     setAttentionSettingsError(null)
@@ -172,7 +209,7 @@ export function DashboardPage() {
       const updatedSettings = await updateJobAttentionSettings(settings)
       setData((current) => ({ ...current, attentionSettings: updatedSettings }))
       setIsAttentionSettingsOpen(false)
-      setActionSuccess('Follow-up reminder rules updated.')
+      showActionSuccess('Follow-up reminder rules updated.')
       setReloadKey((key) => key + 1)
     } catch (saveError) {
       setAttentionSettingsError(getErrorMessage(saveError))
@@ -248,7 +285,7 @@ export function DashboardPage() {
       setSnoozeConfirmation(null)
       setBulkSnoozeConfirmation(null)
       setBulkSnoozeUndoError(null)
-      setActionSuccess(job.company + ' reminder is active again.')
+      showActionSuccess(job.company + ' reminder is active again.')
       setReloadKey((key) => key + 1)
       setHistoryReloadKey((key) => key + 1)
     } catch (resumeError) {
@@ -492,11 +529,27 @@ export function DashboardPage() {
         <div className="dashboard-feedback" role="status">
           <span aria-hidden="true">✓</span>
           <strong>{actionSuccess}</strong>
+          {completionUndoError && <small role="alert">{completionUndoError}</small>}
+          {completionUndoActivity && (
+            <button
+              className="dashboard-feedback__undo"
+              type="button"
+              disabled={isCompletionUndoing}
+              onClick={() => void handleActivityCompletionUndo()}
+            >
+              {isCompletionUndoing ? 'Undoing…' : 'Undo'}
+            </button>
+          )}
           <button
             className="dashboard-feedback__close"
             type="button"
             aria-label="Dismiss confirmation"
-            onClick={() => setActionSuccess(null)}
+            disabled={isCompletionUndoing}
+            onClick={() => {
+              setActionSuccess(null)
+              setCompletionUndoActivity(null)
+              setCompletionUndoError(null)
+            }}
           >
             ×
           </button>

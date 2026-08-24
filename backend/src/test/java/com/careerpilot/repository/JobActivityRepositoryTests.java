@@ -60,7 +60,7 @@ class JobActivityRepositoryTests {
                 "Completed interview",
                 "2026-08-24T12:00:00Z"
         );
-        completed.complete(Instant.parse("2026-08-22T13:00:00Z"), "Completed");
+        completed.complete(Instant.parse("2026-08-22T13:00:00Z"), "Completed", null, null);
         jobActivityRepository.saveAllAndFlush(List.of(
                 activity(job, JobActivityType.INTERVIEW, "Interview", "2026-08-23T12:00:00Z"),
                 activity(job, JobActivityType.FOLLOW_UP, "Follow-up", "2026-08-25T12:00:00Z"),
@@ -114,7 +114,7 @@ class JobActivityRepositoryTests {
                 "Completed early",
                 "2026-08-30T12:00:00Z"
         );
-        completed.complete(Instant.parse("2026-08-24T12:00:00Z"), null);
+        completed.complete(Instant.parse("2026-08-24T12:00:00Z"), null, null, null);
         jobActivityRepository.saveAndFlush(completed);
 
         JobActivityLastTouchProjection lastTouch = jobActivityRepository

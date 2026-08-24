@@ -30,6 +30,12 @@ export interface CompleteJobActivityInput {
   jobStatus?: JobStatus
 }
 
+export interface ReopenJobActivityResult {
+  activity: JobActivity
+  jobStatus: JobStatus
+  jobStatusRestored: boolean
+}
+
 export interface UpcomingJobActivity {
   id: number
   jobId: number

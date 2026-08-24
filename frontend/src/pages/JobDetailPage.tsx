@@ -9,12 +9,14 @@ import {
   deleteJobActivity,
   downloadJobActivityCalendar,
   getJobActivities,
+  reopenJobActivity,
   updateJobActivity,
 } from '../services/jobActivityApi'
 import { getJob } from '../services/jobApi'
 import type { Job } from '../types/job'
 import type { CreateJobActivityInput, JobActivity } from '../types/jobActivity'
 import { getErrorMessage, isAbortError } from '../utils/errors'
+import { getJobStatusConfig } from '../utils/jobStatus'
 import { NotFoundPage } from './NotFoundPage'
 
 export function JobDetailPage() {
@@ -32,6 +34,7 @@ export function JobDetailPage() {
   const [deletingActivityId, setDeletingActivityId] = useState<number | null>(null)
   const [editingActivity, setEditingActivity] = useState<JobActivity | null>(null)
   const [exportingActivityId, setExportingActivityId] = useState<number | null>(null)
+  const [reopeningActivityId, setReopeningActivityId] = useState<number | null>(null)
   const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
@@ -128,6 +131,28 @@ export function JobDetailPage() {
     setFormError(null)
     setActionNotice(null)
     setActionError(null)
+  }
+
+  async function handleReopenActivity(activity: JobActivity) {
+    setReopeningActivityId(activity.id)
+    setActionNotice(null)
+    setActionError(null)
+
+    try {
+      const result = await reopenJobActivity(jobId, activity.id)
+      setActivities((current) => current
+        .map((item) => item.id === result.activity.id ? result.activity : item)
+        .sort(compareActivitiesNewestFirst))
+      setJob((current) => current ? { ...current, status: result.jobStatus } : current)
+      const statusDetail = result.jobStatusRestored
+        ? ' Job stage restored to ' + getJobStatusConfig(result.jobStatus).label + '.'
+        : ''
+      setActionNotice(activity.title + ' was reopened.' + statusDetail)
+    } catch (error) {
+      setActionError(getErrorMessage(error))
+    } finally {
+      setReopeningActivityId(null)
+    }
   }
 
   async function handleExportCalendar(activity: JobActivity) {
@@ -245,8 +270,10 @@ export function JobDetailPage() {
                 deletingActivityId={deletingActivityId}
                 editingActivityId={editingActivity?.id ?? null}
                 exportingActivityId={exportingActivityId}
+                reopeningActivityId={reopeningActivityId}
                 onEdit={handleEditActivity}
                 onExportCalendar={handleExportCalendar}
+                onReopen={handleReopenActivity}
                 onDelete={handleDeleteActivity}
               />
             </div>

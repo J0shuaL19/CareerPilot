@@ -7,8 +7,10 @@ interface JobTimelineProps {
   deletingActivityId: number | null
   editingActivityId: number | null
   exportingActivityId: number | null
+  reopeningActivityId: number | null
   onEdit: (activity: JobActivity) => void
   onExportCalendar: (activity: JobActivity) => Promise<void>
+  onReopen: (activity: JobActivity) => Promise<void>
   onDelete: (activity: JobActivity) => Promise<void>
 }
 
@@ -25,8 +27,10 @@ export function JobTimeline({
   deletingActivityId,
   editingActivityId,
   exportingActivityId,
+  reopeningActivityId,
   onEdit,
   onExportCalendar,
+  onReopen,
   onDelete,
 }: JobTimelineProps) {
   const [confirmingActivityId, setConfirmingActivityId] = useState<number | null>(null)
@@ -49,6 +53,7 @@ export function JobTimeline({
         const isConfirming = confirmingActivityId === activity.id
         const isEditing = editingActivityId === activity.id
         const isExporting = exportingActivityId === activity.id
+        const isReopening = reopeningActivityId === activity.id
         const canExportCalendar = activity.type === 'INTERVIEW' || activity.type === 'FOLLOW_UP'
 
         return (
@@ -104,6 +109,15 @@ export function JobTimeline({
                   </>
                 ) : (
                   <>
+                    {activity.completedAt && (
+                      <button
+                        type="button"
+                        disabled={isReopening}
+                        onClick={() => void onReopen(activity)}
+                      >
+                        {isReopening ? 'Reopening…' : 'Reopen'}
+                      </button>
+                    )}
                     {canExportCalendar && (
                       <button
                         type="button"

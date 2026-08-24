@@ -3,6 +3,7 @@ package com.careerpilot.service;
 import com.careerpilot.dto.JobActivityCompletionRequest;
 import com.careerpilot.dto.JobActivityRequest;
 import com.careerpilot.dto.JobActivityResponse;
+import com.careerpilot.dto.JobActivityReopenResponse;
 import com.careerpilot.dto.UpcomingJobActivityResponse;
 import com.careerpilot.exception.JobActivityCompletionException;
 import com.careerpilot.exception.ResourceNotFoundException;
@@ -11,6 +12,7 @@ import com.careerpilot.model.JobActivity;
 import com.careerpilot.model.JobActivityType;
 import com.careerpilot.model.JobAttentionEvent;
 import com.careerpilot.model.JobAttentionEventAction;
+import com.careerpilot.model.JobStatus;
 import com.careerpilot.repository.JobActivityRepository;
 import com.careerpilot.repository.JobAttentionEventRepository;
 import com.careerpilot.repository.JobRepository;
@@ -123,11 +125,42 @@ public class JobActivityService {
             throw new JobActivityCompletionException("Activity is already completed.");
         }
 
-        activity.complete(clock.instant(), normalizeOptional(request.note()));
-        if (request.jobStatus() != null) {
-            job.updateStatus(request.jobStatus());
+        JobStatus previousJobStatus = request.jobStatus() != null
+                && request.jobStatus() != job.getStatus()
+                ? job.getStatus()
+                : null;
+        JobStatus appliedJobStatus = previousJobStatus == null ? null : request.jobStatus();
+        activity.complete(
+                clock.instant(),
+                normalizeOptional(request.note()),
+                previousJobStatus,
+                appliedJobStatus
+        );
+        if (appliedJobStatus != null) {
+            job.updateStatus(appliedJobStatus);
         }
         return toResponse(activity);
+    }
+
+    @Transactional
+    public JobActivityReopenResponse reopenActivity(Long jobId, Long activityId) {
+        Job job = findJob(jobId);
+        JobActivity activity = findActivity(jobId, activityId);
+        if (activity.getCompletedAt() == null) {
+            throw new JobActivityCompletionException("Activity is not completed.");
+        }
+
+        boolean jobStatusRestored = activity.getCompletionPreviousJobStatus() != null
+                && activity.getCompletionAppliedJobStatus() == job.getStatus();
+        if (jobStatusRestored) {
+            job.updateStatus(activity.getCompletionPreviousJobStatus());
+        }
+        activity.reopen();
+        return new JobActivityReopenResponse(
+                toResponse(activity),
+                job.getStatus(),
+                jobStatusRestored
+        );
     }
 
     @Transactional(readOnly = true)

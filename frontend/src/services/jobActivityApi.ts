@@ -5,6 +5,7 @@ import type {
   JobAttentionItem,
   JobAttentionSettings,
   JobActivity,
+  ReopenJobActivityResult,
   UpcomingJobActivity,
   UpdateJobActivityInput,
 } from '../types/jobActivity'
@@ -56,6 +57,16 @@ export function completeJobActivity(
     },
     body: JSON.stringify(input),
   })
+}
+
+export function reopenJobActivity(
+  jobId: number,
+  activityId: number,
+): Promise<ReopenJobActivityResult> {
+  return apiRequest<ReopenJobActivityResult>(
+    '/api/jobs/' + jobId + '/activities/' + activityId + '/reopen',
+    { method: 'PUT' },
+  )
 }
 
 export function deleteJobActivity(jobId: number, activityId: number): Promise<void> {

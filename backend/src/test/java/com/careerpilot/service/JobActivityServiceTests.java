@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import com.careerpilot.dto.JobActivityCompletionRequest;
 import com.careerpilot.dto.JobActivityRequest;
+import com.careerpilot.dto.JobActivityReopenResponse;
 import com.careerpilot.dto.JobActivityResponse;
 import com.careerpilot.dto.UpcomingJobActivityResponse;
 import com.careerpilot.exception.JobActivityCompletionException;
@@ -180,6 +181,85 @@ class JobActivityServiceTests {
         assertThat(response.completedAt()).isEqualTo(completedAt);
         assertThat(response.completionNote()).isEqualTo("Strong conversation");
         assertThat(job.getStatus()).isEqualTo(JobStatus.INTERVIEW);
+        assertThat(activity.getCompletionPreviousJobStatus()).isEqualTo(JobStatus.SAVED);
+        assertThat(activity.getCompletionAppliedJobStatus()).isEqualTo(JobStatus.INTERVIEW);
+    }
+
+    @Test
+    void reopensActivityAndRestoresUnchangedCompletionStatus() {
+        Job job = persistedJob(1L);
+        JobActivity activity = persistedActivity(
+                2L,
+                job,
+                JobActivityType.INTERVIEW,
+                "Hiring manager interview",
+                "2026-08-25T16:00:00Z"
+        );
+        activity.complete(
+                Instant.parse("2026-08-24T18:00:00Z"),
+                "Strong conversation",
+                JobStatus.SAVED,
+                JobStatus.INTERVIEW
+        );
+        job.updateStatus(JobStatus.INTERVIEW);
+        when(jobRepository.findById(1L)).thenReturn(Optional.of(job));
+        when(jobActivityRepository.findByIdAndJob_Id(2L, 1L)).thenReturn(Optional.of(activity));
+
+        JobActivityReopenResponse response = jobActivityService.reopenActivity(1L, 2L);
+
+        assertThat(response.activity().completedAt()).isNull();
+        assertThat(response.activity().completionNote()).isNull();
+        assertThat(response.jobStatus()).isEqualTo(JobStatus.SAVED);
+        assertThat(response.jobStatusRestored()).isTrue();
+        assertThat(job.getStatus()).isEqualTo(JobStatus.SAVED);
+        assertThat(activity.getCompletionPreviousJobStatus()).isNull();
+        assertThat(activity.getCompletionAppliedJobStatus()).isNull();
+    }
+
+    @Test
+    void reopensActivityWithoutOverwritingLaterJobStatus() {
+        Job job = persistedJob(1L);
+        JobActivity activity = persistedActivity(
+                2L,
+                job,
+                JobActivityType.INTERVIEW,
+                "Hiring manager interview",
+                "2026-08-25T16:00:00Z"
+        );
+        activity.complete(
+                Instant.parse("2026-08-24T18:00:00Z"),
+                null,
+                JobStatus.SAVED,
+                JobStatus.INTERVIEW
+        );
+        job.updateStatus(JobStatus.OFFER);
+        when(jobRepository.findById(1L)).thenReturn(Optional.of(job));
+        when(jobActivityRepository.findByIdAndJob_Id(2L, 1L)).thenReturn(Optional.of(activity));
+
+        JobActivityReopenResponse response = jobActivityService.reopenActivity(1L, 2L);
+
+        assertThat(response.jobStatus()).isEqualTo(JobStatus.OFFER);
+        assertThat(response.jobStatusRestored()).isFalse();
+        assertThat(job.getStatus()).isEqualTo(JobStatus.OFFER);
+        assertThat(response.activity().completedAt()).isNull();
+    }
+
+    @Test
+    void rejectsReopeningActivityThatIsNotCompleted() {
+        Job job = persistedJob(1L);
+        JobActivity activity = persistedActivity(
+                2L,
+                job,
+                JobActivityType.FOLLOW_UP,
+                "Recruiter follow-up",
+                "2026-08-25T16:00:00Z"
+        );
+        when(jobRepository.findById(1L)).thenReturn(Optional.of(job));
+        when(jobActivityRepository.findByIdAndJob_Id(2L, 1L)).thenReturn(Optional.of(activity));
+
+        assertThatThrownBy(() -> jobActivityService.reopenActivity(1L, 2L))
+                .isInstanceOf(JobActivityCompletionException.class)
+                .hasMessage("Activity is not completed.");
     }
 
     @Test
