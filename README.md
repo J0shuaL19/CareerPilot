@@ -18,7 +18,7 @@ CareerPilot/
 └── docs/       Architecture, database, and API notes
 ```
 
-Current features include a career dashboard with time-range funnel analytics, configurable stage-specific follow-up reminders with per-job snoozing, opt-in browser alerts, transactional bulk reminder actions with one-click undo, and a recent reminder change history, quick follow-up capture, and personalized follow-up message templates with one-click copy, searchable job pipeline tracking with validated CSV import and filtered export, editable job activity timelines with calendar export, PDF/DOCX resume import, searchable resume previews and version duplication, AI match analysis, and searchable saved analysis history.
+Current features include a career dashboard with time-range funnel analytics and a unified daily action center for due follow-ups and upcoming activities, configurable stage-specific reminders with per-job snoozing, opt-in browser alerts, transactional bulk reminder actions with one-click undo, and a recent reminder change history, quick follow-up capture, and personalized follow-up message templates with one-click copy, searchable job pipeline tracking with validated CSV import and filtered export, editable job activity timelines with calendar export, PDF/DOCX resume import, searchable resume previews and version duplication, AI match analysis, and searchable saved analysis history.
 
 ## Run locally
 
@@ -47,8 +47,12 @@ pnpm run dev
 
 The Vite development server is available at `http://localhost:5173`.
 
+## Daily action center
+
+The dashboard combines follow-ups that have reached their stage-specific reminder threshold with interviews and follow-ups scheduled in the next 14 days. Today's scheduled activities appear first, followed by due application follow-ups ordered by urgency, then later activities in chronological order. Each row keeps its relevant quick actions: follow up, snooze, or open the job.
+
 ## Browser reminder alerts
 
-The dashboard can show browser notifications for applications in `Needs attention`. Alerts are opt-in and only run while CareerPilot is open in a secure browser context. Each overdue job is notified at most once per local calendar day; the preference and daily delivery record stay in that browser's local storage.
+The dashboard can show browser notifications for due applications in the daily action center. Alerts are opt-in and only run while CareerPilot is open in a secure browser context. Each overdue job is notified at most once per local calendar day; the preference and daily delivery record stay in that browser's local storage.
 
 If notification permission is blocked, use the browser's site settings to allow notifications and then return to CareerPilot. Turning alerts off stops future notifications without changing reminder rules, snoozes, or server data.

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AttentionSettingsDialog } from '../components/AttentionSettingsDialog'
+import { DailyActionCenter } from '../components/DailyActionCenter'
 import { DashboardFunnel } from '../components/DashboardFunnel'
-import { NeedsAttentionPanel } from '../components/NeedsAttentionPanel'
 import { PipelineSummary } from '../components/PipelineSummary'
 import { QuickFollowUpDialog } from '../components/QuickFollowUpDialog'
 import { ReminderHistory } from '../components/ReminderHistory'
@@ -11,7 +11,6 @@ import {
   type SnoozeReminderTarget,
 } from '../components/SnoozeReminderDialog'
 import { SnoozedRemindersPanel } from '../components/SnoozedRemindersPanel'
-import { UpcomingActivities } from '../components/UpcomingActivities'
 import { useAttentionNotifications } from '../hooks/useAttentionNotifications'
 import { getDashboardStats } from '../services/dashboardApi'
 import {
@@ -587,8 +586,9 @@ export function DashboardPage() {
             <PipelineSummary jobs={data.jobs} />
           </section>
 
-          <NeedsAttentionPanel
-            items={data.attentionItems}
+          <DailyActionCenter
+            attentionItems={data.attentionItems}
+            upcomingActivities={data.upcomingActivities}
             settings={data.attentionSettings}
             onConfigure={() => {
               setAttentionSettingsError(null)
@@ -606,6 +606,7 @@ export function DashboardPage() {
               setSnoozeError(null)
               setSnoozeItem(item)
             }}
+            onViewJob={(jobId) => navigate('/jobs/' + jobId)}
           />
 
           {snoozedJobs.length > 0 && (
@@ -640,14 +641,6 @@ export function DashboardPage() {
 
           <ReminderHistory
             reloadKey={historyReloadKey}
-            onViewJob={(jobId) => navigate(`/jobs/${jobId}`)}
-          />
-
-          <UpcomingActivities
-            activities={data.upcomingActivities}
-            isLoading={false}
-            error={null}
-            onRetry={() => setReloadKey((key) => key + 1)}
             onViewJob={(jobId) => navigate(`/jobs/${jobId}`)}
           />
 
