@@ -357,7 +357,21 @@ Clears `completedAt` and `completionNote` so an interview or follow-up can be ac
 
 If completion changed the job stage and that stage has not changed since, reopening restores the stage that was active before completion and returns `jobStatusRestored: true`. If the stage was changed again afterward, reopening preserves the newer stage and returns `jobStatusRestored: false`.
 
-Success: `200 OK`. Reopening an activity that is not completed returns `400 Bad Request`; missing jobs or activities return `404 Not Found`. A future reopened activity returns to the daily action center, while a past activity remains outside the upcoming window.
+Success: `200 OK`. Reopening an activity that is not completed returns `400 Bad Request`; missing jobs or activities return `404 Not Found`. A future reopened activity returns to the upcoming action list, while a past activity returns to the overdue action list.
+
+### Reschedule an activity
+
+`PUT /api/jobs/{jobId}/activities/{activityId}/reschedule`
+
+Moves an incomplete interview or follow-up to a new future time without creating a duplicate timeline entry.
+
+```json
+{
+  "occurredAt": "2026-08-27T18:00:00Z"
+}
+```
+
+`occurredAt` is required and must be later than the current server time. A successful reschedule also clears any saved attention snooze for the job and records that change in reminder history. Success: `200 OK` with the updated activity. Applications, general notes, completed activities, and past or current replacement times return `400 Bad Request`. Missing jobs or activities return `404 Not Found`.
 
 ### Export a job activity to a calendar
 
@@ -370,6 +384,12 @@ Downloads an RFC 5545 iCalendar file for an interview or follow-up. Success: `20
 `DELETE /api/jobs/{jobId}/activities/{activityId}`
 
 Success: `204 No Content`. The activity must belong to the job in the request path. Missing jobs or activities return `404 Not Found`.
+
+### List overdue job activities
+
+`GET /api/job-activities/overdue`
+
+Returns incomplete interviews and follow-ups whose scheduled time is before the current server time, ordered from oldest to newest. These activities appear first in the daily action center and can be completed, rescheduled, or opened from their owning job. Success: `200 OK`; when nothing is overdue, the endpoint returns `[]`.
 
 ### List upcoming job activities
 

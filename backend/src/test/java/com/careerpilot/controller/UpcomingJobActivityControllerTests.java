@@ -26,6 +26,27 @@ class UpcomingJobActivityControllerTests {
     private JobActivityService jobActivityService;
 
     @Test
+    void returnsOverdueActivities() throws Exception {
+        when(jobActivityService.getOverdueActivities()).thenReturn(List.of(
+                new UpcomingJobActivityResponse(
+                        2L,
+                        1L,
+                        "OpenAI",
+                        "Engineer",
+                        JobActivityType.INTERVIEW,
+                        "Missed interview",
+                        "Alex Chen",
+                        Instant.parse("2026-08-22T12:00:00Z")
+                )
+        ));
+
+        mockMvc.perform(get("/api/job-activities/overdue"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].jobId").value(1))
+                .andExpect(jsonPath("$[0].title").value("Missed interview"));
+    }
+
+    @Test
     void returnsUpcomingActivities() throws Exception {
         when(jobActivityService.getUpcomingActivities()).thenReturn(List.of(
                 new UpcomingJobActivityResponse(

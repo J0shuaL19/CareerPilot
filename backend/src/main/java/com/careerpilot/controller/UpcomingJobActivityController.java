@@ -17,6 +17,11 @@ public class UpcomingJobActivityController {
         this.jobActivityService = jobActivityService;
     }
 
+    @GetMapping("/overdue")
+    public List<UpcomingJobActivityResponse> getOverdueActivities() {
+        return jobActivityService.getOverdueActivities();
+    }
+
     @GetMapping("/upcoming")
     public List<UpcomingJobActivityResponse> getUpcomingActivities() {
         return jobActivityService.getUpcomingActivities();

@@ -4,8 +4,10 @@ import com.careerpilot.dto.JobActivityCompletionRequest;
 import com.careerpilot.dto.JobActivityRequest;
 import com.careerpilot.dto.JobActivityResponse;
 import com.careerpilot.dto.JobActivityReopenResponse;
+import com.careerpilot.dto.JobActivityRescheduleRequest;
 import com.careerpilot.dto.UpcomingJobActivityResponse;
 import com.careerpilot.exception.JobActivityCompletionException;
+import com.careerpilot.exception.JobActivityRescheduleException;
 import com.careerpilot.exception.ResourceNotFoundException;
 import com.careerpilot.model.Job;
 import com.careerpilot.model.JobActivity;
@@ -53,16 +55,7 @@ public class JobActivityService {
     @Transactional
     public JobActivityResponse createActivity(Long jobId, JobActivityRequest request) {
         Job job = findJob(jobId);
-        LocalDate previousSnoozeDate = job.getAttentionSnoozedUntil();
-        job.clearAttentionSnooze();
-        if (previousSnoozeDate != null) {
-            jobAttentionEventRepository.save(new JobAttentionEvent(
-                    job,
-                    JobAttentionEventAction.CLEARED_BY_ACTIVITY,
-                    previousSnoozeDate,
-                    null
-            ));
-        }
+        clearAttentionSnooze(job);
         JobActivity activity = new JobActivity(
                 job,
                 request.type(),
@@ -163,6 +156,47 @@ public class JobActivityService {
         );
     }
 
+    @Transactional
+    public JobActivityResponse rescheduleActivity(
+            Long jobId,
+            Long activityId,
+            JobActivityRescheduleRequest request
+    ) {
+        Job job = findJob(jobId);
+        JobActivity activity = findActivity(jobId, activityId);
+        if (!REMINDER_TYPES.contains(activity.getType())) {
+            throw new JobActivityRescheduleException(
+                    "Only interviews and follow-ups can be rescheduled."
+            );
+        }
+        if (activity.getCompletedAt() != null) {
+            throw new JobActivityRescheduleException(
+                    "Completed activities must be reopened before rescheduling."
+            );
+        }
+        if (!request.occurredAt().isAfter(clock.instant())) {
+            throw new JobActivityRescheduleException(
+                    "New activity time must be in the future."
+            );
+        }
+
+        clearAttentionSnooze(job);
+        activity.reschedule(request.occurredAt());
+        return toResponse(activity);
+    }
+
+    @Transactional(readOnly = true)
+    public List<UpcomingJobActivityResponse> getOverdueActivities() {
+        return jobActivityRepository
+                .findAllByTypeInAndCompletedAtIsNullAndOccurredAtBeforeOrderByOccurredAtAscCreatedAtAsc(
+                        REMINDER_TYPES,
+                        clock.instant()
+                )
+                .stream()
+                .map(JobActivityService::toUpcomingResponse)
+                .toList();
+    }
+
     @Transactional(readOnly = true)
     public List<UpcomingJobActivityResponse> getUpcomingActivities() {
         Instant start = clock.instant();
@@ -176,6 +210,19 @@ public class JobActivityService {
                 .stream()
                 .map(JobActivityService::toUpcomingResponse)
                 .toList();
+    }
+
+    private void clearAttentionSnooze(Job job) {
+        LocalDate previousSnoozeDate = job.getAttentionSnoozedUntil();
+        job.clearAttentionSnooze();
+        if (previousSnoozeDate != null) {
+            jobAttentionEventRepository.save(new JobAttentionEvent(
+                    job,
+                    JobAttentionEventAction.CLEARED_BY_ACTIVITY,
+                    previousSnoozeDate,
+                    null
+            ));
+        }
     }
 
     private Job findJob(Long jobId) {

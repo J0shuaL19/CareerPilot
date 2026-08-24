@@ -7,6 +7,7 @@ import { DashboardFunnel } from '../components/DashboardFunnel'
 import { PipelineSummary } from '../components/PipelineSummary'
 import { QuickFollowUpDialog } from '../components/QuickFollowUpDialog'
 import { ReminderHistory } from '../components/ReminderHistory'
+import { RescheduleActivityDialog } from '../components/RescheduleActivityDialog'
 import {
   SnoozeReminderDialog,
   type SnoozeReminderTarget,
@@ -19,8 +20,10 @@ import {
   createJobActivity,
   getJobAttentionItems,
   getJobAttentionSettings,
+  getOverdueJobActivities,
   getUpcomingJobActivities,
   reopenJobActivity,
+  rescheduleJobActivity,
   updateJobAttentionSettings,
 } from '../services/jobActivityApi'
 import {
@@ -71,6 +74,7 @@ interface DashboardData {
   analyses: MatchAnalysis[]
   attentionItems: JobAttentionItem[]
   attentionSettings: JobAttentionSettings
+  overdueActivities: UpcomingJobActivity[]
   upcomingActivities: UpcomingJobActivity[]
 }
 
@@ -84,6 +88,7 @@ const emptyData: DashboardData = {
     onlineAssessmentDays: 7,
     interviewDays: 7,
   },
+  overdueActivities: [],
   upcomingActivities: [],
 }
 
@@ -109,6 +114,10 @@ export function DashboardPage() {
     useState<UpcomingJobActivity | null>(null)
   const [isCompletionUndoing, setIsCompletionUndoing] = useState(false)
   const [completionUndoError, setCompletionUndoError] = useState<string | null>(null)
+  const [reschedulingActivity, setReschedulingActivity] =
+    useState<UpcomingJobActivity | null>(null)
+  const [isActivityRescheduling, setIsActivityRescheduling] = useState(false)
+  const [activityRescheduleError, setActivityRescheduleError] = useState<string | null>(null)
   const [isAttentionSettingsOpen, setIsAttentionSettingsOpen] = useState(false)
   const [isAttentionSettingsSaving, setIsAttentionSettingsSaving] = useState(false)
   const [attentionSettingsError, setAttentionSettingsError] = useState<string | null>(null)
@@ -198,6 +207,29 @@ export function DashboardPage() {
       setCompletionUndoError(getErrorMessage(undoError))
     } finally {
       setIsCompletionUndoing(false)
+    }
+  }
+
+  async function handleActivityReschedule(occurredAt: string) {
+    if (!reschedulingActivity) return
+
+    setIsActivityRescheduling(true)
+    setActivityRescheduleError(null)
+    try {
+      const updatedActivity = await rescheduleJobActivity(
+        reschedulingActivity.jobId,
+        reschedulingActivity.id,
+        { occurredAt },
+      )
+      showActionSuccess(
+        reschedulingActivity.title + ' rescheduled for ' + formatDate(updatedActivity.occurredAt) + '.',
+      )
+      setReschedulingActivity(null)
+      setReloadKey((key) => key + 1)
+    } catch (rescheduleError) {
+      setActivityRescheduleError(getErrorMessage(rescheduleError))
+    } finally {
+      setIsActivityRescheduling(false)
     }
   }
 
@@ -407,6 +439,7 @@ export function DashboardPage() {
           analyses,
           attentionItems,
           attentionSettings,
+          overdueActivities,
           upcomingActivities,
         ] = await Promise.all([
           getJobs(controller.signal),
@@ -414,6 +447,7 @@ export function DashboardPage() {
           getMatchAnalyses(controller.signal),
           getJobAttentionItems(controller.signal),
           getJobAttentionSettings(controller.signal),
+          getOverdueJobActivities(controller.signal),
           getUpcomingJobActivities(controller.signal),
         ])
         setData({
@@ -422,6 +456,7 @@ export function DashboardPage() {
           analyses,
           attentionItems,
           attentionSettings,
+          overdueActivities,
           upcomingActivities,
         })
       } catch (loadError) {
@@ -672,6 +707,7 @@ export function DashboardPage() {
 
           <DailyActionCenter
             attentionItems={data.attentionItems}
+            overdueActivities={data.overdueActivities}
             upcomingActivities={data.upcomingActivities}
             settings={data.attentionSettings}
             onConfigure={() => {
@@ -693,6 +729,10 @@ export function DashboardPage() {
             onComplete={(activity) => {
               setActivityCompletionError(null)
               setCompletingActivity(activity)
+            }}
+            onReschedule={(activity) => {
+              setActivityRescheduleError(null)
+              setReschedulingActivity(activity)
             }}
             onViewJob={(jobId) => navigate('/jobs/' + jobId)}
           />
@@ -750,6 +790,19 @@ export function DashboardPage() {
             setCompletingActivity(null)
           }}
           onSubmit={(input) => void handleActivityComplete(input)}
+        />
+      )}
+
+      {reschedulingActivity && (
+        <RescheduleActivityDialog
+          activity={reschedulingActivity}
+          isSaving={isActivityRescheduling}
+          error={activityRescheduleError}
+          onClose={() => {
+            setActivityRescheduleError(null)
+            setReschedulingActivity(null)
+          }}
+          onSubmit={(occurredAt) => void handleActivityReschedule(occurredAt)}
         />
       )}
 

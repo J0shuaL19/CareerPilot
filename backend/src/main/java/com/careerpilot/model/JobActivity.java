@@ -117,6 +117,10 @@ public class JobActivity {
         this.completionAppliedJobStatus = null;
     }
 
+    public void reschedule(Instant occurredAt) {
+        this.occurredAt = Objects.requireNonNull(occurredAt, "Activity time is required");
+    }
+
     @PrePersist
     void setCreationTime() {
         if (createdAt == null) {

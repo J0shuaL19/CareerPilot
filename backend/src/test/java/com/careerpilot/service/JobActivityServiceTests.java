@@ -9,9 +9,11 @@ import static org.mockito.Mockito.when;
 import com.careerpilot.dto.JobActivityCompletionRequest;
 import com.careerpilot.dto.JobActivityRequest;
 import com.careerpilot.dto.JobActivityReopenResponse;
+import com.careerpilot.dto.JobActivityRescheduleRequest;
 import com.careerpilot.dto.JobActivityResponse;
 import com.careerpilot.dto.UpcomingJobActivityResponse;
 import com.careerpilot.exception.JobActivityCompletionException;
+import com.careerpilot.exception.JobActivityRescheduleException;
 import com.careerpilot.exception.ResourceNotFoundException;
 import com.careerpilot.model.Job;
 import com.careerpilot.model.JobActivity;
@@ -155,6 +157,109 @@ class JobActivityServiceTests {
         assertThat(response.details()).isEqualTo("Mention platform discussion");
         assertThat(response.contact()).isEqualTo("Alex Chen");
         assertThat(response.occurredAt()).isEqualTo(Instant.parse("2026-08-26T18:00:00Z"));
+    }
+
+    @Test
+    void reschedulesIncompleteReminderToFutureTime() {
+        Instant now = Instant.parse("2026-08-24T18:00:00Z");
+        Instant newTime = Instant.parse("2026-08-26T18:00:00Z");
+        Job job = persistedJob(1L);
+        job.snoozeAttentionUntil(LocalDate.parse("2026-08-30"));
+        JobActivity activity = persistedActivity(
+                2L,
+                job,
+                JobActivityType.INTERVIEW,
+                "Hiring manager interview",
+                "2026-08-23T16:00:00Z"
+        );
+        when(jobRepository.findById(1L)).thenReturn(Optional.of(job));
+        when(jobActivityRepository.findByIdAndJob_Id(2L, 1L)).thenReturn(Optional.of(activity));
+        when(clock.instant()).thenReturn(now);
+
+        JobActivityResponse response = jobActivityService.rescheduleActivity(
+                1L,
+                2L,
+                new JobActivityRescheduleRequest(newTime)
+        );
+
+        assertThat(response.occurredAt()).isEqualTo(newTime);
+        assertThat(activity.getOccurredAt()).isEqualTo(newTime);
+        assertThat(job.getAttentionSnoozedUntil()).isNull();
+        ArgumentCaptor<JobAttentionEvent> eventCaptor =
+                ArgumentCaptor.forClass(JobAttentionEvent.class);
+        verify(jobAttentionEventRepository).save(eventCaptor.capture());
+        assertThat(eventCaptor.getValue().getAction())
+                .isEqualTo(JobAttentionEventAction.CLEARED_BY_ACTIVITY);
+        assertThat(eventCaptor.getValue().getPreviousSnoozedUntil())
+                .isEqualTo(LocalDate.parse("2026-08-30"));
+    }
+
+    @Test
+    void rejectsReschedulingUnsupportedActivityType() {
+        Job job = persistedJob(1L);
+        JobActivity activity = persistedActivity(
+                2L,
+                job,
+                "General note",
+                "2026-08-23T16:00:00Z"
+        );
+        when(jobRepository.findById(1L)).thenReturn(Optional.of(job));
+        when(jobActivityRepository.findByIdAndJob_Id(2L, 1L)).thenReturn(Optional.of(activity));
+
+        assertThatThrownBy(() -> jobActivityService.rescheduleActivity(
+                1L,
+                2L,
+                new JobActivityRescheduleRequest(Instant.parse("2026-08-26T18:00:00Z"))
+        ))
+                .isInstanceOf(JobActivityRescheduleException.class)
+                .hasMessage("Only interviews and follow-ups can be rescheduled.");
+    }
+
+    @Test
+    void rejectsReschedulingToPastTime() {
+        Instant now = Instant.parse("2026-08-24T18:00:00Z");
+        Job job = persistedJob(1L);
+        JobActivity activity = persistedActivity(
+                2L,
+                job,
+                JobActivityType.FOLLOW_UP,
+                "Recruiter follow-up",
+                "2026-08-23T16:00:00Z"
+        );
+        when(jobRepository.findById(1L)).thenReturn(Optional.of(job));
+        when(jobActivityRepository.findByIdAndJob_Id(2L, 1L)).thenReturn(Optional.of(activity));
+        when(clock.instant()).thenReturn(now);
+
+        assertThatThrownBy(() -> jobActivityService.rescheduleActivity(
+                1L,
+                2L,
+                new JobActivityRescheduleRequest(Instant.parse("2026-08-24T17:00:00Z"))
+        ))
+                .isInstanceOf(JobActivityRescheduleException.class)
+                .hasMessage("New activity time must be in the future.");
+    }
+
+    @Test
+    void rejectsReschedulingCompletedActivity() {
+        Job job = persistedJob(1L);
+        JobActivity activity = persistedActivity(
+                2L,
+                job,
+                JobActivityType.INTERVIEW,
+                "Hiring manager interview",
+                "2026-08-23T16:00:00Z"
+        );
+        activity.complete(Instant.parse("2026-08-24T18:00:00Z"), null, null, null);
+        when(jobRepository.findById(1L)).thenReturn(Optional.of(job));
+        when(jobActivityRepository.findByIdAndJob_Id(2L, 1L)).thenReturn(Optional.of(activity));
+
+        assertThatThrownBy(() -> jobActivityService.rescheduleActivity(
+                1L,
+                2L,
+                new JobActivityRescheduleRequest(Instant.parse("2026-08-26T18:00:00Z"))
+        ))
+                .isInstanceOf(JobActivityRescheduleException.class)
+                .hasMessage("Completed activities must be reopened before rescheduling.");
     }
 
     @Test
@@ -327,6 +432,39 @@ class JobActivityServiceTests {
         assertThatThrownBy(() -> jobActivityService.updateActivity(1L, 99L, request))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Job activity not found with id: 99");
+    }
+
+    @Test
+    void returnsOverdueReminderActivitiesInRepositoryOrder() {
+        Instant now = Instant.parse("2026-08-24T12:00:00Z");
+        Job job = persistedJob(1L);
+        JobActivity interview = persistedActivity(
+                2L,
+                job,
+                JobActivityType.INTERVIEW,
+                "Missed interview",
+                "2026-08-22T12:00:00Z"
+        );
+        JobActivity followUp = persistedActivity(
+                3L,
+                job,
+                JobActivityType.FOLLOW_UP,
+                "Late follow-up",
+                "2026-08-23T12:00:00Z"
+        );
+        when(clock.instant()).thenReturn(now);
+        when(jobActivityRepository
+                .findAllByTypeInAndCompletedAtIsNullAndOccurredAtBeforeOrderByOccurredAtAscCreatedAtAsc(
+                        List.of(JobActivityType.INTERVIEW, JobActivityType.FOLLOW_UP),
+                        now
+                ))
+                .thenReturn(List.of(interview, followUp));
+
+        List<UpcomingJobActivityResponse> responses =
+                jobActivityService.getOverdueActivities();
+
+        assertThat(responses).extracting(UpcomingJobActivityResponse::title)
+                .containsExactly("Missed interview", "Late follow-up");
     }
 
     @Test

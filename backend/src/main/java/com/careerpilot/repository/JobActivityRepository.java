@@ -39,4 +39,10 @@ public interface JobActivityRepository extends JpaRepository<JobActivity, Long> 
             Instant start,
             Instant end
     );
+
+    @EntityGraph(attributePaths = "job")
+    List<JobActivity> findAllByTypeInAndCompletedAtIsNullAndOccurredAtBeforeOrderByOccurredAtAscCreatedAtAsc(
+            Collection<JobActivityType> types,
+            Instant cutoff
+    );
 }

@@ -30,6 +30,10 @@ export interface CompleteJobActivityInput {
   jobStatus?: JobStatus
 }
 
+export interface RescheduleJobActivityInput {
+  occurredAt: string
+}
+
 export interface ReopenJobActivityResult {
   activity: JobActivity
   jobStatus: JobStatus

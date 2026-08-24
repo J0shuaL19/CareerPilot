@@ -10,6 +10,7 @@ import { getJobStatusConfig } from '../utils/jobStatus'
 
 interface DailyActionCenterProps {
   attentionItems: JobAttentionItem[]
+  overdueActivities: UpcomingJobActivity[]
   upcomingActivities: UpcomingJobActivity[]
   settings: JobAttentionSettings
   notificationStatus: AttentionNotificationStatus
@@ -20,6 +21,7 @@ interface DailyActionCenterProps {
   onFollowUp: (item: JobAttentionItem) => void
   onSnooze: (item: JobAttentionItem) => void
   onComplete: (item: UpcomingJobActivity) => void
+  onReschedule: (item: UpcomingJobActivity) => void
   onViewJob: (jobId: number) => void
 }
 
@@ -32,6 +34,7 @@ const timeFormatter = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute
 
 export function DailyActionCenter({
   attentionItems,
+  overdueActivities,
   upcomingActivities,
   settings,
   notificationStatus,
@@ -42,10 +45,11 @@ export function DailyActionCenter({
   onFollowUp,
   onSnooze,
   onComplete,
+  onReschedule,
   onViewJob,
 }: DailyActionCenterProps) {
   const now = new Date()
-  const actions = buildDailyActions(attentionItems, upcomingActivities, now)
+  const actions = buildDailyActions(attentionItems, overdueActivities, upcomingActivities, now)
   const todayCount = upcomingActivities.filter(
     (activity) => isSameLocalDay(new Date(activity.occurredAt), now),
   ).length
@@ -84,6 +88,9 @@ export function DailyActionCenter({
       </div>
 
       <div className="action-center__summary" aria-label="Action summary">
+        <span className={overdueActivities.length > 0 ? 'action-center__summary-overdue' : undefined}>
+          <strong>{overdueActivities.length}</strong> overdue
+        </span>
         <span><strong>{todayCount}</strong> today</span>
         <span><strong>{attentionItems.length}</strong> follow-ups due</span>
         <span><strong>{futureCount}</strong> later</span>
@@ -98,7 +105,7 @@ export function DailyActionCenter({
           <span aria-hidden="true">✓</span>
           <div>
             <strong>You are clear for now.</strong>
-            <p>No applications need a follow-up and nothing is scheduled in the next 14 days.</p>
+            <p>No applications need a follow-up, no activities are overdue, and nothing is scheduled in the next 14 days.</p>
           </div>
         </div>
       ) : (
@@ -119,6 +126,7 @@ export function DailyActionCenter({
                     item={action.item}
                     now={now}
                     onComplete={onComplete}
+                    onReschedule={onReschedule}
                     onViewJob={onViewJob}
                   />
                 )
@@ -169,26 +177,33 @@ function ScheduledAction({
   item,
   now,
   onComplete,
+  onReschedule,
   onViewJob,
 }: {
   item: UpcomingJobActivity
   now: Date
   onComplete: (item: UpcomingJobActivity) => void
+  onReschedule: (item: UpcomingJobActivity) => void
   onViewJob: (jobId: number) => void
 }) {
   const occurredAt = new Date(item.occurredAt)
   const config = getJobActivityTypeConfig(item.type)
-  const dayLabel = getRelativeDayLabel(occurredAt, now)
+  const isOverdue = occurredAt < now
+  const dayLabel = isOverdue ? getOverdueDayLabel(occurredAt, now) : getRelativeDayLabel(occurredAt, now)
 
   return (
-    <article className={'action-center__item action-center__item--' + item.type.toLowerCase()}>
-      <span className="action-center__when">
+    <article className={
+      'action-center__item action-center__item--' + item.type.toLowerCase()
+      + (isOverdue ? ' action-center__item--overdue' : '')
+    }>
+      <span className={'action-center__when' + (isOverdue ? ' action-center__when--overdue' : '')}>
         <strong>{dayLabel}</strong>
-        <span>{timeFormatter.format(occurredAt)}</span>
+        <span>{isOverdue ? 'overdue' : timeFormatter.format(occurredAt)}</span>
       </span>
       <div className="action-center__content">
         <div className="action-center__badges">
           <span className="action-center__kind">{config.shortLabel}</span>
+          {isOverdue && <span className="action-center__overdue-badge">Needs decision</span>}
         </div>
         <strong>{item.title}</strong>
         <span>
@@ -199,6 +214,9 @@ function ScheduledAction({
         <button type="button" onClick={() => onComplete(item)}>
           Complete <span aria-hidden="true">✓</span>
         </button>
+        {isOverdue && (
+          <button type="button" onClick={() => onReschedule(item)}>Reschedule</button>
+        )}
         <button type="button" onClick={() => onViewJob(item.jobId)}>
           View job <span aria-hidden="true">→</span>
         </button>
@@ -209,14 +227,21 @@ function ScheduledAction({
 
 function buildDailyActions(
   attentionItems: JobAttentionItem[],
+  overdueActivities: UpcomingJobActivity[],
   upcomingActivities: UpcomingJobActivity[],
   now: Date,
 ): DailyAction[] {
   return [
+    ...overdueActivities.map((item): DailyAction => ({
+      kind: 'scheduled',
+      item,
+      priority: 0,
+      sortValue: new Date(item.occurredAt).getTime(),
+    })),
     ...attentionItems.map((item): DailyAction => ({
       kind: 'attention',
       item,
-      priority: 1,
+      priority: 2,
       sortValue: -(item.daysWithoutActivity - item.thresholdDays),
     })),
     ...upcomingActivities.map((item): DailyAction => {
@@ -224,13 +249,20 @@ function buildDailyActions(
       return {
         kind: 'scheduled',
         item,
-        priority: isSameLocalDay(occurredAt, now) ? 0 : 2,
+        priority: isSameLocalDay(occurredAt, now) ? 1 : 3,
         sortValue: occurredAt.getTime(),
       }
     }),
   ].sort((first, second) => (
     first.priority - second.priority || first.sortValue - second.sortValue
   ))
+}
+
+function getOverdueDayLabel(date: Date, now: Date): string {
+  const dateDay = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
+  const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())
+  const daysLate = Math.round((today - dateDay) / 86_400_000)
+  return daysLate === 0 ? 'Today' : daysLate + 'd'
 }
 
 function getRelativeDayLabel(date: Date, now: Date): string {

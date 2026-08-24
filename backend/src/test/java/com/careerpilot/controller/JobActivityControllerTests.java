@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.careerpilot.dto.JobActivityRequest;
+import com.careerpilot.dto.JobActivityRescheduleRequest;
 import com.careerpilot.dto.JobActivityReopenResponse;
 import com.careerpilot.dto.JobActivityResponse;
 import com.careerpilot.exception.JobActivityCalendarException;
@@ -129,6 +130,35 @@ class JobActivityControllerTests {
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Malformed JSON request"));
+    }
+
+    @Test
+    void reschedulesActivity() throws Exception {
+        when(jobActivityService.rescheduleActivity(
+                any(Long.class),
+                any(Long.class),
+                any(JobActivityRescheduleRequest.class)
+        )).thenReturn(response(2L, "Technical interview"));
+
+        mockMvc.perform(put("/api/jobs/1/activities/2/reschedule")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "occurredAt": "2026-08-26T18:00:00Z"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(2));
+    }
+
+    @Test
+    void validatesRescheduleTime() throws Exception {
+        mockMvc.perform(put("/api/jobs/1/activities/2/reschedule")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.occurredAt")
+                        .value("New activity time is required"));
     }
 
     @Test

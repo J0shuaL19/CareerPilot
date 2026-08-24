@@ -6,6 +6,7 @@ import type {
   JobAttentionSettings,
   JobActivity,
   ReopenJobActivityResult,
+  RescheduleJobActivityInput,
   UpcomingJobActivity,
   UpdateJobActivityInput,
 } from '../types/jobActivity'
@@ -59,6 +60,21 @@ export function completeJobActivity(
   })
 }
 
+export function rescheduleJobActivity(
+  jobId: number,
+  activityId: number,
+  input: RescheduleJobActivityInput,
+): Promise<JobActivity> {
+  return apiRequest<JobActivity>(
+    '/api/jobs/' + jobId + '/activities/' + activityId + '/reschedule',
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(input),
+    },
+  )
+}
+
 export function reopenJobActivity(
   jobId: number,
   activityId: number,
@@ -80,6 +96,10 @@ export function downloadJobActivityCalendar(
   activityId: number,
 ): Promise<Blob> {
   return apiDownload(`/api/jobs/${jobId}/activities/${activityId}/calendar`)
+}
+
+export function getOverdueJobActivities(signal?: AbortSignal): Promise<UpcomingJobActivity[]> {
+  return apiRequest<UpcomingJobActivity[]>('/api/job-activities/overdue', { signal })
 }
 
 export function getUpcomingJobActivities(signal?: AbortSignal): Promise<UpcomingJobActivity[]> {

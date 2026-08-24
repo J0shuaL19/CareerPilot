@@ -1080,6 +1080,16 @@ a:focus-visible {
   color: #334d91;
 }
 
+.action-center__summary > .action-center__summary-overdue {
+  border-color: #efc0c5;
+  color: #98424b;
+  background: #fff5f5;
+}
+
+.action-center__summary-overdue strong {
+  color: #ae3442;
+}
+
 .action-center__empty {
   display: flex;
   min-height: 84px;
@@ -1153,6 +1163,15 @@ a:focus-visible {
   background: #7757c9;
 }
 
+.action-center__item--overdue {
+  border-color: #efcbd0;
+  background: linear-gradient(100deg, #fff9f9 0%, #fff 36%);
+}
+
+.action-center__item--overdue::before {
+  background: #cf5360;
+}
+
 .action-center__item:hover {
   border-color: #b7c4dc;
   transform: translateY(-1px);
@@ -1178,6 +1197,11 @@ a:focus-visible {
 .action-center__when--attention {
   color: #8b5b0e;
   background: #fff1d7;
+}
+
+.action-center__item--overdue .action-center__when--overdue {
+  color: #a73745;
+  background: #ffeaec;
 }
 
 .action-center__when strong {
@@ -1219,6 +1243,17 @@ a:focus-visible {
 
 .action-center__item--interview .action-center__kind {
   color: #6746b6;
+}
+
+.action-center__overdue-badge {
+  padding: 0.16rem 0.34rem;
+  border-radius: 999px;
+  color: #a73745;
+  background: #ffeaec;
+  font-size: 0.54rem;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .action-center__content > strong,
@@ -5292,7 +5327,7 @@ a:focus-visible {
 @media (max-width: 430px) {
   .action-center__summary {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .action-center__summary > span {
@@ -5305,6 +5340,17 @@ a:focus-visible {
   .action-center__content > span:last-child {
     white-space: normal;
   }
+}
+
+.reschedule-activity-dialog {
+  max-width: 540px;
+}
+
+.reschedule-activity-dialog__intro {
+  margin: 0;
+  color: #667187;
+  font-size: 0.78rem;
+  line-height: 1.55;
 }
 
 .complete-activity-dialog {

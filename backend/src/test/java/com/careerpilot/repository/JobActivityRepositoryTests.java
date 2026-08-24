@@ -82,6 +82,34 @@ class JobActivityRepositoryTests {
     }
 
     @Test
+    void findsOverdueIncompleteReminderTypes() {
+        Job job = jobRepository.save(new Job("OpenAI", "Engineer", "Description", null));
+        JobActivity completed = activity(
+                job,
+                JobActivityType.INTERVIEW,
+                "Completed interview",
+                "2026-08-20T12:00:00Z"
+        );
+        completed.complete(Instant.parse("2026-08-21T12:00:00Z"), null, null, null);
+        jobActivityRepository.saveAllAndFlush(List.of(
+                activity(job, JobActivityType.INTERVIEW, "Old interview", "2026-08-20T12:00:00Z"),
+                activity(job, JobActivityType.FOLLOW_UP, "Late follow-up", "2026-08-21T12:00:00Z"),
+                completed,
+                activity(job, JobActivityType.NOTE, "Old note", "2026-08-20T12:00:00Z"),
+                activity(job, JobActivityType.INTERVIEW, "Future interview", "2026-08-25T12:00:00Z")
+        ));
+
+        List<JobActivity> activities = jobActivityRepository
+                .findAllByTypeInAndCompletedAtIsNullAndOccurredAtBeforeOrderByOccurredAtAscCreatedAtAsc(
+                        List.of(JobActivityType.INTERVIEW, JobActivityType.FOLLOW_UP),
+                        Instant.parse("2026-08-22T12:00:00Z")
+                );
+
+        assertThat(activities).extracting(JobActivity::getTitle)
+                .containsExactly("Old interview", "Late follow-up");
+    }
+
+    @Test
     void findsLatestActivityTimeForEachJob() {
         Job firstJob = jobRepository.save(new Job("OpenAI", "Engineer", "Description", null));
         Job secondJob = jobRepository.save(new Job("Example", "Designer", "Description", null));

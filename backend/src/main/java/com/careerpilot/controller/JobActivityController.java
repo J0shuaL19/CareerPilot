@@ -4,6 +4,7 @@ import com.careerpilot.dto.JobActivityCompletionRequest;
 import com.careerpilot.dto.JobActivityRequest;
 import com.careerpilot.dto.JobActivityResponse;
 import com.careerpilot.dto.JobActivityReopenResponse;
+import com.careerpilot.dto.JobActivityRescheduleRequest;
 import com.careerpilot.service.JobActivityCalendarFile;
 import com.careerpilot.service.JobActivityCalendarService;
 import com.careerpilot.service.JobActivityService;
@@ -67,6 +68,15 @@ public class JobActivityController {
             @Valid @RequestBody JobActivityCompletionRequest request
     ) {
         return jobActivityService.completeActivity(jobId, activityId, request);
+    }
+
+    @PutMapping("/{activityId}/reschedule")
+    public JobActivityResponse rescheduleActivity(
+            @PathVariable Long jobId,
+            @PathVariable Long activityId,
+            @Valid @RequestBody JobActivityRescheduleRequest request
+    ) {
+        return jobActivityService.rescheduleActivity(jobId, activityId, request);
     }
 
     @PutMapping("/{activityId}/reopen")
