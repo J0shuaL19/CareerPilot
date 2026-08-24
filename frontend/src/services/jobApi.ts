@@ -1,6 +1,7 @@
 import type {
   CreateJobInput,
   Job,
+  JobAttentionSnoozeSnapshot,
   JobCsvImportPreview,
   JobCsvImportResult,
   UpdateJobInput,
@@ -116,6 +117,18 @@ export function clearJobAttentionSnoozeBulk(jobIds: number[]): Promise<Job[]> {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ jobIds }),
+  })
+}
+
+export function restoreJobAttentionSnoozes(
+  reminders: JobAttentionSnoozeSnapshot[],
+): Promise<Job[]> {
+  return apiRequest<Job[]>('/api/jobs/attention-snooze/restore', {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ reminders }),
   })
 }
 

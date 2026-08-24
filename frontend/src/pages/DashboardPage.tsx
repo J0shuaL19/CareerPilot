@@ -23,12 +23,13 @@ import {
   clearJobAttentionSnooze,
   clearJobAttentionSnoozeBulk,
   getJobs,
+  restoreJobAttentionSnoozes,
   snoozeJobAttention,
   snoozeJobAttentionBulk,
 } from '../services/jobApi'
 import { getMatchAnalyses } from '../services/matchAnalysisApi'
 import { getResumes } from '../services/resumeApi'
-import type { Job } from '../types/job'
+import type { Job, JobAttentionSnoozeSnapshot } from '../types/job'
 import type { DashboardStats, DashboardStatsRange } from '../types/dashboard'
 import type {
   CreateJobActivityInput,
@@ -49,6 +50,11 @@ interface SnoozeConfirmation {
 
 interface SnoozeDialogItem extends SnoozeReminderTarget {
   jobId: number
+}
+
+interface BulkSnoozeConfirmation {
+  message: string
+  reminders: JobAttentionSnoozeSnapshot[]
 }
 
 interface DashboardData {
@@ -101,6 +107,11 @@ export function DashboardPage() {
   const [snoozedRemindersError, setSnoozedRemindersError] = useState<string | null>(null)
   const [bulkSnoozeJobs, setBulkSnoozeJobs] = useState<Job[] | null>(null)
   const [isBulkSnoozeBusy, setIsBulkSnoozeBusy] = useState(false)
+  const [bulkSnoozeConfirmation, setBulkSnoozeConfirmation] =
+    useState<BulkSnoozeConfirmation | null>(null)
+  const [isBulkSnoozeUndoing, setIsBulkSnoozeUndoing] = useState(false)
+  const [bulkSnoozeUndoError, setBulkSnoozeUndoError] = useState<string | null>(null)
+  const [bulkSelectionResetKey, setBulkSelectionResetKey] = useState(0)
 
   async function handleFollowUpSubmit(input: CreateJobActivityInput) {
     if (!followUpItem) return
@@ -150,6 +161,8 @@ export function DashboardPage() {
           (item) => item.jobId !== snoozeItem.jobId,
         ),
       }))
+      setBulkSnoozeConfirmation(null)
+      setBulkSnoozeUndoError(null)
       setSnoozeConfirmation({
         jobId: snoozeItem.jobId,
         company: snoozeItem.company,
@@ -193,6 +206,8 @@ export function DashboardPage() {
         jobs: current.jobs.map((item) => item.id === updatedJob.id ? updatedJob : item),
       }))
       setSnoozeConfirmation(null)
+      setBulkSnoozeConfirmation(null)
+      setBulkSnoozeUndoError(null)
       setFollowUpSuccess(job.company + ' reminder is active again.')
       setReloadKey((key) => key + 1)
     } catch (resumeError) {
@@ -205,6 +220,7 @@ export function DashboardPage() {
   async function handleBulkSnoozeSubmit(snoozedUntil: string) {
     if (!bulkSnoozeJobs) return
 
+    const previousReminders = toSnoozeSnapshots(bulkSnoozeJobs)
     setIsBulkSnoozeBusy(true)
     setSnoozeError(null)
 
@@ -221,10 +237,14 @@ export function DashboardPage() {
       setBulkSnoozeJobs(null)
       setSnoozedRemindersError(null)
       setSnoozeConfirmation(null)
-      setFollowUpSuccess(
-        updatedJobs.length + ' reminders now return on '
+      setFollowUpSuccess(null)
+      setBulkSnoozeUndoError(null)
+      setBulkSnoozeConfirmation({
+        message: updatedJobs.length + ' reminders now return on '
           + formatDate(snoozedUntil + 'T12:00:00') + '.',
-      )
+        reminders: previousReminders,
+      })
+      setBulkSelectionResetKey((key) => key + 1)
     } catch (saveError) {
       setSnoozeError(getErrorMessage(saveError))
     } finally {
@@ -233,6 +253,7 @@ export function DashboardPage() {
   }
 
   async function handleBulkResume(jobs: Job[]) {
+    const previousReminders = toSnoozeSnapshots(jobs)
     setIsBulkSnoozeBusy(true)
     setSnoozedRemindersError(null)
 
@@ -244,16 +265,50 @@ export function DashboardPage() {
         jobs: current.jobs.map((job) => updatesById.get(job.id) ?? job),
       }))
       setSnoozeConfirmation(null)
-      setFollowUpSuccess(
-        updatedJobs.length
+      setFollowUpSuccess(null)
+      setBulkSnoozeUndoError(null)
+      setBulkSnoozeConfirmation({
+        message: updatedJobs.length
           + (updatedJobs.length === 1 ? ' reminder is' : ' reminders are')
           + ' active again.',
-      )
+        reminders: previousReminders,
+      })
+      setBulkSelectionResetKey((key) => key + 1)
       setReloadKey((key) => key + 1)
     } catch (resumeError) {
       setSnoozedRemindersError(getErrorMessage(resumeError))
     } finally {
       setIsBulkSnoozeBusy(false)
+    }
+  }
+
+  async function handleBulkSnoozeUndo() {
+    if (!bulkSnoozeConfirmation) return
+
+    setIsBulkSnoozeUndoing(true)
+    setBulkSnoozeUndoError(null)
+
+    try {
+      const updatedJobs = await restoreJobAttentionSnoozes(
+        bulkSnoozeConfirmation.reminders,
+      )
+      const updatesById = new Map(updatedJobs.map((job) => [job.id, job]))
+      const restoredIds = new Set(updatedJobs.map((job) => job.id))
+      setData((current) => ({
+        ...current,
+        jobs: current.jobs.map((job) => updatesById.get(job.id) ?? job),
+        attentionItems: current.attentionItems.filter(
+          (item) => !restoredIds.has(item.jobId),
+        ),
+      }))
+      setBulkSnoozeConfirmation(null)
+      setSnoozedRemindersError(null)
+      setBulkSelectionResetKey((key) => key + 1)
+      setReloadKey((key) => key + 1)
+    } catch (undoError) {
+      setBulkSnoozeUndoError(getErrorMessage(undoError))
+    } finally {
+      setIsBulkSnoozeUndoing(false)
     }
   }
 
@@ -429,6 +484,34 @@ export function DashboardPage() {
         </div>
       )}
 
+      {bulkSnoozeConfirmation && (
+        <div className="dashboard-feedback dashboard-feedback--snoozed" role="status">
+          <span aria-hidden="true">◷</span>
+          <strong>{bulkSnoozeConfirmation.message}</strong>
+          {bulkSnoozeUndoError && <small role="alert">{bulkSnoozeUndoError}</small>}
+          <button
+            className="dashboard-feedback__undo"
+            type="button"
+            disabled={isBulkSnoozeUndoing}
+            onClick={() => void handleBulkSnoozeUndo()}
+          >
+            {isBulkSnoozeUndoing ? 'Undoing…' : 'Undo'}
+          </button>
+          <button
+            className="dashboard-feedback__close"
+            type="button"
+            aria-label="Dismiss bulk snooze confirmation"
+            disabled={isBulkSnoozeUndoing}
+            onClick={() => {
+              setBulkSnoozeConfirmation(null)
+              setBulkSnoozeUndoError(null)
+            }}
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       {isLoading && (
         <div className="state-card" role="status">
           <div className="spinner" aria-hidden="true" />
@@ -506,9 +589,10 @@ export function DashboardPage() {
 
           {snoozedJobs.length > 0 && (
             <SnoozedRemindersPanel
+              key={bulkSelectionResetKey}
               jobs={snoozedJobs}
               busyJobId={resumingSnoozeJobId}
-              isBulkBusy={isBulkSnoozeBusy}
+              isBulkBusy={isBulkSnoozeBusy || isBulkSnoozeUndoing}
               error={snoozedRemindersError}
               onChangeDate={(job) => {
                 setSnoozeError(null)
@@ -684,6 +768,14 @@ function getScoreTone(score: number): 'low' | 'medium' | 'high' {
   if (score >= 75) return 'high'
   if (score >= 50) return 'medium'
   return 'low'
+}
+
+function toSnoozeSnapshots(jobs: Job[]): JobAttentionSnoozeSnapshot[] {
+  return jobs.flatMap((job) => (
+    job.attentionSnoozedUntil === null
+      ? []
+      : [{ jobId: job.id, snoozedUntil: job.attentionSnoozedUntil }]
+  ))
 }
 
 function toDateInputValue(date: Date): string {

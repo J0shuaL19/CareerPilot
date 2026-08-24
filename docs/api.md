@@ -263,7 +263,22 @@ Applies one future return date to every selected job in a single transaction.
 }
 ```
 
-Both bulk endpoints require between 1 and 100 positive job IDs and return complete job responses in request order. If any selected job is missing, the complete operation fails with `404 Not Found` and no reminder is changed.
+### Restore multiple job reminder dates
+
+`PUT /api/jobs/attention-snooze/restore`
+
+Restores each selected reminder to its own previous date. The dashboard uses this endpoint for one-click Undo after a bulk date change or bulk resume.
+
+```json
+{
+  "reminders": [
+    { "jobId": 1, "snoozedUntil": "2026-08-30" },
+    { "jobId": 2, "snoozedUntil": "2026-09-02" }
+  ]
+}
+```
+
+All three bulk endpoints process between 1 and 100 reminders and return complete job responses in request order. Job IDs must be positive, and every restore date must be in the future. If any selected job is missing, the complete operation fails with `404 Not Found` and no reminder is changed.
 
 ### Delete a job
 

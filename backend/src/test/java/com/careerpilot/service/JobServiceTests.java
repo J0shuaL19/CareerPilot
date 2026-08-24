@@ -7,8 +7,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.careerpilot.dto.JobAttentionBulkClearRequest;
+import com.careerpilot.dto.JobAttentionBulkRestoreRequest;
 import com.careerpilot.dto.JobAttentionBulkSnoozeRequest;
 import com.careerpilot.dto.JobAttentionSnoozeRequest;
+import com.careerpilot.dto.JobAttentionSnoozeRestoreItem;
 import com.careerpilot.dto.JobRequest;
 import com.careerpilot.dto.JobResponse;
 import com.careerpilot.dto.JobStatusUpdateRequest;
@@ -235,6 +237,46 @@ class JobServiceTests {
         )).isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Job not found with id: 999");
         assertThat(job.getAttentionSnoozedUntil()).isNull();
+    }
+
+    @Test
+    void restoresMultipleJobRemindersToTheirOriginalDates() {
+        Job firstJob = persistedJob(1L, "OpenAI", "2026-08-18T12:00:00Z");
+        Job secondJob = persistedJob(2L, "Anthropic", "2026-08-19T12:00:00Z");
+        when(jobRepository.findById(1L)).thenReturn(Optional.of(firstJob));
+        when(jobRepository.findById(2L)).thenReturn(Optional.of(secondJob));
+        LocalDate firstDate = LocalDate.parse("2026-08-30");
+        LocalDate secondDate = LocalDate.parse("2026-09-02");
+
+        List<JobResponse> responses = jobService.restoreAttentionSnoozes(
+                new JobAttentionBulkRestoreRequest(List.of(
+                        new JobAttentionSnoozeRestoreItem(1L, firstDate),
+                        new JobAttentionSnoozeRestoreItem(2L, secondDate)
+                ))
+        );
+
+        assertThat(responses).extracting(JobResponse::attentionSnoozedUntil)
+                .containsExactly(firstDate, secondDate);
+        assertThat(firstJob.getAttentionSnoozedUntil()).isEqualTo(firstDate);
+        assertThat(secondJob.getAttentionSnoozedUntil()).isEqualTo(secondDate);
+    }
+
+    @Test
+    void leavesEveryReminderUnchangedWhenBulkRestoreContainsMissingJob() {
+        Job job = persistedJob(1L, "OpenAI", "2026-08-18T12:00:00Z");
+        LocalDate originalDate = LocalDate.parse("2026-09-10");
+        job.snoozeAttentionUntil(originalDate);
+        when(jobRepository.findById(1L)).thenReturn(Optional.of(job));
+        when(jobRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> jobService.restoreAttentionSnoozes(
+                new JobAttentionBulkRestoreRequest(List.of(
+                        new JobAttentionSnoozeRestoreItem(1L, LocalDate.parse("2026-09-20")),
+                        new JobAttentionSnoozeRestoreItem(999L, LocalDate.parse("2026-09-21"))
+                ))
+        )).isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("Job not found with id: 999");
+        assertThat(job.getAttentionSnoozedUntil()).isEqualTo(originalDate);
     }
 
     @Test

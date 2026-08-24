@@ -18,6 +18,11 @@ export interface Job {
   attentionSnoozedUntil: string | null
 }
 
+export interface JobAttentionSnoozeSnapshot {
+  jobId: number
+  snoozedUntil: string
+}
+
 export interface CreateJobInput {
   company: string
   title: string

@@ -13,6 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.careerpilot.dto.JobAttentionBulkClearRequest;
+import com.careerpilot.dto.JobAttentionBulkRestoreRequest;
 import com.careerpilot.dto.JobAttentionBulkSnoozeRequest;
 import com.careerpilot.dto.JobAttentionSnoozeRequest;
 import com.careerpilot.dto.JobRequest;
@@ -407,6 +408,43 @@ class JobControllerTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].attentionSnoozedUntil").doesNotExist())
                 .andExpect(jsonPath("$[1].attentionSnoozedUntil").doesNotExist());
+    }
+
+    @Test
+    void restoresMultipleJobReminderDates() throws Exception {
+        when(jobService.restoreAttentionSnoozes(any(JobAttentionBulkRestoreRequest.class)))
+                .thenReturn(List.of(
+                        jobResponse(1L, "OpenAI", JobStatus.APPLIED, LocalDate.parse("2099-09-01")),
+                        jobResponse(2L, "Anthropic", JobStatus.INTERVIEW, LocalDate.parse("2099-09-03"))
+                ));
+
+        mockMvc.perform(put("/api/jobs/attention-snooze/restore")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "reminders": [
+                                    { "jobId": 1, "snoozedUntil": "2099-09-01" },
+                                    { "jobId": 2, "snoozedUntil": "2099-09-03" }
+                                  ]
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].attentionSnoozedUntil").value("2099-09-01"))
+                .andExpect(jsonPath("$[1].attentionSnoozedUntil").value("2099-09-03"));
+    }
+
+    @Test
+    void rejectsEmptyBulkReminderRestore() throws Exception {
+        mockMvc.perform(put("/api/jobs/attention-snooze/restore")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "reminders": []
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.reminders")
+                        .value("At least one reminder is required"));
     }
 
     @Test
