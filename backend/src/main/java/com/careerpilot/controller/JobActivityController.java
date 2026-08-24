@@ -5,9 +5,12 @@ import com.careerpilot.dto.JobActivityRequest;
 import com.careerpilot.dto.JobActivityResponse;
 import com.careerpilot.dto.JobActivityReopenResponse;
 import com.careerpilot.dto.JobActivityRescheduleRequest;
+import com.careerpilot.dto.InterviewPreparationRequest;
+import com.careerpilot.dto.InterviewPreparationResponse;
 import com.careerpilot.service.JobActivityCalendarFile;
 import com.careerpilot.service.JobActivityCalendarService;
 import com.careerpilot.service.JobActivityService;
+import com.careerpilot.service.InterviewPreparationService;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpHeaders;
@@ -29,13 +32,16 @@ public class JobActivityController {
 
     private final JobActivityService jobActivityService;
     private final JobActivityCalendarService jobActivityCalendarService;
+    private final InterviewPreparationService interviewPreparationService;
 
     public JobActivityController(
             JobActivityService jobActivityService,
-            JobActivityCalendarService jobActivityCalendarService
+            JobActivityCalendarService jobActivityCalendarService,
+            InterviewPreparationService interviewPreparationService
     ) {
         this.jobActivityService = jobActivityService;
         this.jobActivityCalendarService = jobActivityCalendarService;
+        this.interviewPreparationService = interviewPreparationService;
     }
 
     @PostMapping
@@ -85,6 +91,23 @@ public class JobActivityController {
             @PathVariable Long activityId
     ) {
         return jobActivityService.reopenActivity(jobId, activityId);
+    }
+
+    @GetMapping("/{activityId}/preparation")
+    public InterviewPreparationResponse getInterviewPreparation(
+            @PathVariable Long jobId,
+            @PathVariable Long activityId
+    ) {
+        return interviewPreparationService.getPreparation(jobId, activityId);
+    }
+
+    @PutMapping("/{activityId}/preparation")
+    public InterviewPreparationResponse saveInterviewPreparation(
+            @PathVariable Long jobId,
+            @PathVariable Long activityId,
+            @Valid @RequestBody InterviewPreparationRequest request
+    ) {
+        return interviewPreparationService.savePreparation(jobId, activityId, request);
     }
 
     @GetMapping("/{activityId}/calendar")

@@ -14,12 +14,15 @@ import com.careerpilot.dto.JobActivityRequest;
 import com.careerpilot.dto.JobActivityRescheduleRequest;
 import com.careerpilot.dto.JobActivityReopenResponse;
 import com.careerpilot.dto.JobActivityResponse;
+import com.careerpilot.dto.InterviewPreparationRequest;
+import com.careerpilot.dto.InterviewPreparationResponse;
 import com.careerpilot.exception.JobActivityCalendarException;
 import com.careerpilot.model.JobActivityType;
 import com.careerpilot.model.JobStatus;
 import com.careerpilot.service.JobActivityCalendarFile;
 import com.careerpilot.service.JobActivityCalendarService;
 import com.careerpilot.service.JobActivityService;
+import com.careerpilot.service.InterviewPreparationService;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
@@ -41,6 +44,9 @@ class JobActivityControllerTests {
 
     @MockitoBean
     private JobActivityCalendarService jobActivityCalendarService;
+
+    @MockitoBean
+    private InterviewPreparationService interviewPreparationService;
 
     @Test
     void createsActivity() throws Exception {
@@ -210,6 +216,56 @@ class JobActivityControllerTests {
     }
 
     @Test
+    void getsInterviewPreparation() throws Exception {
+        when(interviewPreparationService.getPreparation(1L, 2L))
+                .thenReturn(preparationResponse(2));
+
+        mockMvc.perform(get("/api/jobs/1/activities/2/preparation"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.activityId").value(2))
+                .andExpect(jsonPath("$.completedSections").value(2))
+                .andExpect(jsonPath("$.progressPercent").value(50));
+    }
+
+    @Test
+    void savesInterviewPreparation() throws Exception {
+        when(interviewPreparationService.savePreparation(
+                any(Long.class),
+                any(Long.class),
+                any(InterviewPreparationRequest.class)
+        )).thenReturn(preparationResponse(3));
+
+        mockMvc.perform(put("/api/jobs/1/activities/2/preparation")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "companyResearch": "Product notes",
+                                  "companyResearchDone": true,
+                                  "rolePriorities": "Role notes",
+                                  "rolePrioritiesDone": true,
+                                  "starStories": "Impact story",
+                                  "starStoriesDone": true,
+                                  "questionsToAskDone": false
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.completedSections").value(3))
+                .andExpect(jsonPath("$.progressPercent").value(75));
+    }
+
+    @Test
+    void validatesInterviewPreparationLength() throws Exception {
+        String notes = "a".repeat(5001);
+
+        mockMvc.perform(put("/api/jobs/1/activities/2/preparation")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"companyResearch\":\"" + notes + "\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.companyResearch")
+                        .value("Company research must be 5000 characters or fewer"));
+    }
+
+    @Test
     void deletesActivity() throws Exception {
         mockMvc.perform(delete("/api/jobs/1/activities/2"))
                 .andExpect(status().isNoContent());
@@ -265,6 +321,24 @@ class JobActivityControllerTests {
                 Instant.parse("2026-08-22T12:00:00Z")
         );
     }
+    private static InterviewPreparationResponse preparationResponse(int completedSections) {
+        return new InterviewPreparationResponse(
+                2L,
+                "Product notes",
+                completedSections >= 1,
+                "Role notes",
+                completedSections >= 2,
+                "Impact story",
+                completedSections >= 3,
+                "Questions",
+                completedSections >= 4,
+                completedSections,
+                4,
+                completedSections * 25,
+                Instant.parse("2026-08-24T20:00:00Z")
+        );
+    }
+
     private static JobActivityResponse completedResponse(Long id, String title) {
         return new JobActivityResponse(
                 id,

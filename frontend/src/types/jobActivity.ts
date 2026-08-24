@@ -129,3 +129,29 @@ export interface JobActivityCalendarImportResult {
   imported: number
   skippedDuplicates: number
 }
+export interface InterviewPreparation {
+  activityId: number
+  companyResearch: string | null
+  companyResearchDone: boolean
+  rolePriorities: string | null
+  rolePrioritiesDone: boolean
+  starStories: string | null
+  starStoriesDone: boolean
+  questionsToAsk: string | null
+  questionsToAskDone: boolean
+  completedSections: number
+  totalSections: number
+  progressPercent: number
+  updatedAt: string | null
+}
+
+export interface InterviewPreparationInput {
+  companyResearch?: string
+  companyResearchDone: boolean
+  rolePriorities?: string
+  rolePrioritiesDone: boolean
+  starStories?: string
+  starStoriesDone: boolean
+  questionsToAsk?: string
+  questionsToAskDone: boolean
+}

@@ -13,6 +13,7 @@ import {
   type CalendarViewMode,
 } from '../components/CalendarNavigation'
 import { CompleteActivityDialog } from '../components/CompleteActivityDialog'
+import { InterviewPreparationDialog } from '../components/InterviewPreparationDialog'
 import { RescheduleActivityDialog } from '../components/RescheduleActivityDialog'
 import {
   completeJobActivity,
@@ -71,6 +72,7 @@ export function CalendarPage() {
   const [isCreating, setIsCreating] = useState(false)
   const [createError, setCreateError] = useState<string | null>(null)
   const [selectedActivity, setSelectedActivity] = useState<ScheduledJobActivity | null>(null)
+  const [preparingActivity, setPreparingActivity] = useState<ScheduledJobActivity | null>(null)
   const [detailsError, setDetailsError] = useState<string | null>(null)
   const [isReopening, setIsReopening] = useState(false)
   const [completingActivity, setCompletingActivity] =
@@ -643,6 +645,10 @@ export function CalendarPage() {
             setCompletingActivity(selectedActivity)
             setSelectedActivity(null)
           }}
+          onPrepare={() => {
+            setPreparingActivity(selectedActivity)
+            setSelectedActivity(null)
+          }}
           onReschedule={() => {
             setRescheduleError(null)
             setRescheduleInitialOccurredAt(null)
@@ -650,6 +656,21 @@ export function CalendarPage() {
             setSelectedActivity(null)
           }}
           onReopen={() => void handleReopen()}
+        />
+      )}
+
+      {preparingActivity && (
+        <InterviewPreparationDialog
+          activity={preparingActivity}
+          onClose={() => setPreparingActivity(null)}
+          onSaved={(preparation) => {
+            setPreparingActivity(null)
+            setNotice(
+              'Interview preparation saved · '
+                + preparation.completedSections + ' of '
+                + preparation.totalSections + ' sections ready.',
+            )
+          }}
         />
       )}
 

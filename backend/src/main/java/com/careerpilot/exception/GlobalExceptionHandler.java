@@ -155,6 +155,19 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(InterviewPreparationException.class)
+    public ResponseEntity<ApiErrorResponse> handleInterviewPreparationFailure(
+            InterviewPreparationException exception,
+            HttpServletRequest request
+    ) {
+        return errorResponse(
+                HttpStatus.BAD_REQUEST,
+                exception.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
+    }
+
     @ExceptionHandler(JobCsvImportException.class)
     public ResponseEntity<ApiErrorResponse> handleJobCsvImportFailure(
             JobCsvImportException exception,

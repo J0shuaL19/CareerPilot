@@ -12,6 +12,7 @@ interface CalendarActivityDetailsDialogProps {
   error: string | null
   onClose: () => void
   onComplete: () => void
+  onPrepare: () => void
   onReschedule: () => void
   onReopen: () => void
 }
@@ -34,6 +35,7 @@ export function CalendarActivityDetailsDialog({
   error,
   onClose,
   onComplete,
+  onPrepare,
   onReschedule,
   onReopen,
 }: CalendarActivityDetailsDialogProps) {
@@ -130,6 +132,16 @@ export function CalendarActivityDetailsDialog({
         <footer className="calendar-details-dialog__actions">
           <Link className="button button--secondary" to={'/jobs/' + activity.jobId}>View job</Link>
           <div>
+            {activity.type === 'INTERVIEW' && (
+              <button
+                className="button button--secondary"
+                type="button"
+                disabled={isReopening}
+                onClick={onPrepare}
+              >
+                Prepare
+              </button>
+            )}
             {isCompleted ? (
               <button
                 className="button button--primary"

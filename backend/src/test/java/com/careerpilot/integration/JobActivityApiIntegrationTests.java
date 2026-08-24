@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.careerpilot.model.Job;
 import com.careerpilot.model.JobActivity;
 import com.careerpilot.model.JobActivityType;
+import com.careerpilot.repository.InterviewPreparationRepository;
 import com.careerpilot.repository.JobActivityRepository;
 import com.careerpilot.repository.JobRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,8 +37,12 @@ class JobActivityApiIntegrationTests {
     @Autowired
     private JobActivityRepository jobActivityRepository;
 
+    @Autowired
+    private InterviewPreparationRepository interviewPreparationRepository;
+
     @BeforeEach
     void clearData() {
+        interviewPreparationRepository.deleteAll();
         jobActivityRepository.deleteAll();
         jobRepository.deleteAll();
     }
@@ -116,6 +121,58 @@ class JobActivityApiIntegrationTests {
                 .andExpect(status().isNoContent());
 
         assertThat(jobActivityRepository.count()).isZero();
+    }
+
+    @Test
+    void savesAndReloadsInterviewPreparation() throws Exception {
+        Job job = jobRepository.saveAndFlush(new Job("OpenAI", "Engineer", "Description", null));
+        JobActivity interview = jobActivityRepository.saveAndFlush(activity(
+                job,
+                JobActivityType.INTERVIEW,
+                "Technical interview",
+                Instant.parse("2026-08-25T18:00:00Z")
+        ));
+
+        mockMvc.perform(get(
+                        "/api/jobs/{jobId}/activities/{activityId}/preparation",
+                        job.getId(),
+                        interview.getId()
+                ))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.completedSections").value(0))
+                .andExpect(jsonPath("$.updatedAt").doesNotExist());
+
+        mockMvc.perform(put(
+                        "/api/jobs/{jobId}/activities/{activityId}/preparation",
+                        job.getId(),
+                        interview.getId()
+                )
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "companyResearch": "  Product and market  ",
+                                  "companyResearchDone": true,
+                                  "rolePriorities": "Role outcomes",
+                                  "rolePrioritiesDone": true,
+                                  "starStoriesDone": false,
+                                  "questionsToAskDone": false
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.companyResearch").value("Product and market"))
+                .andExpect(jsonPath("$.completedSections").value(2))
+                .andExpect(jsonPath("$.progressPercent").value(50));
+
+        mockMvc.perform(get(
+                        "/api/jobs/{jobId}/activities/{activityId}/preparation",
+                        job.getId(),
+                        interview.getId()
+                ))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.rolePriorities").value("Role outcomes"))
+                .andExpect(jsonPath("$.updatedAt").isNotEmpty());
+
+        assertThat(interviewPreparationRepository.count()).isEqualTo(1);
     }
 
     @Test

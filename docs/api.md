@@ -379,6 +379,33 @@ Moves an incomplete interview or follow-up to a new future time without creating
 
 Downloads an RFC 5545 iCalendar file for an interview or follow-up. Success: `200 OK` with a UTF-8 `text/calendar` attachment. Applications and general notes return `400 Bad Request`; missing jobs or activities return `404 Not Found`.
 
+### Get interview preparation
+
+`GET /api/jobs/{jobId}/activities/{activityId}/preparation`
+
+Returns the four-part preparation checklist attached to an interview activity. Before the first save, all note fields are `null`, all completion fields are `false`, `completedSections` and `progressPercent` are zero, and `updatedAt` is `null`.
+
+Only `INTERVIEW` activities support preparation. Follow-ups, applications, and notes return `400 Bad Request`; a missing job or activity returns `404 Not Found`.
+
+### Save interview preparation
+
+`PUT /api/jobs/{jobId}/activities/{activityId}/preparation`
+
+```json
+{
+  "companyResearch": "Product, market, and recent company news",
+  "companyResearchDone": true,
+  "rolePriorities": "Top outcomes and matching proof points",
+  "rolePrioritiesDone": true,
+  "starStories": "Impact, ambiguity, and collaboration examples",
+  "starStoriesDone": false,
+  "questionsToAsk": "What should this person achieve in 90 days?",
+  "questionsToAskDone": false
+}
+```
+
+Each note field is optional and limited to 5000 characters. A section can only be marked complete when its note field contains non-blank text. Values are trimmed before storage. The response returns the saved fields plus `completedSections`, `totalSections`, `progressPercent`, and `updatedAt`. Repeated saves update the same checklist rather than creating additional records.
+
 ### Delete a job activity
 
 `DELETE /api/jobs/{jobId}/activities/{activityId}`

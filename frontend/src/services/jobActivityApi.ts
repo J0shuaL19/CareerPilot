@@ -8,6 +8,8 @@ import type {
   JobActivityCalendarImportInput,
   JobActivityCalendarImportPreview,
   JobActivityCalendarImportResult,
+  InterviewPreparation,
+  InterviewPreparationInput,
   ReopenJobActivityResult,
   RescheduleJobActivityInput,
   ScheduledJobActivity,
@@ -21,6 +23,32 @@ export function getJobActivities(
   signal?: AbortSignal,
 ): Promise<JobActivity[]> {
   return apiRequest<JobActivity[]>(`/api/jobs/${jobId}/activities`, { signal })
+}
+
+export function getInterviewPreparation(
+  jobId: number,
+  activityId: number,
+  signal?: AbortSignal,
+): Promise<InterviewPreparation> {
+  return apiRequest<InterviewPreparation>(
+    '/api/jobs/' + jobId + '/activities/' + activityId + '/preparation',
+    { signal },
+  )
+}
+
+export function saveInterviewPreparation(
+  jobId: number,
+  activityId: number,
+  input: InterviewPreparationInput,
+): Promise<InterviewPreparation> {
+  return apiRequest<InterviewPreparation>(
+    '/api/jobs/' + jobId + '/activities/' + activityId + '/preparation',
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(input),
+    },
+  )
 }
 
 export function createJobActivity(
