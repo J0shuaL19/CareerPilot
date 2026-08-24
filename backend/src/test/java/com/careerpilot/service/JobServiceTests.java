@@ -3,6 +3,7 @@ package com.careerpilot.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -10,18 +11,23 @@ import com.careerpilot.dto.JobAttentionBulkClearRequest;
 import com.careerpilot.dto.JobAttentionBulkRestoreRequest;
 import com.careerpilot.dto.JobAttentionBulkSnoozeRequest;
 import com.careerpilot.dto.JobAttentionSnoozeRequest;
+import com.careerpilot.dto.JobAttentionSnoozeRestoreRequest;
 import com.careerpilot.dto.JobAttentionSnoozeRestoreItem;
 import com.careerpilot.dto.JobRequest;
 import com.careerpilot.dto.JobResponse;
 import com.careerpilot.dto.JobStatusUpdateRequest;
 import com.careerpilot.exception.ResourceNotFoundException;
 import com.careerpilot.model.Job;
+import com.careerpilot.model.JobAttentionEvent;
+import com.careerpilot.model.JobAttentionEventAction;
 import com.careerpilot.model.JobStatus;
+import com.careerpilot.repository.JobAttentionEventRepository;
 import com.careerpilot.repository.JobRepository;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.StreamSupport;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -35,6 +41,9 @@ class JobServiceTests {
 
     @Mock
     private JobRepository jobRepository;
+
+    @Mock
+    private JobAttentionEventRepository jobAttentionEventRepository;
 
     @InjectMocks
     private JobService jobService;
@@ -174,6 +183,55 @@ class JobServiceTests {
 
         assertThat(job.getAttentionSnoozedUntil()).isEqualTo(snoozedUntil);
         assertThat(response.attentionSnoozedUntil()).isEqualTo(snoozedUntil);
+        ArgumentCaptor<JobAttentionEvent> eventCaptor =
+                ArgumentCaptor.forClass(JobAttentionEvent.class);
+        verify(jobAttentionEventRepository).save(eventCaptor.capture());
+        assertThat(eventCaptor.getValue().getAction())
+                .isEqualTo(JobAttentionEventAction.SNOOZED);
+        assertThat(eventCaptor.getValue().getPreviousSnoozedUntil()).isNull();
+        assertThat(eventCaptor.getValue().getNewSnoozedUntil()).isEqualTo(snoozedUntil);
+    }
+
+    @Test
+    void recordsRescheduledReminderWithBothDates() {
+        Job job = persistedJob(1L, "OpenAI", "2026-08-18T12:00:00Z");
+        LocalDate previousDate = LocalDate.parse("2026-08-30");
+        LocalDate newDate = LocalDate.parse("2026-09-02");
+        job.snoozeAttentionUntil(previousDate);
+        when(jobRepository.findById(1L)).thenReturn(Optional.of(job));
+
+        jobService.snoozeAttention(1L, new JobAttentionSnoozeRequest(newDate));
+
+        ArgumentCaptor<JobAttentionEvent> eventCaptor =
+                ArgumentCaptor.forClass(JobAttentionEvent.class);
+        verify(jobAttentionEventRepository).save(eventCaptor.capture());
+        assertThat(eventCaptor.getValue().getAction())
+                .isEqualTo(JobAttentionEventAction.RESCHEDULED);
+        assertThat(eventCaptor.getValue().getPreviousSnoozedUntil()).isEqualTo(previousDate);
+        assertThat(eventCaptor.getValue().getNewSnoozedUntil()).isEqualTo(newDate);
+    }
+
+    @Test
+    void restoresSingleReminderToItsPreviousDate() {
+        Job job = persistedJob(1L, "OpenAI", "2026-08-18T12:00:00Z");
+        LocalDate changedDate = LocalDate.parse("2026-09-05");
+        LocalDate restoredDate = LocalDate.parse("2026-08-30");
+        job.snoozeAttentionUntil(changedDate);
+        when(jobRepository.findById(1L)).thenReturn(Optional.of(job));
+
+        JobResponse response = jobService.restoreAttentionSnooze(
+                1L,
+                new JobAttentionSnoozeRestoreRequest(restoredDate)
+        );
+
+        assertThat(response.attentionSnoozedUntil()).isEqualTo(restoredDate);
+        ArgumentCaptor<JobAttentionEvent> eventCaptor =
+                ArgumentCaptor.forClass(JobAttentionEvent.class);
+        verify(jobAttentionEventRepository).save(eventCaptor.capture());
+        assertThat(eventCaptor.getValue().getAction())
+                .isEqualTo(JobAttentionEventAction.RESTORED);
+        assertThat(eventCaptor.getValue().getPreviousSnoozedUntil()).isEqualTo(changedDate);
+        assertThat(eventCaptor.getValue().getNewSnoozedUntil()).isEqualTo(restoredDate);
     }
 
     @Test
@@ -186,6 +244,14 @@ class JobServiceTests {
 
         assertThat(job.getAttentionSnoozedUntil()).isNull();
         assertThat(response.attentionSnoozedUntil()).isNull();
+        ArgumentCaptor<JobAttentionEvent> eventCaptor =
+                ArgumentCaptor.forClass(JobAttentionEvent.class);
+        verify(jobAttentionEventRepository).save(eventCaptor.capture());
+        assertThat(eventCaptor.getValue().getAction())
+                .isEqualTo(JobAttentionEventAction.RESUMED);
+        assertThat(eventCaptor.getValue().getPreviousSnoozedUntil())
+                .isEqualTo(LocalDate.parse("2026-08-30"));
+        assertThat(eventCaptor.getValue().getNewSnoozedUntil()).isNull();
     }
 
     @Test
@@ -259,6 +325,15 @@ class JobServiceTests {
                 .containsExactly(firstDate, secondDate);
         assertThat(firstJob.getAttentionSnoozedUntil()).isEqualTo(firstDate);
         assertThat(secondJob.getAttentionSnoozedUntil()).isEqualTo(secondDate);
+        verify(jobAttentionEventRepository).saveAll(argThat(events -> {
+            List<JobAttentionEvent> savedEvents = StreamSupport
+                    .stream(events.spliterator(), false)
+                    .toList();
+            return savedEvents.size() == 2
+                    && savedEvents.stream().allMatch(event -> (
+                            event.getAction() == JobAttentionEventAction.RESTORED
+                    ));
+        }));
     }
 
     @Test

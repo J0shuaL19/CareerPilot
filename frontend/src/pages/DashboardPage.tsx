@@ -5,6 +5,7 @@ import { DashboardFunnel } from '../components/DashboardFunnel'
 import { NeedsAttentionPanel } from '../components/NeedsAttentionPanel'
 import { PipelineSummary } from '../components/PipelineSummary'
 import { QuickFollowUpDialog } from '../components/QuickFollowUpDialog'
+import { ReminderHistory } from '../components/ReminderHistory'
 import {
   SnoozeReminderDialog,
   type SnoozeReminderTarget,
@@ -23,6 +24,7 @@ import {
   clearJobAttentionSnooze,
   clearJobAttentionSnoozeBulk,
   getJobs,
+  restoreJobAttentionSnooze,
   restoreJobAttentionSnoozes,
   snoozeJobAttention,
   snoozeJobAttentionBulk,
@@ -46,6 +48,7 @@ interface SnoozeConfirmation {
   jobId: number
   company: string
   snoozedUntil: string
+  previousSnoozedUntil: string | null
 }
 
 interface SnoozeDialogItem extends SnoozeReminderTarget {
@@ -112,6 +115,7 @@ export function DashboardPage() {
   const [isBulkSnoozeUndoing, setIsBulkSnoozeUndoing] = useState(false)
   const [bulkSnoozeUndoError, setBulkSnoozeUndoError] = useState<string | null>(null)
   const [bulkSelectionResetKey, setBulkSelectionResetKey] = useState(0)
+  const [historyReloadKey, setHistoryReloadKey] = useState(0)
 
   async function handleFollowUpSubmit(input: CreateJobActivityInput) {
     if (!followUpItem) return
@@ -123,6 +127,7 @@ export function DashboardPage() {
       setFollowUpSuccess(`Follow-up saved for ${followUpItem.company}.`)
       setFollowUpItem(null)
       setReloadKey((key) => key + 1)
+      setHistoryReloadKey((key) => key + 1)
     } catch (saveError) {
       setFollowUpError(getErrorMessage(saveError))
     } finally {
@@ -167,11 +172,13 @@ export function DashboardPage() {
         jobId: snoozeItem.jobId,
         company: snoozeItem.company,
         snoozedUntil,
+        previousSnoozedUntil: snoozeItem.currentSnoozedUntil ?? null,
       })
       setSnoozeUndoError(null)
       setSnoozedRemindersError(null)
       setFollowUpSuccess(null)
       setSnoozeItem(null)
+      setHistoryReloadKey((key) => key + 1)
     } catch (saveError) {
       setSnoozeError(getErrorMessage(saveError))
     } finally {
@@ -185,9 +192,13 @@ export function DashboardPage() {
     setIsSnoozeUndoing(true)
     setSnoozeUndoError(null)
     try {
-      await clearJobAttentionSnooze(snoozeConfirmation.jobId)
+      await restoreJobAttentionSnooze(
+        snoozeConfirmation.jobId,
+        snoozeConfirmation.previousSnoozedUntil,
+      )
       setSnoozeConfirmation(null)
       setReloadKey((key) => key + 1)
+      setHistoryReloadKey((key) => key + 1)
     } catch (undoError) {
       setSnoozeUndoError(getErrorMessage(undoError))
     } finally {
@@ -210,6 +221,7 @@ export function DashboardPage() {
       setBulkSnoozeUndoError(null)
       setFollowUpSuccess(job.company + ' reminder is active again.')
       setReloadKey((key) => key + 1)
+      setHistoryReloadKey((key) => key + 1)
     } catch (resumeError) {
       setSnoozedRemindersError(getErrorMessage(resumeError))
     } finally {
@@ -245,6 +257,7 @@ export function DashboardPage() {
         reminders: previousReminders,
       })
       setBulkSelectionResetKey((key) => key + 1)
+      setHistoryReloadKey((key) => key + 1)
     } catch (saveError) {
       setSnoozeError(getErrorMessage(saveError))
     } finally {
@@ -275,6 +288,7 @@ export function DashboardPage() {
       })
       setBulkSelectionResetKey((key) => key + 1)
       setReloadKey((key) => key + 1)
+      setHistoryReloadKey((key) => key + 1)
     } catch (resumeError) {
       setSnoozedRemindersError(getErrorMessage(resumeError))
     } finally {
@@ -305,6 +319,7 @@ export function DashboardPage() {
       setSnoozedRemindersError(null)
       setBulkSelectionResetKey((key) => key + 1)
       setReloadKey((key) => key + 1)
+      setHistoryReloadKey((key) => key + 1)
     } catch (undoError) {
       setBulkSnoozeUndoError(getErrorMessage(undoError))
     } finally {
@@ -616,6 +631,11 @@ export function DashboardPage() {
               onViewJob={(jobId) => navigate('/jobs/' + jobId)}
             />
           )}
+
+          <ReminderHistory
+            reloadKey={historyReloadKey}
+            onViewJob={(jobId) => navigate(`/jobs/${jobId}`)}
+          />
 
           <UpcomingActivities
             activities={data.upcomingActivities}

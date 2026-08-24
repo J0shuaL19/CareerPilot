@@ -91,6 +91,19 @@ export function snoozeJobAttention(id: number, snoozedUntil: string): Promise<Jo
   })
 }
 
+export function restoreJobAttentionSnooze(
+  id: number,
+  snoozedUntil: string | null,
+): Promise<Job> {
+  return apiRequest<Job>('/api/jobs/' + id + '/attention-snooze/restore', {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ snoozedUntil }),
+  })
+}
+
 export function clearJobAttentionSnooze(id: number): Promise<Job> {
   return apiRequest<Job>('/api/jobs/' + id + '/attention-snooze', {
     method: 'DELETE',

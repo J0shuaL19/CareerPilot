@@ -16,6 +16,7 @@ import com.careerpilot.dto.JobAttentionBulkClearRequest;
 import com.careerpilot.dto.JobAttentionBulkRestoreRequest;
 import com.careerpilot.dto.JobAttentionBulkSnoozeRequest;
 import com.careerpilot.dto.JobAttentionSnoozeRequest;
+import com.careerpilot.dto.JobAttentionSnoozeRestoreRequest;
 import com.careerpilot.dto.JobRequest;
 import com.careerpilot.dto.JobCsvImportPreviewResponse;
 import com.careerpilot.dto.JobCsvImportResultResponse;
@@ -319,6 +320,29 @@ class JobControllerTests {
         ));
 
         mockMvc.perform(put("/api/jobs/1/attention-snooze")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "snoozedUntil": "2099-08-30"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.attentionSnoozedUntil").value("2099-08-30"));
+    }
+
+    @Test
+    void restoresSingleReminderToPreviousDate() throws Exception {
+        when(jobService.restoreAttentionSnooze(
+                any(Long.class),
+                any(JobAttentionSnoozeRestoreRequest.class)
+        )).thenReturn(jobResponse(
+                1L,
+                "OpenAI",
+                JobStatus.APPLIED,
+                LocalDate.parse("2099-08-30")
+        ));
+
+        mockMvc.perform(put("/api/jobs/1/attention-snooze/restore")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {

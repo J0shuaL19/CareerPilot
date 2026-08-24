@@ -1,5 +1,6 @@
 import type {
   CreateJobActivityInput,
+  JobAttentionHistoryEntry,
   JobAttentionItem,
   JobAttentionSettings,
   JobActivity,
@@ -57,6 +58,14 @@ export function downloadJobActivityCalendar(
 
 export function getUpcomingJobActivities(signal?: AbortSignal): Promise<UpcomingJobActivity[]> {
   return apiRequest<UpcomingJobActivity[]>('/api/job-activities/upcoming', { signal })
+}
+
+export function getJobAttentionHistory(
+  signal?: AbortSignal,
+): Promise<JobAttentionHistoryEntry[]> {
+  return apiRequest<JobAttentionHistoryEntry[]>('/api/job-activities/attention-history', {
+    signal,
+  })
 }
 
 export function getJobAttentionItems(signal?: AbortSignal): Promise<JobAttentionItem[]> {

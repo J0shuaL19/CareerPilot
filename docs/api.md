@@ -240,6 +240,20 @@ Clears the saved date immediately. Success: `200 OK` with the complete updated j
 
 The dashboard derives its `Snoozed reminders` management list from active jobs returned by `GET /api/jobs` whose `attentionSnoozedUntil` date is still in the future. Users can update that date through the snooze endpoint or resume the reminder immediately through the clear endpoint.
 
+### Restore one job reminder state
+
+`PUT /api/jobs/{id}/attention-snooze/restore`
+
+Used by the dashboard's single-item Undo action. Pass the previous future date to undo a date change, or `null` to undo an initial pause.
+
+```json
+{
+  "snoozedUntil": "2026-08-30"
+}
+```
+
+Success: `200 OK` with the complete updated job response. The restored change is recorded in reminder history as `RESTORED`.
+
 ### Snooze multiple job reminders
 
 `PUT /api/jobs/attention-snooze`
@@ -359,6 +373,29 @@ Results are ordered by how far each job is past its own threshold, from most ove
   }
 ]
 ```
+
+### Read reminder change history
+
+`GET /api/job-activities/attention-history`
+
+Returns the 20 most recent reminder changes, newest first. Each item includes the job context, action, previous date, new date, and creation time. Actions are `SNOOZED`, `RESCHEDULED`, `RESUMED`, `RESTORED`, or `CLEARED_BY_ACTIVITY`.
+
+```json
+[
+  {
+    "id": 7,
+    "jobId": 1,
+    "company": "OpenAI",
+    "jobTitle": "Software Engineer",
+    "action": "RESCHEDULED",
+    "previousSnoozedUntil": "2026-08-30",
+    "newSnoozedUntil": "2026-09-02",
+    "createdAt": "2026-08-24T12:00:00Z"
+  }
+]
+```
+
+Deleting a job also deletes its reminder history. A fresh history returns `[]`.
 
 ### Read follow-up reminder settings
 

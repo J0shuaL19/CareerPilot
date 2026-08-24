@@ -44,6 +44,24 @@ export interface JobAttentionItem {
   thresholdDays: number
 }
 
+export type JobAttentionHistoryAction =
+  | 'SNOOZED'
+  | 'RESCHEDULED'
+  | 'RESUMED'
+  | 'RESTORED'
+  | 'CLEARED_BY_ACTIVITY'
+
+export interface JobAttentionHistoryEntry {
+  id: number
+  jobId: number
+  company: string
+  jobTitle: string
+  action: JobAttentionHistoryAction
+  previousSnoozedUntil: string | null
+  newSnoozedUntil: string | null
+  createdAt: string
+}
+
 export interface JobAttentionSettings {
   appliedDays: number
   onlineAssessmentDays: number

@@ -76,6 +76,23 @@ Each row records one dated event or note in a job's application history. Deletin
 | `occurred_at` | `TIMESTAMP WITH TIME ZONE` | When the activity happened or is scheduled |
 | `created_at` | `TIMESTAMP WITH TIME ZONE` | UTC record creation time |
 
+## Job attention events table
+
+Migration: `V7__create_job_attention_events_table.sql`
+
+Each row records one reminder state change for one job. Bulk operations create one row per selected job so every original date remains independently traceable. Deleting the owning job removes its reminder events.
+
+| Column | Type | Purpose |
+| --- | --- | --- |
+| `id` | `BIGSERIAL` | Database-generated identifier |
+| `job_id` | `BIGINT` | Owning job |
+| `action` | `VARCHAR(32)` | Pause, reschedule, resume, restore, or activity-triggered clear |
+| `previous_snoozed_until` | `DATE` | Optional date before the change |
+| `new_snoozed_until` | `DATE` | Optional date after the change |
+| `created_at` | `TIMESTAMP WITH TIME ZONE` | UTC event creation time |
+
+At least one of the previous or new dates must be present.
+
 ## Job attention settings table
 
 Migration: `V5__create_job_attention_settings_table.sql`

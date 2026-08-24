@@ -4,6 +4,7 @@ import com.careerpilot.dto.JobAttentionBulkClearRequest;
 import com.careerpilot.dto.JobAttentionBulkRestoreRequest;
 import com.careerpilot.dto.JobAttentionBulkSnoozeRequest;
 import com.careerpilot.dto.JobAttentionSnoozeRequest;
+import com.careerpilot.dto.JobAttentionSnoozeRestoreRequest;
 import com.careerpilot.dto.JobCsvExportRequest;
 import com.careerpilot.dto.JobCsvImportPreviewResponse;
 import com.careerpilot.dto.JobCsvImportResultResponse;
@@ -109,6 +110,14 @@ public class JobController {
             @Valid @RequestBody JobAttentionSnoozeRequest request
     ) {
         return jobService.snoozeAttention(id, request);
+    }
+
+    @PutMapping("/{id}/attention-snooze/restore")
+    public JobResponse restoreAttentionSnooze(
+            @PathVariable Long id,
+            @Valid @RequestBody JobAttentionSnoozeRestoreRequest request
+    ) {
+        return jobService.restoreAttentionSnooze(id, request);
     }
 
     @PutMapping("/attention-snooze")

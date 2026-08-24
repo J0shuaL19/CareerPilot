@@ -7,10 +7,14 @@ import com.careerpilot.exception.ResourceNotFoundException;
 import com.careerpilot.model.Job;
 import com.careerpilot.model.JobActivity;
 import com.careerpilot.model.JobActivityType;
+import com.careerpilot.model.JobAttentionEvent;
+import com.careerpilot.model.JobAttentionEventAction;
 import com.careerpilot.repository.JobActivityRepository;
+import com.careerpilot.repository.JobAttentionEventRepository;
 import com.careerpilot.repository.JobRepository;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import org.springframework.stereotype.Service;
@@ -27,22 +31,34 @@ public class JobActivityService {
 
     private final JobRepository jobRepository;
     private final JobActivityRepository jobActivityRepository;
+    private final JobAttentionEventRepository jobAttentionEventRepository;
     private final Clock clock;
 
     public JobActivityService(
             JobRepository jobRepository,
             JobActivityRepository jobActivityRepository,
+            JobAttentionEventRepository jobAttentionEventRepository,
             Clock clock
     ) {
         this.jobRepository = jobRepository;
         this.jobActivityRepository = jobActivityRepository;
+        this.jobAttentionEventRepository = jobAttentionEventRepository;
         this.clock = clock;
     }
 
     @Transactional
     public JobActivityResponse createActivity(Long jobId, JobActivityRequest request) {
         Job job = findJob(jobId);
+        LocalDate previousSnoozeDate = job.getAttentionSnoozedUntil();
         job.clearAttentionSnooze();
+        if (previousSnoozeDate != null) {
+            jobAttentionEventRepository.save(new JobAttentionEvent(
+                    job,
+                    JobAttentionEventAction.CLEARED_BY_ACTIVITY,
+                    previousSnoozeDate,
+                    null
+            ));
+        }
         JobActivity activity = new JobActivity(
                 job,
                 request.type(),

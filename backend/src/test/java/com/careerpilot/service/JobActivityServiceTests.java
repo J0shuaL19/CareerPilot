@@ -13,7 +13,10 @@ import com.careerpilot.exception.ResourceNotFoundException;
 import com.careerpilot.model.Job;
 import com.careerpilot.model.JobActivity;
 import com.careerpilot.model.JobActivityType;
+import com.careerpilot.model.JobAttentionEvent;
+import com.careerpilot.model.JobAttentionEventAction;
 import com.careerpilot.repository.JobActivityRepository;
+import com.careerpilot.repository.JobAttentionEventRepository;
 import com.careerpilot.repository.JobRepository;
 import java.time.Clock;
 import java.time.Instant;
@@ -36,6 +39,9 @@ class JobActivityServiceTests {
 
     @Mock
     private JobActivityRepository jobActivityRepository;
+
+    @Mock
+    private JobAttentionEventRepository jobAttentionEventRepository;
 
     @Mock
     private Clock clock;
@@ -74,6 +80,14 @@ class JobActivityServiceTests {
         assertThat(job.getAttentionSnoozedUntil()).isNull();
         assertThat(response.id()).isEqualTo(2L);
         assertThat(response.jobId()).isEqualTo(1L);
+        ArgumentCaptor<JobAttentionEvent> eventCaptor =
+                ArgumentCaptor.forClass(JobAttentionEvent.class);
+        verify(jobAttentionEventRepository).save(eventCaptor.capture());
+        assertThat(eventCaptor.getValue().getAction())
+                .isEqualTo(JobAttentionEventAction.CLEARED_BY_ACTIVITY);
+        assertThat(eventCaptor.getValue().getPreviousSnoozedUntil())
+                .isEqualTo(LocalDate.parse("2026-08-30"));
+        assertThat(eventCaptor.getValue().getNewSnoozedUntil()).isNull();
     }
 
     @Test
