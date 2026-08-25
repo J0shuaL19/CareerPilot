@@ -134,3 +134,7 @@ A single row stores the reminder timing used by the dashboard. The seeded row us
 Each threshold is constrained to `1` through `90`.
 
 Future schema changes must be added as new Flyway migrations. Do not edit a migration after it has been applied to a shared database.
+
+## Production persistence
+
+Docker Compose stores PostgreSQL data in the named `postgres-data` volume. Removing application containers does not remove this volume, but `docker compose down -v` does. Follow the backup and restore procedures in [`deployment.md`](deployment.md) before upgrades or any destructive database operation.

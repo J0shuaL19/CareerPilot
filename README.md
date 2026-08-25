@@ -60,3 +60,16 @@ The Calendar page organizes interviews and follow-ups into a desktop calendar gr
 The dashboard can show browser notifications for due applications in the daily action center. Alerts are opt-in and only run while CareerPilot is open in a secure browser context. Each overdue job is notified at most once per local calendar day; the preference and daily delivery record stay in that browser's local storage.
 
 If notification permission is blocked, use the browser's site settings to allow notifications and then return to CareerPilot. Turning alerts off stops future notifications without changing reminder rules, snoozes, or server data.
+
+## Deploy with Docker Compose
+
+This release supports private, single-user deployment with Docker Compose. It does not yet include login or per-user data isolation, so do not expose it directly to the public internet.
+
+```bash
+cp .env.example .env
+# Replace the placeholder database password and review the remaining settings.
+docker compose build --pull
+docker compose up -d
+```
+
+The default endpoint is `http://127.0.0.1:8080`. See [`docs/deployment.md`](docs/deployment.md) for HTTPS and access-control guidance, health checks, backups, restoration, upgrades, and the release checklist.

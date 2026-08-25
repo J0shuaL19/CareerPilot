@@ -10,7 +10,6 @@ import com.careerpilot.repository.JobRepository;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
@@ -54,7 +53,7 @@ public class JobAttentionService {
         }
 
         Instant now = clock.instant();
-        LocalDate today = now.atZone(ZoneId.systemDefault()).toLocalDate();
+        LocalDate today = now.atZone(clock.getZone()).toLocalDate();
         List<Job> unsnoozedJobs = activeJobs.stream()
                 .filter(job -> job.getAttentionSnoozedUntil() == null
                         || !job.getAttentionSnoozedUntil().isAfter(today))

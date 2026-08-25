@@ -14,6 +14,7 @@ import com.careerpilot.repository.JobRepository;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -71,6 +72,7 @@ class JobAttentionServiceTests {
                         lastTouch(4L, "2026-08-25T12:00:00Z")
                 ));
         when(clock.instant()).thenReturn(NOW);
+        when(clock.getZone()).thenReturn(ZoneOffset.UTC);
         when(settingsService.getSettings())
                 .thenReturn(new JobAttentionSettingsResponse(14, 2, 7));
 
@@ -95,6 +97,7 @@ class JobAttentionServiceTests {
         when(jobActivityRepository.findLatestOccurredAtByJobIds(List.of(1L)))
                 .thenReturn(List.of());
         when(clock.instant()).thenReturn(NOW);
+        when(clock.getZone()).thenReturn(ZoneOffset.UTC);
         when(settingsService.getSettings())
                 .thenReturn(new JobAttentionSettingsResponse(7, 7, 7));
 
@@ -130,6 +133,7 @@ class JobAttentionServiceTests {
                 JobStatus.INTERVIEW
         ))).thenReturn(List.of(futureSnooze, dueToday));
         when(clock.instant()).thenReturn(NOW);
+        when(clock.getZone()).thenReturn(ZoneOffset.UTC);
         when(jobActivityRepository.findLatestOccurredAtByJobIds(List.of(2L)))
                 .thenReturn(List.of());
         when(settingsService.getSettings())
