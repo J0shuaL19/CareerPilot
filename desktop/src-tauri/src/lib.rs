@@ -60,6 +60,13 @@ pub fn run() {
         .plugin(tauri_plugin_single_instance::init(
             |app, _arguments, _working_directory| focus_existing_window(app),
         ))
+        .on_window_event(|window, event| {
+            if matches!(event, tauri::WindowEvent::CloseRequested { .. }) {
+                let app_handle = window.app_handle();
+                app_handle.state::<backend::BackendState>().stop();
+                app_handle.exit(0);
+            }
+        })
         .setup(|app| {
             app.manage(backend::BackendState::default());
 

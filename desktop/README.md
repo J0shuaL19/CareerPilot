@@ -13,9 +13,9 @@ pnpm dev
 pnpm build
 ```
 
-The first milestone only embeds the React production build. The bundled Java
-backend, local H2 database, startup health check, and process cleanup are added
-in the following milestones.
+`pnpm build` produces the Windows installer and its release executable. The
+desktop package includes the React frontend, Spring Boot backend, H2 database
+driver, and a minimized Java 21 runtime.
 
 ## Desktop backend
 
@@ -49,3 +49,16 @@ backend. After `/api/health` confirms both the service and database are ready,
 the window navigates to the loopback URL and becomes visible. Application data
 is stored under `%LOCALAPPDATA%/CareerPilot`; closing the app also stops the
 backend process. A second launch focuses the existing window.
+
+## Windows installer
+
+Create a per-user NSIS installer with:
+
+```powershell
+pnpm build
+```
+
+The installer is written to `src-tauri/target/release/bundle/nsis`. It installs
+without administrator access, uses the bundled Java runtime, and downloads the
+Microsoft WebView2 bootstrapper only when WebView2 is unavailable. The installed
+application stores its database and logs under `%LOCALAPPDATA%/CareerPilot`.
