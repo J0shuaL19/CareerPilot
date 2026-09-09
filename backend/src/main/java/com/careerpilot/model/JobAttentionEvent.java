@@ -60,6 +60,22 @@ public class JobAttentionEvent {
         this.previousSnoozedUntil = previousSnoozedUntil;
         this.newSnoozedUntil = newSnoozedUntil;
     }
+    public static JobAttentionEvent restore(
+            Job job,
+            JobAttentionEventAction action,
+            LocalDate previousSnoozedUntil,
+            LocalDate newSnoozedUntil,
+            Instant createdAt
+    ) {
+        JobAttentionEvent event = new JobAttentionEvent(
+                job,
+                action,
+                previousSnoozedUntil,
+                newSnoozedUntil
+        );
+        event.createdAt = Objects.requireNonNull(createdAt, "Creation time is required");
+        return event;
+    }
 
     @PrePersist
     void setCreationTime() {

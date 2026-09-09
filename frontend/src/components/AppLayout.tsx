@@ -4,6 +4,7 @@ export function AppLayout() {
   const { pathname } = useLocation()
   const isDashboardRoute = pathname === '/dashboard'
   const isCalendarRoute = pathname === '/calendar'
+  const isDataRoute = pathname === '/data'
   const isJobRoute = pathname === '/jobs' || pathname.startsWith('/jobs/')
   const isResumeRoute = pathname === '/resumes' || pathname.startsWith('/resumes/')
   const isAnalysisRoute = pathname === '/analyses' || pathname.startsWith('/analyses/')
@@ -61,6 +62,14 @@ export function AppLayout() {
                 : 'app-nav__link'}
             >
               Analyses
+            </NavLink>            <NavLink
+              to="/data"
+              end
+              className={isDataRoute
+                ? 'app-nav__link app-nav__link--active'
+                : 'app-nav__link'}
+            >
+              Data
             </NavLink>
             <NavLink className="button button--primary button--compact" to="/jobs/new">
               <span aria-hidden="true">＋</span> Add job

@@ -12,6 +12,7 @@ import { AddJobPage } from './pages/AddJobPage'
 import { AddResumePage } from './pages/AddResumePage'
 import { CalendarPage } from './pages/CalendarPage'
 import { DashboardPage } from './pages/DashboardPage'
+import { DataTransferPage } from './pages/DataTransferPage'
 import { EditJobPage } from './pages/EditJobPage'
 import { EditResumePage } from './pages/EditResumePage'
 import { JobDetailPage } from './pages/JobDetailPage'
@@ -160,6 +161,7 @@ function App() {
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="calendar" element={<CalendarPage />} />
+          <Route path="data" element={<DataTransferPage />} />
           <Route path="jobs" element={<JobsRoute />} />
           <Route path="jobs/new" element={<AddJobRoute />} />
           <Route path="jobs/:id/edit" element={<EditJobRoute />} />

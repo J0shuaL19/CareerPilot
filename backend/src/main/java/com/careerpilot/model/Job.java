@@ -55,6 +55,21 @@ public class Job {
         this.jobUrl = jobUrl;
         this.status = JobStatus.SAVED;
     }
+    public static Job restore(
+            String company,
+            String title,
+            String description,
+            String jobUrl,
+            JobStatus status,
+            Instant createdAt,
+            LocalDate attentionSnoozedUntil
+    ) {
+        Job job = new Job(company, title, description, jobUrl);
+        job.status = Objects.requireNonNull(status, "Job status is required");
+        job.createdAt = Objects.requireNonNull(createdAt, "Creation time is required");
+        job.attentionSnoozedUntil = attentionSnoozedUntil;
+        return job;
+    }
 
     public void updateStatus(JobStatus status) {
         this.status = Objects.requireNonNull(status, "Job status is required");

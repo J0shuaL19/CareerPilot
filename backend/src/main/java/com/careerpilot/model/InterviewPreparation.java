@@ -62,6 +62,32 @@ public class InterviewPreparation {
         this.activity = Objects.requireNonNull(activity, "Interview activity is required");
         this.updatedAt = Objects.requireNonNull(updatedAt, "Update time is required");
     }
+    public static InterviewPreparation restore(
+            JobActivity activity,
+            String companyResearch,
+            boolean companyResearchDone,
+            String rolePriorities,
+            boolean rolePrioritiesDone,
+            String starStories,
+            boolean starStoriesDone,
+            String questionsToAsk,
+            boolean questionsToAskDone,
+            Instant updatedAt
+    ) {
+        InterviewPreparation preparation = new InterviewPreparation(activity, updatedAt);
+        preparation.update(
+                companyResearch,
+                companyResearchDone,
+                rolePriorities,
+                rolePrioritiesDone,
+                starStories,
+                starStoriesDone,
+                questionsToAsk,
+                questionsToAskDone,
+                updatedAt
+        );
+        return preparation;
+    }
 
     public int completedSections() {
         int completedSections = 0;

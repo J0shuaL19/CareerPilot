@@ -35,6 +35,11 @@ public class Resume {
     public Resume(String name, String content) {
         updateDetails(name, content);
     }
+    public static Resume restore(String name, String content, Instant createdAt) {
+        Resume resume = new Resume(name, content);
+        resume.createdAt = Objects.requireNonNull(createdAt, "Creation time is required");
+        return resume;
+    }
 
     public void updateDetails(String name, String content) {
         this.name = Objects.requireNonNull(name);

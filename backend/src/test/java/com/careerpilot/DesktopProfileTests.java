@@ -2,6 +2,7 @@ package com.careerpilot;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.careerpilot.service.DataTransferService;
 import java.sql.Connection;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
@@ -23,9 +24,13 @@ class DesktopProfileTests {
     @Autowired
     private DataSource dataSource;
 
+    @Autowired
+    private DataTransferService dataTransferService;
+
     @Test
     void startsWithDesktopProfileAndMigratedH2Database() throws Exception {
         assertThat(environment.getActiveProfiles()).contains("desktop");
+        assertThat(dataTransferService.capabilities().importEnabled()).isTrue();
 
         try (Connection connection = dataSource.getConnection();
                 var statement = connection.createStatement();

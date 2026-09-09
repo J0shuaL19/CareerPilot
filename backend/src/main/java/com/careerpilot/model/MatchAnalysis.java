@@ -74,6 +74,33 @@ public class MatchAnalysis {
         this.recommendations = recommendations;
         this.modelName = modelName;
     }
+    public static MatchAnalysis restore(
+            Job job,
+            Resume resume,
+            int matchScore,
+            String summary,
+            String strengths,
+            String gaps,
+            String recommendations,
+            String modelName,
+            Instant createdAt
+    ) {
+        MatchAnalysis analysis = new MatchAnalysis(
+                job,
+                resume,
+                matchScore,
+                summary,
+                strengths,
+                gaps,
+                recommendations,
+                modelName
+        );
+        analysis.createdAt = java.util.Objects.requireNonNull(
+                createdAt,
+                "Creation time is required"
+        );
+        return analysis;
+    }
 
     @PrePersist
     void setCreationTime() {

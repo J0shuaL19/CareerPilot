@@ -7455,3 +7455,377 @@ a:focus-visible {
     flex: 1;
   }
 }
+/* Data transfer */
+.data-transfer-page {
+  display: grid;
+  gap: 0;
+}
+
+.data-transfer-page .page-header {
+  margin-bottom: 2.2rem;
+}
+
+.data-transfer-card {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap: 1.25rem;
+  padding: clamp(1.35rem, 3vw, 2rem);
+}
+
+.data-transfer-card__icon {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  place-items: center;
+  border-radius: 16px;
+  color: #2859d8;
+  background: #eaf0ff;
+  font-size: 1.5rem;
+  font-weight: 900;
+}
+
+.data-transfer-card__icon--import {
+  color: #24754d;
+  background: #e7f6ed;
+}
+
+.data-transfer-card__content {
+  display: grid;
+  min-width: 0;
+  gap: 1.1rem;
+}
+
+.data-transfer-card__content > p,
+.data-transfer-card__heading h2,
+.data-transfer-card__heading span,
+.data-transfer-web-notice p,
+.data-transfer-warning p,
+.data-transfer-complete p {
+  margin: 0;
+}
+
+.data-transfer-card__content > p {
+  max-width: 680px;
+  color: #687489;
+  font-size: 0.9rem;
+  line-height: 1.65;
+}
+
+.data-transfer-card__heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.data-transfer-card__heading > div {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.data-transfer-card__heading > div > span,
+.data-transfer-preview__heading > div > span {
+  color: #7b879a;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.data-transfer-card__heading h2 {
+  color: #26334c;
+  font-size: 1.25rem;
+  letter-spacing: -0.02em;
+}
+
+.data-transfer-badge {
+  flex: 0 0 auto;
+  padding: 0.36rem 0.65rem;
+  border-radius: 999px;
+  color: #2859d8;
+  background: #edf2ff;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.data-transfer-badge--desktop {
+  color: #24754d;
+  background: #e8f6ed;
+}
+
+.data-transfer-badge--muted {
+  color: #69758a;
+  background: #eef1f5;
+}
+
+.data-transfer-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.data-transfer-actions > span {
+  color: #8791a3;
+  font-size: 0.78rem;
+}
+
+.data-transfer-connector {
+  display: grid;
+  height: 58px;
+  place-items: center;
+}
+
+.data-transfer-connector::before {
+  position: absolute;
+  width: 2px;
+  height: 58px;
+  background: #dbe2ee;
+  content: '';
+}
+
+.data-transfer-connector span {
+  z-index: 1;
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 3px solid #f4f7fb;
+  border-radius: 50%;
+  color: #647087;
+  background: #e7ebf2;
+  font-size: 0.7rem;
+  font-weight: 900;
+}
+
+.data-transfer-web-notice,
+.data-transfer-warning {
+  padding: 1rem 1.1rem;
+  border: 1px solid #dce3ef;
+  border-radius: 14px;
+  color: #536078;
+  background: #f7f9fc;
+}
+
+.data-transfer-web-notice {
+  border-color: #cfdaf2;
+  background: #f5f8ff;
+}
+
+.data-transfer-web-notice strong,
+.data-transfer-warning strong {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: #33415b;
+  font-size: 0.9rem;
+}
+
+.data-transfer-web-notice p,
+.data-transfer-warning p {
+  font-size: 0.8rem;
+  line-height: 1.55;
+}
+
+.data-transfer-state {
+  padding: 1rem;
+  border-radius: 12px;
+  color: #748097;
+  background: #f7f8fb;
+  font-size: 0.85rem;
+}
+
+.data-transfer-file {
+  display: grid;
+  gap: 0.55rem;
+  padding: 1.15rem;
+  border: 1px dashed #aebbd0;
+  border-radius: 16px;
+  background: #fafbfe;
+  cursor: pointer;
+}
+
+.data-transfer-file:hover {
+  border-color: #6f8fd7;
+  background: #f6f8ff;
+}
+
+.data-transfer-file > span {
+  color: #34415a;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.data-transfer-file input {
+  width: 100%;
+  color: #5c6980;
+  font-size: 0.8rem;
+}
+
+.data-transfer-file input::file-selector-button {
+  margin-right: 0.8rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid #d3dbea;
+  border-radius: 9px;
+  color: #3158b5;
+  background: #fff;
+  cursor: pointer;
+  font-weight: 750;
+}
+
+.data-transfer-file small {
+  color: #8791a3;
+  font-size: 0.72rem;
+}
+
+.data-transfer-preview {
+  display: grid;
+  gap: 1rem;
+  padding: 1.1rem;
+  border: 1px solid #d7dfec;
+  border-radius: 16px;
+  background: #fafbfd;
+}
+
+.data-transfer-preview__heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.data-transfer-preview__heading > div {
+  display: grid;
+  min-width: 0;
+  gap: 0.2rem;
+}
+
+.data-transfer-preview__heading strong {
+  overflow: hidden;
+  color: #34415a;
+  font-size: 0.9rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.data-transfer-preview__heading > span {
+  color: #7b879a;
+  font-size: 0.72rem;
+}
+
+.data-transfer-counts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin: 0;
+}
+
+.data-transfer-counts > div {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.7rem;
+  border: 1px solid #e0e5ee;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.data-transfer-counts dt {
+  color: #7b879a;
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+
+.data-transfer-counts dd {
+  margin: 0;
+  color: #2f4f9f;
+  font-size: 1rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.data-transfer-warning {
+  border-color: #efd5ab;
+  color: #815719;
+  background: #fff9ee;
+}
+
+.data-transfer-warning strong {
+  color: #885b16;
+}
+
+.data-transfer-confirmation {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  color: #4c596f;
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.45;
+  cursor: pointer;
+}
+
+.data-transfer-confirmation input {
+  width: 17px;
+  height: 17px;
+  margin: 0.05rem 0 0;
+  accent-color: #bd3049;
+}
+
+.data-transfer-preview > .button {
+  justify-self: start;
+}
+
+.data-transfer-complete {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #b8e5ce;
+  border-radius: 14px;
+  color: #17633f;
+  background: #eaf9f1;
+}
+
+.data-transfer-complete > span {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  background: #2f9566;
+  font-weight: 900;
+}
+
+.data-transfer-complete > div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.data-transfer-complete p {
+  font-size: 0.78rem;
+}
+
+@media (max-width: 700px) {
+  .data-transfer-card {
+    grid-template-columns: 1fr;
+  }
+
+  .data-transfer-card__heading,
+  .data-transfer-preview__heading,
+  .data-transfer-actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .data-transfer-counts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .data-transfer-complete {
+    grid-template-columns: 36px minmax(0, 1fr);
+  }
+
+  .data-transfer-complete .button {
+    grid-column: 1 / -1;
+  }
+}

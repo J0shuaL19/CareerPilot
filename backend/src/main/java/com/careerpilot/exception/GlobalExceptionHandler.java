@@ -181,6 +181,31 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(DataTransferImportDisabledException.class)
+    public ResponseEntity<ApiErrorResponse> handleDataTransferImportDisabled(
+            DataTransferImportDisabledException exception,
+            HttpServletRequest request
+    ) {
+        return errorResponse(
+                HttpStatus.FORBIDDEN,
+                exception.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
+    }
+
+    @ExceptionHandler(DataTransferException.class)
+    public ResponseEntity<ApiErrorResponse> handleDataTransferFailure(
+            DataTransferException exception,
+            HttpServletRequest request
+    ) {
+        return errorResponse(
+                HttpStatus.BAD_REQUEST,
+                exception.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
+    }
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<ApiErrorResponse> handleUploadTooLarge(HttpServletRequest request) {
         return errorResponse(

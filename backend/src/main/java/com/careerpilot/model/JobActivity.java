@@ -80,6 +80,30 @@ public class JobActivity {
         this.contact = contact;
         this.occurredAt = Objects.requireNonNull(occurredAt, "Activity time is required");
     }
+    public static JobActivity restore(
+            Job job,
+            JobActivityType type,
+            String title,
+            String details,
+            String contact,
+            Instant occurredAt,
+            Instant completedAt,
+            String completionNote,
+            JobStatus completionPreviousJobStatus,
+            JobStatus completionAppliedJobStatus,
+            Instant createdAt
+    ) {
+        if ((completionPreviousJobStatus == null) != (completionAppliedJobStatus == null)) {
+            throw new IllegalArgumentException("Completion status snapshots must be paired");
+        }
+        JobActivity activity = new JobActivity(job, type, title, details, contact, occurredAt);
+        activity.completedAt = completedAt;
+        activity.completionNote = completionNote;
+        activity.completionPreviousJobStatus = completionPreviousJobStatus;
+        activity.completionAppliedJobStatus = completionAppliedJobStatus;
+        activity.createdAt = Objects.requireNonNull(createdAt, "Creation time is required");
+        return activity;
+    }
 
     public void update(
             JobActivityType type,
