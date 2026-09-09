@@ -42,3 +42,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/prepare-resources.ps
 `pnpm build` runs this script automatically before Tauri creates a Windows
 bundle. Generated JAR and runtime files live under `src-tauri/resources` and are
 ignored by Git; the script always recreates them from the committed sources.
+## Application lifecycle
+
+The desktop launcher keeps the main window hidden while it starts the bundled
+backend. After `/api/health` confirms both the service and database are ready,
+the window navigates to the loopback URL and becomes visible. Application data
+is stored under `%LOCALAPPDATA%/CareerPilot`; closing the app also stops the
+backend process. A second launch focuses the existing window.
