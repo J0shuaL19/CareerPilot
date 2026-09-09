@@ -31,3 +31,14 @@ The profile packages the React build and H2 driver into the Spring Boot JAR.
 When run with `--spring.profiles.active=desktop`, it binds only to loopback and
 stores data in `${user.home}/.careerpilot/data` by default. The Tauri launcher
 will override the data and log paths with `%LOCALAPPDATA%/CareerPilot`.
+## Bundled resources
+
+Prepare the backend and a minimized Java 21 runtime with:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/prepare-resources.ps1
+```
+
+`pnpm build` runs this script automatically before Tauri creates a Windows
+bundle. Generated JAR and runtime files live under `src-tauri/resources` and are
+ignored by Git; the script always recreates them from the committed sources.

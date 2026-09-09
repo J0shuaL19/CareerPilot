@@ -1,0 +1,3 @@
+# Detected from the packaged backend with jdeps. The final five modules cover
+# HTTPS crypto, localized data, management providers, networking, and ZIP access.
+java.base,java.compiler,java.desktop,java.instrument,java.management,java.net.http,java.prefs,java.rmi,java.scripting,java.security.jgss,java.sql.rowset,java.xml.crypto,jdk.jfr,jdk.net,jdk.unsupported,jdk.crypto.ec,jdk.localedata,jdk.management,jdk.zipfs

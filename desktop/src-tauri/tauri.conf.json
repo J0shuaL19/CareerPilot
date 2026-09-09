@@ -11,8 +11,8 @@
     },
     "devUrl": "http://localhost:5173",
     "beforeBuildCommand": {
-      "cwd": "../../frontend",
-      "script": "pnpm build",
+      "cwd": "..",
+      "script": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/prepare-resources.ps1",
       "wait": true
     },
     "frontendDist": "../../frontend/dist"
@@ -38,6 +38,9 @@
     "active": true,
     "targets": ["nsis"],
     "icon": ["icons/icon.ico"],
+    "resources": {
+      "resources/": ""
+    },
     "windows": {
       "webviewInstallMode": {
         "type": "downloadBootstrapper",
