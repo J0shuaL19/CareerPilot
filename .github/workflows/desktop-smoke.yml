@@ -1,0 +1,54 @@
+name: Desktop smoke
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/desktop-smoke.yml"
+      - "backend/**"
+      - "frontend/**"
+      - "desktop/**"
+  pull_request:
+    paths:
+      - ".github/workflows/desktop-smoke.yml"
+      - "backend/**"
+      - "frontend/**"
+      - "desktop/**"
+
+permissions:
+  contents: read
+
+jobs:
+  packaged-app:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+      - name: Set up pnpm
+        shell: pwsh
+        run: corepack enable && corepack prepare pnpm@11.19.0 --activate
+      - name: Set up Rust
+        shell: pwsh
+        run: |
+          rustup toolchain install stable --profile minimal --no-self-update
+          rustup default stable
+      - name: Install frontend dependencies
+        shell: pwsh
+        run: pnpm --dir frontend install --frozen-lockfile
+      - name: Install desktop dependencies
+        shell: pwsh
+        run: pnpm --dir desktop install --frozen-lockfile
+      - name: Build packaged app without installer
+        shell: pwsh
+        run: pnpm --dir desktop run build:smoke
+      - name: Run packaged-app smoke test
+        shell: pwsh
+        run: pnpm --dir desktop run smoke:packaged
