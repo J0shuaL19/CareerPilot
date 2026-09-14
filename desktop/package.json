@@ -8,7 +8,9 @@
     "dev": "tauri dev",
     "build": "tauri build",
     "build:smoke": "tauri build --no-bundle --ci",
-    "smoke:packaged": "pwsh -NoProfile -File scripts/smoke-packaged-app.ps1"
+    "build:installer-smoke": "tauri build --bundles nsis --ci",
+    "smoke:packaged": "pwsh -NoProfile -File scripts/smoke-packaged-app.ps1",
+    "smoke:installer": "pwsh -NoProfile -File scripts/smoke-installer.ps1"
   },
   "devDependencies": {
     "@tauri-apps/cli": "2.11.4"

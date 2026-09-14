@@ -46,9 +46,9 @@ jobs:
       - name: Install desktop dependencies
         shell: pwsh
         run: pnpm --dir desktop install --frozen-lockfile
-      - name: Build packaged app without installer
+      - name: Build NSIS installer
         shell: pwsh
-        run: pnpm --dir desktop run build:smoke
-      - name: Run packaged-app smoke test
+        run: pnpm --dir desktop run build:installer-smoke
+      - name: Run installed-app smoke test
         shell: pwsh
-        run: pnpm --dir desktop run smoke:packaged
+        run: pnpm --dir desktop run smoke:installer
