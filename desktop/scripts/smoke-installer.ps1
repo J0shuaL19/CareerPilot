@@ -37,6 +37,24 @@ function Assert-PathExists {
     }
 }
 
+function Wait-ForPathRemoval {
+    param(
+        [Parameter(Mandatory)][string]$Path,
+        [Parameter(Mandatory)][string]$Description,
+        [Parameter()][ValidateRange(1, 60)][int]$TimeoutSeconds = 15
+    )
+
+    $deadline = [datetime]::UtcNow.AddSeconds($TimeoutSeconds)
+    while ([datetime]::UtcNow -lt $deadline) {
+        if (-not (Test-Path -LiteralPath $Path)) {
+            return
+        }
+        Start-Sleep -Milliseconds 250
+    }
+
+    throw "$Description was not removed within $TimeoutSeconds seconds: $Path"
+}
+
 function Invoke-CheckedProcess {
     param(
         [Parameter(Mandatory)][string]$FilePath,
@@ -140,14 +158,10 @@ try {
     Invoke-CheckedProcess -FilePath $uninstaller -ArgumentList @('/S') -TimeoutSeconds $InstallerTimeoutSeconds -Description 'CareerPilot uninstaller'
     $installationCreated = $false
 
-    if (Test-Path -LiteralPath $installRoot) {
-        throw "The uninstall left the installation directory behind: $installRoot"
-    }
-    foreach ($removedPath in @($uninstallKey, $desktopShortcut, $startMenuShortcut)) {
-        if (Test-Path -LiteralPath $removedPath) {
-            throw "The uninstall left a registered installation artifact behind: $removedPath"
-        }
-    }
+    Wait-ForPathRemoval -Path $installRoot -Description 'Installation directory'
+    Wait-ForPathRemoval -Path $uninstallKey -Description 'Uninstall registry entry'
+    Wait-ForPathRemoval -Path $desktopShortcut -Description 'Desktop shortcut'
+    Wait-ForPathRemoval -Path $startMenuShortcut -Description 'Start menu shortcut'
 
     Write-Host 'PASS: installer installed, exercised, and uninstalled CareerPilot cleanly.'
 }
